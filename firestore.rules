@@ -68,6 +68,7 @@ service cloud.firestore {
     }
     function staffOk(d) {
       return d.get('staff', false) == true
+        && request.time < S().nanumStart
         && d.get('staffKey', '') == get(/databases/$(db)/documents/secrets/staff).data.code;
     }
     function typeTimeOk(d) {
