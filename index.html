@@ -152,10 +152,10 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 <div class="app">
   <div id="kakao" class="kakao" style="display:none"><span>카톡 안에서 열렸어요. 여권을 잃지 않으려면 기본 브라우저로 열어 주세요.</span><button id="openExt">브라우저로 열기</button></div>
   <div class="bar"><a href="#/" class="t">G-DEAL · 제3회 지딜 한마당</a><svg viewBox="0 0 4080 2040" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-<mask id="g5_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
+<mask id="g7_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
 <path d="M0 0H4080V2040H0V0Z" fill="white"/>
 </mask>
-<g mask="url(#g5_mask0_469_582)">
+<g mask="url(#g7_mask0_469_582)">
 <path d="M390.488 928.94C390.488 1023.28 477.999 1056.23 541.008 1056.23H705.222V991.222H510.706V866.592H856.01V1068.62C856.01 1192.78 715.037 1180.86 651.254 1180.86H478.335C343.271 1180.86 231.708 1073.43 231.002 942.169C229.906 739.219 383.359 665.56 536.923 665.56H856.01V801.646H546.84C483.832 801.646 390.488 815.228 390.488 928.94Z" fill="#C9A24A"/>
 <path d="M1280.07 1002.64H946.407V872.258H1280.07V1002.64Z" fill="#C9A24A"/>
 <path d="M2570.95 801.645H2053.61V665.558H2570.95V801.645Z" fill="#C9A24A"/>
@@ -182,7 +182,7 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
     <div class="arrive"><b>초대장이 도착했어요</b><span style="font-size:13.5px;color:#3d5a4a">지딜 한마당행 탑승권을 확인하세요</span></div>
     <div class="tk"><div class="bp" style="margin:0">
       <div class="hd"><span>BOARDING PASS</span><span>G-DEAL AIR</span></div>
-      <div class="route"><div><div class="code">GSN</div><div class="sm">경상권 어디서나</div></div><div style="color:var(--g);font-size:22px">✈</div><div><div class="code">MSU</div><div class="sm">마산대학교</div></div></div>
+      <div class="route"><div><div class="code">KOR</div><div class="sm">부울경·전국 어디서나</div></div><div style="color:var(--g);font-size:22px">✈</div><div><div class="code">MSU</div><div class="sm">마산대학교</div></div></div>
       <div class="ft"><div>DATE<b>12.19</b></div><div>BOARDING<b>10:00</b></div><div>DAY<b>SAT</b></div></div>
     </div></div>
   </div>
@@ -300,7 +300,7 @@ async function home() {
   <section class="hero">
     <div class="inv">
       <div class="seal">G</div>
-      <div class="to">${active ? esc(me.name) + ' 선생님께' : '경상권 선생님께'}</div>
+      <div class="to">${active ? esc(me.name) + ' 선생님께' : '부울경과 전국의 선생님께'}</div>
       <h1>지딜 한마당에<br>초대합니다</h1>
       <div class="meta">2026. 12. 19. 토 · 10:00–17:00<br>${esc(S?.venueShort || '마산대학교')}</div>
       ${active ? `<a class="btn" href="#/t/${me.tok}">내 탑승권 보기</a>` : `
@@ -462,7 +462,7 @@ async function ticket(tok) {
     <div class="bp" id="bp">
       <div class="hd"><span>BOARDING PASS</span><span>G-DEAL AIR</span></div>
       <div class="nm">${esc(d.name)} 선생님 <span class="pill ${TYPEPILL[d.type]}" style="font-family:var(--sans);font-size:11px">${TYPE[d.type]}</span></div>
-      <div class="route"><div><div class="code">GSN</div><div class="sm">경상권 어디서나</div></div><div style="color:var(--g);font-size:22px">✈</div><div><div class="code">MSU</div><div class="sm">마산대학교</div></div></div>
+      <div class="route"><div><div class="code">KOR</div><div class="sm">부울경·전국 어디서나</div></div><div style="color:var(--g);font-size:22px">✈</div><div><div class="code">MSU</div><div class="sm">마산대학교</div></div></div>
       <div class="ft"><div>DATE<b>12.19 SAT</b></div><div>BOARDING<b>10:00</b></div><div>PASSPORT<b>${esc(d.pno)}</b></div></div>
       ${cancelled ? '<div class="void">취소됨</div>' : ''}
     </div>
@@ -681,9 +681,9 @@ function drawPass(d) {
   x.fillStyle = '#C9A24A'; x.font = F(700, 30, 'ui-monospace, Consolas, monospace'); x.fillText('BOARDING PASS', 80, 100); x.textAlign = 'right'; x.fillText('G-DEAL AIR', W - 80, 100); x.textAlign = 'left';
   x.fillStyle = '#14402A'; x.font = F(800, 52); x.fillText(d.name + ' 선생님', 80, 210);
   x.font = F(700, 26); x.fillStyle = '#45AF76'; x.fillText(TYPE[d.type] + ' · 지딜 한마당 2026', 80, 255);
-  x.fillStyle = '#14402A'; x.font = F(800, 96, 'ui-monospace, Consolas, monospace'); x.fillText('GSN', 80, 380); x.textAlign = 'right'; x.fillText('MSU', W - 80, 380); x.textAlign = 'center';
+  x.fillStyle = '#14402A'; x.font = F(800, 96, 'ui-monospace, Consolas, monospace'); x.fillText('KOR', 80, 380); x.textAlign = 'right'; x.fillText('MSU', W - 80, 380); x.textAlign = 'center';
   x.fillStyle = '#45AF76'; x.font = F(700, 64); x.fillText('✈', W / 2, 370);
-  x.fillStyle = '#5b7566'; x.font = F(500, 24); x.textAlign = 'left'; x.fillText('경상권 어디서나', 82, 418); x.textAlign = 'right'; x.fillText('마산대학교', W - 82, 418);
+  x.fillStyle = '#5b7566'; x.font = F(500, 24); x.textAlign = 'left'; x.fillText('부울경·전국 어디서나', 82, 418); x.textAlign = 'right'; x.fillText('마산대학교', W - 82, 418);
   x.setLineDash([14, 12]); x.strokeStyle = '#cfe0d5'; x.lineWidth = 4; x.beginPath(); x.moveTo(80, 460); x.lineTo(W - 80, 460); x.stroke(); x.setLineDash([]);
   x.textAlign = 'left'; const cols = [['DATE', '12.19 SAT'], ['BOARDING', '10:00'], ['PASSPORT', d.pno]];
   cols.forEach(([k, v], i) => { const X = 80 + i * 320; x.fillStyle = '#5b7566'; x.font = F(600, 22); x.fillText(k, X, 510); x.fillStyle = '#14402A'; x.font = F(800, 38, 'ui-monospace, Consolas, monospace'); x.fillText(v, X, 556); });
