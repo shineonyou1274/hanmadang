@@ -58,8 +58,12 @@ service cloud.firestore {
         && d.get('testKey', '') == get(/databases/$(db)/documents/secrets/test).data.code
         && (d.type != 'nanum' || d.code == get(/databases/$(db)/documents/secrets/nanum).data.code);
     }
+    function staffOk(d) {
+      return d.get('staff', false) == true
+        && d.get('staffKey', '') == get(/databases/$(db)/documents/secrets/staff).data.code;
+    }
     function typeTimeOk(d) {
-      return testOk(d) || request.time < S().closeAt
+      return testOk(d) || staffOk(d) || request.time < S().closeAt
         && ((d.type == 'nanum' && request.time >= S().nanumStart
               && d.code == get(/databases/$(db)/documents/secrets/nanum).data.code)
           || (d.type == 'baeum' && request.time >= S().baeumStart)
@@ -69,7 +73,7 @@ service cloud.firestore {
       let d = request.resource.data;
       return tok.size() >= 20
         && d.keys().hasOnly(['pno', 'name', 'school', 'phone', 'email', 'type', 'status',
-                             'createdAt', 'consent', 'photoAck', 'code', 'phoneKey', 'lookupKey', 'test', 'testKey'])
+                             'createdAt', 'consent', 'photoAck', 'code', 'phoneKey', 'lookupKey', 'test', 'testKey', 'staff', 'staffKey'])
         && d.status == 'active'
         && d.consent == true
         && d.createdAt == request.time
@@ -148,7 +152,7 @@ service cloud.firestore {
       let d = request.resource.data;
       let p = get(P(tok)).data;
       return p.status == 'active'
-        && (p.get('test', false) == true || (request.time >= S().hackOpen && request.time < S().hackClose))
+        && (p.get('test', false) == true || p.get('staff', false) == true || (request.time >= S().hackOpen && request.time < S().hackClose))
         && d.keys().hasOnly(['name', 'pno', 'mode', 'team', 'topics', 'level', 'laptop', 'idea', 'status', 'createdAt', 'v'])
         && d.name == p.name && d.pno == p.pno
         && d.status == 'active' && d.createdAt == request.time && d.laptop == true
