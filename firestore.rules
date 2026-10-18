@@ -111,6 +111,118 @@ service cloud.firestore {
       allow update: if isAdmin();
     }
 
+    // ---------- 해커톤 ----------
+    function H(t) { return /databases/$(db)/documents/hackers/$(t); }
+    function T(c) { return /databases/$(db)/documents/teams/$(c); }
+    function J(v) { return /databases/$(db)/documents/hjoins/$(v); }
+    function HC() { return /databases/$(db)/documents/hcounters/main; }
+
+    match /hcounters/{id} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (id == 'main'
+            && request.resource.data.keys().hasOnly(['total', 'last'])
+            && ((request.resource.data.total == resource.data.total + 1
+                  && request.resource.data.total <= S().hackCap
+                  && !exists(H(request.resource.data.last))
+                  && existsAfter(H(request.resource.data.last)))
+              || (request.resource.data.total == resource.data.total - 1
+                  && get(H(request.resource.data.last)).data.status == 'active'
+                  && getAfter(H(request.resource.data.last)).data.status == 'cancelled')));
+    }
+
+    function teamLinkOk(d, tok) {
+      return d.team is string
+        && !exists(J(d.v)) && existsAfter(J(d.v))
+        && getAfter(J(d.v)).data.tok == tok
+        && getAfter(J(d.v)).data.team == d.team
+        && getAfter(T(d.team)).data.v == d.v;
+    }
+    function hackCreateOk(tok) {
+      let d = request.resource.data;
+      let p = get(P(tok)).data;
+      return p.status == 'active'
+        && request.time >= S().hackOpen && request.time < S().hackClose
+        && d.keys().hasOnly(['name', 'pno', 'mode', 'team', 'topics', 'level', 'laptop', 'idea', 'status', 'createdAt', 'v'])
+        && d.name == p.name && d.pno == p.pno
+        && d.status == 'active' && d.createdAt == request.time && d.laptop == true
+        && d.mode in ['lead', 'join', 'match']
+        && d.topics is list && d.topics.size() >= 1 && d.topics.size() <= 2
+        && d.level in ['new', 'some', 'often']
+        && (!('idea' in d) || (d.idea is string && d.idea.size() <= 100))
+        && getAfter(HC()).data.last == tok
+        && getAfter(HC()).data.total == get(HC()).data.total + 1
+        && ((d.mode == 'match' && d.team == null) || (d.mode != 'match' && teamLinkOk(d, tok)));
+    }
+    function hackCancelOk(tok) {
+      let d = request.resource.data;
+      return resource.data.status == 'active' && d.status == 'cancelled'
+        && d.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelledAt', 'cancelPhone', 'v'])
+        && d.cancelPhone == get(P(tok)).data.phone
+        && d.cancelledAt == request.time
+        && request.time < S().cancelDeadline
+        && getAfter(HC()).data.last == tok
+        && getAfter(HC()).data.total == get(HC()).data.total - 1
+        && (resource.data.team == null
+            || (getAfter(T(resource.data.team)).data.count == get(T(resource.data.team)).data.count - 1
+                && getAfter(T(resource.data.team)).data.v == d.v));
+    }
+    match /hackers/{tok} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if hackCreateOk(tok);
+      allow update: if isAdmin() || hackCancelOk(tok);
+      allow delete: if isAdmin();
+    }
+
+    function joinOk(code, kind) {
+      let v = request.resource.data.v;
+      return !exists(J(v)) && existsAfter(J(v))
+        && getAfter(J(v)).data.team == code
+        && getAfter(J(v)).data.kind == kind;
+    }
+    function joinerName() {
+      return get(P(getAfter(J(request.resource.data.v)).data.tok)).data.name;
+    }
+    match /teams/{code} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        || (code.size() == 6
+            && request.resource.data.keys().hasOnly(['name', 'count', 'names', 'v', 'createdAt'])
+            && request.resource.data.name is string
+            && request.resource.data.name.size() >= 1 && request.resource.data.name.size() <= 20
+            && request.resource.data.count == 1
+            && joinOk(code, 'lead')
+            && request.resource.data.names == [joinerName()]);
+      allow update: if isAdmin()
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count', 'names', 'v'])
+            && ((request.resource.data.count == resource.data.count + 1
+                  && request.resource.data.count <= S().hackTeamMax
+                  && joinOk(code, 'join')
+                  && request.resource.data.names == resource.data.names.concat([joinerName()]))
+              || (request.resource.data.count == resource.data.count - 1
+                  && joinOk(code, 'leave')
+                  && request.resource.data.names == resource.data.names.removeAll([joinerName()]))));
+      allow delete: if isAdmin();
+    }
+
+    match /hjoins/{v} {
+      allow read: if isAdmin();
+      allow create: if v.size() >= 16
+        && request.resource.data.keys().hasOnly(['tok', 'team', 'kind'])
+        && getAfter(H(request.resource.data.tok)).data.v == v
+        && ((request.resource.data.kind in ['lead', 'join']
+              && !exists(H(request.resource.data.tok))
+              && getAfter(H(request.resource.data.tok)).data.team == request.resource.data.team)
+          || (request.resource.data.kind == 'leave'
+              && get(H(request.resource.data.tok)).data.status == 'active'
+              && get(H(request.resource.data.tok)).data.team == request.resource.data.team
+              && getAfter(H(request.resource.data.tok)).data.status == 'cancelled'));
+      allow update, delete: if isAdmin();
+    }
+
     // ---------- 이름+전화로 내 여권 찾기 ----------
     match /lookups/{key} {
       allow get: if true;
