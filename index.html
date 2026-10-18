@@ -130,16 +130,32 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 .photo{border-radius:12px;overflow:hidden;margin:8px 0}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:99px;font-size:13.5px;z-index:90;opacity:0;transition:opacity .3s;pointer-events:none}
 .toast.on{opacity:1}
+/* hackathon */
+.hk{background:linear-gradient(160deg,#E8892B,#f2a65a);color:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:var(--paper)}
+.hk h3{font-size:17px;margin-bottom:4px}
+.hk p{font-size:13.5px;color:#fff8ee}
+.hk .btn{background:#fff;color:#c4621a}
+.hk .code{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:.15em;background:#fff;color:#c4621a;border-radius:10px;padding:4px 12px;display:inline-block;margin:6px 0}
+.hgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.hgrid div{background:#fff;border-radius:12px;padding:9px 11px;font-size:12px;color:#6b8577}
+.hgrid b{display:block;font-size:15px;color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips label{display:flex;align-items:center;gap:6px;background:#fff;border:1.5px solid #d3e2d8;border-radius:99px;padding:7px 12px;font-size:13.5px;font-weight:700;cursor:pointer}
+.chips input{accent-color:var(--orange)}
+.web{display:grid;grid-template-columns:44px 1fr;gap:8px;padding:8px 0;border-bottom:1px solid #eef3ef;font-size:13px}
+.web:last-child{border-bottom:0}
+.web b.n{background:var(--orange);color:#fff;border-radius:8px;text-align:center;padding:3px 0;font-size:12px;height:fit-content}
+.sub2{display:none;margin:8px 0 0 28px}
 </style>
 </head>
 <body>
 <div class="app">
   <div id="kakao" class="kakao" style="display:none"><span>카톡 안에서 열렸어요. 여권을 잃지 않으려면 기본 브라우저로 열어 주세요.</span><button id="openExt">브라우저로 열기</button></div>
-  <div class="bar"><a href="#/" class="t">G-DEAL · 한마당 2026</a><svg viewBox="0 0 4080 2040" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-<mask id="g4_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
+  <div class="bar"><a href="#/" class="t">G-DEAL · 제3회 지딜 한마당</a><svg viewBox="0 0 4080 2040" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<mask id="g5_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
 <path d="M0 0H4080V2040H0V0Z" fill="white"/>
 </mask>
-<g mask="url(#g4_mask0_469_582)">
+<g mask="url(#g5_mask0_469_582)">
 <path d="M390.488 928.94C390.488 1023.28 477.999 1056.23 541.008 1056.23H705.222V991.222H510.706V866.592H856.01V1068.62C856.01 1192.78 715.037 1180.86 651.254 1180.86H478.335C343.271 1180.86 231.708 1073.43 231.002 942.169C229.906 739.219 383.359 665.56 536.923 665.56H856.01V801.646H546.84C483.832 801.646 390.488 815.228 390.488 928.94Z" fill="#C9A24A"/>
 <path d="M1280.07 1002.64H946.407V872.258H1280.07V1002.64Z" fill="#C9A24A"/>
 <path d="M2570.95 801.645H2053.61V665.558H2570.95V801.645Z" fill="#C9A24A"/>
@@ -192,6 +208,10 @@ const $ = s => document.querySelector(s);
 const view = $('#view');
 const TYPE = { nanum: '나눔회원', baeum: '배움회원', outside: '지딜 외' };
 const TYPEPILL = { nanum: 'pg', baeum: 'pb', outside: 'po' };
+const TOPICS = ['수업과 평가', '학생 생활과 관계', '교사 업무 개선', '학교·지역사회 연결', '디지털 윤리와 안전', '자유 주제'];
+const LEVEL = { new: '처음이에요', some: '조금 해 봤어요', often: '자주 만들어요' };
+const WEBINARS = [['1차', '11.10(화) 21:00', '바이브코딩 툴 실습 · 구글 앱스스크립트 기초'], ['2차', '11.17(화) 21:00', '교육 현장 문제를 "개발 가능한 단위"로 쪼개기'], ['3차', '11.24(화) 21:00', '협업 환경 세팅 · 당일 운영 규칙 · 팀 결성']];
+const AL = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789', UP = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 let S = null, C = null;
 
 /* ---------- helpers ---------- */
@@ -397,7 +417,6 @@ async function apply() {
         const pp = await getDoc(doc(db, 'participants', prev.data().tok));
         if (pp.exists() && pp.data().status === 'active') { localStorage.setItem('hm_tok', prev.data().tok); fail('이미 신청했어요. 탑승권으로 이동할게요.'); setTimeout(() => location.hash = '#/t/' + prev.data().tok, 1200); return; }
       }
-      const AL = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
       const tok = rnd(24, AL);
       const pno = 'GD-' + rnd(5, 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789');
       const data = { pno, name, school, phone, type, status: 'active', createdAt: serverTimestamp(), consent: true, photoAck: true, phoneKey, lookupKey };
@@ -452,6 +471,7 @@ async function ticket(tok) {
       <div class="row2"><button class="btn2" id="cp">링크 복사</button><button class="btn2" id="sh">나에게 보내기</button></div></div>
     <button class="btn" id="img">탑승권 이미지 저장</button><div class="gap"></div>
     <button class="btn2" id="inv">동료 선생님 초대하기</button><div class="gap"></div>
+    <div id="hackCard"></div>
     <div class="card"><h3>좌석(세션) 지정</h3><p>세션 목록과 교실 정원이 확정되면 이 화면에서 고를 수 있어요. 열리면 지딜 단톡방과 초대장에 알려 드려요.</p></div>
     <div class="card"><h3>신청 정보</h3><div class="kv"><b>소속</b><span>${esc(d.school)}</span><b>휴대폰</b><span>${esc(d.phone.replace(/(\d{3})\d+(\d{4})/, '$1-****-$2'))}</span><b>신청</b><span>${esc(kst(ts(d.createdAt), { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</span></div></div>
     ${canCancel ? `<div style="text-align:center"><button class="btn3" id="cx">참가 취소 (${md(ts(S.cancelDeadline))}까지 가능)</button></div>` : (S ? `<p style="text-align:center;font-size:12.5px;color:#6b8577">취소 마감(${md(ts(S.cancelDeadline))})이 지났어요. 취소는 운영진에게 문의해 주세요.</p>` : '')}`}
@@ -462,10 +482,152 @@ async function ticket(tok) {
   $('#inv').onclick = () => share('지딜 한마당 2026 초대장', '12월 19일 토요일 마산대학교, 지딜 한마당에 같이 가요', location.origin + location.pathname + '#/');
   $('#img').onclick = () => drawPass(d);
   if (canCancel) $('#cx').onclick = () => cancelFlow(tok, d);
+  hackCard(tok, d);
+}
+
+/* ---------- hackathon ---------- */
+async function loadHack(tok) {
+  const [h, hc] = await Promise.all([getDoc(doc(db, 'hackers', tok)), getDoc(doc(db, 'hcounters', 'main'))]);
+  const hacker = h.exists() ? h.data() : null;
+  let team = null;
+  if (hacker && hacker.status === 'active' && hacker.team) { const t = await getDoc(doc(db, 'teams', hacker.team)); team = t.exists() ? t.data() : null; }
+  return { hacker, team, hc: hc.exists() ? hc.data() : { total: 0 } };
+}
+const hackState = () => { if (!S?.hackOpen) return 'unset'; const n = new Date(); if (n < ts(S.hackOpen)) return 'before'; if (n < ts(S.hackClose)) return 'open'; return 'closed'; };
+async function hackCard(tok, d) {
+  const box = $('#hackCard'); if (!box) return;
+  let st; try { st = await loadHack(tok); } catch (e) { return; }
+  const { hacker, team, hc } = st;
+  const cap = S?.hackCap || 40, left = Math.max(0, cap - (hc.total || 0)), hs = hackState();
+  if (hacker && hacker.status === 'active') {
+    box.innerHTML = `<div class="hk"><h3>해커톤 챌린지 신청 완료</h3>
+      ${team ? `<p>팀 <b>${esc(team.name)}</b> · ${team.count}/${S?.hackTeamMax || 4}명<br>팀원: ${team.names.map(esc).join(', ')}</p><div class="code">${esc(hacker.team)}</div><p>아직 안 들어온 팀원에게 이 팀 코드를 보내 주세요. 팀원도 한마당 신청을 먼저 해야 해요.</p><div class="gap"></div><button class="btn" id="hkShare">팀 코드 보내기</button>`
+             : `<p>매칭 대기 중이에요. 운영진이 관심 주제와 경험을 보고 3~4명 팀을 짜 드려요. 팀이 정해지면 이 칸에 표시돼요.</p>`}
+      <p style="margin-top:8px">사전 웨비나 ${WEBINARS.map(w => w[0] + ' ' + w[1]).join(' · ')}</p>
+      ${S && new Date() < ts(S.cancelDeadline) ? '<div style="text-align:center;margin-top:6px"><button class="btn3" id="hkCx" style="color:#fff">해커톤 신청만 취소</button></div>' : ''}</div>`;
+    const sh = $('#hkShare'); if (sh) sh.onclick = () => share('지딜 한마당 해커톤 팀 코드', `지딜 한마당 해커톤 팀 "${team.name}" 코드: ${hacker.team}\n한마당 신청 후 탑승권 화면의 "해커톤 신청"에서 이 코드를 넣으면 같은 팀이 돼요.`, location.origin + location.pathname + '#/');
+    const cx = $('#hkCx'); if (cx) cx.onclick = () => hackCancelFlow(tok, d);
+    return;
+  }
+  if (hs === 'open') {
+    box.innerHTML = `<div class="hk"><h3>해커톤 챌린지</h3><p>12.19 10:00–14:50 · 3~4인 1팀 · 참가비 없음<br>선착순 ${cap}명 · 남은 자리 ${left}</p><div class="gap"></div>${left > 0 ? '<a class="btn" href="#/hack">해커톤 신청하기</a>' : '<p><b>자리가 모두 찼어요</b></p>'}</div>`;
+  } else if (hs === 'before') {
+    box.innerHTML = `<div class="hk"><h3>해커톤 챌린지</h3><p>신청은 ${md(ts(S.hackOpen))}에 열려요 · 선착순 ${cap}명</p></div>`;
+  }
+}
+
+async function hack() {
+  const tok = localStorage.getItem('hm_tok');
+  let p = null; if (tok) { try { const s = await getDoc(doc(db, 'participants', tok)); p = s.exists() ? s.data() : null; } catch (e) { } }
+  if (!p || p.status !== 'active') { view.innerHTML = `<div class="wrap"><h2>해커톤 챌린지</h2><div class="card"><p>해커톤은 한마당 참가 신청(탑승 수속)을 마친 선생님만 신청할 수 있어요. 이미 신청했다면 "내 여권 찾기"로 탑승권을 열어 주세요.</p></div><a class="btn" href="#/">초대장으로</a><div class="gap"></div><a class="btn2" href="#/find">내 여권 찾기</a></div>`; return; }
+  const st = await loadHack(tok);
+  if (st.hacker && st.hacker.status === 'active') { location.hash = '#/t/' + tok; return; }
+  const cap = S?.hackCap || 40, left = Math.max(0, cap - (st.hc.total || 0)), hs = hackState();
+  if (hs !== 'open' || left <= 0) { view.innerHTML = `<div class="wrap"><h2>해커톤 챌린지</h2><div class="card"><p>${left <= 0 ? '자리가 모두 찼어요.' : hs === 'before' ? '신청은 ' + md(ts(S.hackOpen)) + '에 열려요.' : '지금은 신청을 받지 않아요.'}</p></div><a class="btn2" href="#/t/${tok}">내 탑승권으로</a></div>`; return; }
+  view.innerHTML = `
+  <div class="wrap">
+    <div class="hk"><h3 style="font-size:20px">해커톤 챌린지</h3><p>아이디어가 코드가 되고, 교육이 되다</p>
+      <div class="hgrid"><div>일시<b>12.19 10:00–14:50</b></div><div>모집<b>선착순 ${cap}명 (남은 ${left})</b></div><div>팀<b>3~4인 1팀</b></div><div>참가비<b>없음</b></div></div>
+      <p>팀마다 퍼실리테이터 1명이 함께해요. 해커톤 시간(10:00–14:50)에는 다른 세션에 들어갈 수 없어요.</p></div>
+    <form id="hf" novalidate>
+      <div class="field"><label>참가 방식</label><div class="types">
+        <label><input type="radio" name="mode" value="lead"><span>팀을 만들게요 (팀장)<small>팀 코드가 나오면 팀원에게 보내요</small></span></label>
+        <div class="sub2" id="leadF"><input type="text" id="teamName" maxlength="20" placeholder="팀 이름 (20자 안)" style="width:100%;border:1.5px solid #d3e2d8;border-radius:12px;padding:11px 12px;font-size:16px;font-family:inherit"></div>
+        <label><input type="radio" name="mode" value="join"><span>팀 코드로 합류할게요<small>팀장에게 받은 6자리 코드</small></span></label>
+        <div class="sub2" id="joinF"><input type="text" id="teamCode" maxlength="6" placeholder="예: K7P3QX" style="width:100%;border:1.5px solid #d3e2d8;border-radius:12px;padding:11px 12px;font-size:18px;font-family:var(--mono);letter-spacing:.15em;text-transform:uppercase"></div>
+        <label><input type="radio" name="mode" value="match"><span>팀이 없어요, 매칭해 주세요<small>운영진이 관심 주제와 경험을 보고 팀을 짜 드려요</small></span></label>
+      </div></div>
+      <div class="field"><label>관심 주제 (최대 2개)</label><div class="chips">${TOPICS.map((t, i) => `<label><input type="checkbox" name="topic" value="${t}">${t}</label>`).join('')}</div></div>
+      <div class="field"><label>코딩·바이브코딩 경험</label><div class="chips">${Object.entries(LEVEL).map(([k, v]) => `<label><input type="radio" name="level" value="${k}">${v}</label>`).join('')}</div></div>
+      <div class="field"><label>만들어 보고 싶은 것 (선택, 한 줄)</label><input type="text" id="idea" maxlength="100" placeholder="예: 모둠 활동 기록을 자동으로 모아 주는 도구"></div>
+      <div class="consent"><b>대회 전 사전 웨비나 (온라인)</b>${WEBINARS.map(w => `<div class="web"><b class="n">${w[0]}</b><span><b>${w[1]}</b><br>${esc(w[2])}</span></div>`).join('')}
+        <label class="chk"><input type="checkbox" id="laptop"> 당일 노트북을 가져올게요</label></div>
+      <div class="err" id="herr"></div>
+      <button class="btn" id="hgo" type="submit" style="background:var(--orange)">해커톤 신청하기</button>
+      <div class="gap"></div><a class="btn2" href="#/t/${tok}">내 탑승권으로</a>
+    </form>
+  </div>`;
+  const f = $('#hf');
+  const sync = () => { const m = f.querySelector('input[name=mode]:checked')?.value; $('#leadF').style.display = m === 'lead' ? 'block' : 'none'; $('#joinF').style.display = m === 'join' ? 'block' : 'none'; };
+  f.querySelectorAll('input[name=mode]').forEach(r => r.addEventListener('change', sync));
+  f.querySelectorAll('input[name=topic]').forEach(c => c.addEventListener('change', () => { const on = f.querySelectorAll('input[name=topic]:checked'); if (on.length > 2) { c.checked = false; toast('주제는 2개까지 고를 수 있어요'); } }));
+  f.addEventListener('submit', async e => {
+    e.preventDefault();
+    const err = $('#herr'); err.style.display = 'none';
+    const fail = m => { err.textContent = m; err.style.display = 'block'; err.scrollIntoView({ block: 'center', behavior: 'smooth' }); $('#hgo').disabled = false; $('#hgo').textContent = '해커톤 신청하기'; };
+    const mode = f.querySelector('input[name=mode]:checked')?.value;
+    const topics = [...f.querySelectorAll('input[name=topic]:checked')].map(x => x.value);
+    const level = f.querySelector('input[name=level]:checked')?.value;
+    const teamName = $('#teamName').value.trim(), code = $('#teamCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, ''), idea = $('#idea').value.trim();
+    if (!mode) return fail('참가 방식을 골라 주세요.');
+    if (mode === 'lead' && !teamName) return fail('팀 이름을 넣어 주세요.');
+    if (mode === 'join' && code.length !== 6) return fail('팀 코드 6자리를 넣어 주세요.');
+    if (!topics.length) return fail('관심 주제를 1개 이상 골라 주세요.');
+    if (!level) return fail('코딩 경험을 골라 주세요.');
+    if (!$('#laptop').checked) return fail('노트북 지참을 확인해 주세요.');
+    $('#hgo').disabled = true; $('#hgo').textContent = '신청 중…';
+    const v = rnd(20, AL);
+    const teamCode = mode === 'lead' ? rnd(6, UP) : mode === 'join' ? code : null;
+    try {
+      await runTransaction(db, async tx => {
+        const hcRef = doc(db, 'hcounters', 'main');
+        const hc = (await tx.get(hcRef)).data() || { total: 0 };
+        if (hc.total >= (S.hackCap || 40)) throw new Error('FULL');
+        let tRef = null, t = null;
+        if (teamCode) { tRef = doc(db, 'teams', teamCode); const ts_ = await tx.get(tRef); t = ts_.exists() ? ts_.data() : null; }
+        if (mode === 'lead' && t) throw new Error('RETRY');
+        if (mode === 'join' && !t) throw new Error('NOTEAM');
+        if (mode === 'join' && t.count >= (S.hackTeamMax || 4)) throw new Error('TEAMFULL');
+        const hd = { name: p.name, pno: p.pno, mode, team: teamCode, topics, level, laptop: true, status: 'active', createdAt: serverTimestamp(), v };
+        if (idea) hd.idea = idea;
+        tx.set(doc(db, 'hackers', tok), hd);
+        tx.update(hcRef, { total: hc.total + 1, last: tok });
+        if (mode === 'lead') { tx.set(doc(db, 'hjoins', v), { tok, team: teamCode, kind: 'lead' }); tx.set(tRef, { name: teamName, count: 1, names: [p.name], v, createdAt: serverTimestamp() }); }
+        if (mode === 'join') { tx.set(doc(db, 'hjoins', v), { tok, team: teamCode, kind: 'join' }); tx.update(tRef, { count: t.count + 1, names: [...t.names, p.name], v }); }
+      });
+      toast('해커톤 신청을 마쳤어요');
+      location.hash = '#/t/' + tok;
+    } catch (e2) {
+      console.error(e2);
+      const m = { FULL: '방금 해커톤 자리가 모두 찼어요.', NOTEAM: '그 팀 코드를 찾지 못했어요. 팀장에게 다시 확인해 주세요.', TEAMFULL: '그 팀은 이미 인원이 다 찼어요.', RETRY: '잠시 문제가 생겼어요. 한 번 더 눌러 주세요.' }[e2.message];
+      fail(m || '신청이 안 됐어요. 잠시 뒤 다시 해 주세요. (' + (e2.code || e2.message) + ')');
+    }
+  });
+}
+
+// 해커톤 취소 쓰기 (트랜잭션 안에서, 읽기는 미리)
+async function hackReads(tx, tok) {
+  const hRef = doc(db, 'hackers', tok), hcRef = doc(db, 'hcounters', 'main');
+  const h = await tx.get(hRef); if (!h.exists() || h.data().status !== 'active') return null;
+  const hc = (await tx.get(hcRef)).data();
+  let tRef = null, t = null;
+  if (h.data().team) { tRef = doc(db, 'teams', h.data().team); const s = await tx.get(tRef); t = s.exists() ? s.data() : null; }
+  return { hRef, hcRef, h: h.data(), hc, tRef, t };
+}
+function hackWrites(tx, tok, r, phone) {
+  const v = rnd(20, AL);
+  tx.update(r.hRef, { status: 'cancelled', cancelledAt: serverTimestamp(), cancelPhone: phone, v });
+  tx.update(r.hcRef, { total: r.hc.total - 1, last: tok });
+  if (r.tRef && r.t) { tx.set(doc(db, 'hjoins', v), { tok, team: r.h.team, kind: 'leave' }); tx.update(r.tRef, { count: r.t.count - 1, names: r.t.names.filter(n => n !== r.h.name), v }); }
+}
+function hackCancelFlow(tok, d) {
+  modal(`<h2>해커톤 신청을 취소할까요?</h2><div class="sub">한마당 참가는 그대로 유지돼요. 확인을 위해 휴대폰 번호 전체를 넣어 주세요.</div>
+    <div class="field"><input type="tel" id="hxp" inputmode="numeric" placeholder="01012345678"></div><div class="err" id="hxe"></div>
+    <button class="btn" id="hxgo" style="background:var(--red)">해커톤 취소하기</button><div class="gap"></div><button class="btn2" id="hxno">그대로 둘게요</button>`);
+  $('#hxno').onclick = closeModal;
+  $('#hxgo').onclick = async () => {
+    const ph = digits($('#hxp').value), e = $('#hxe'); e.style.display = 'none';
+    if (ph !== d.phone) { e.textContent = '신청한 휴대폰 번호와 달라요.'; e.style.display = 'block'; return; }
+    $('#hxgo').disabled = true;
+    try {
+      await runTransaction(db, async tx => { const r = await hackReads(tx, tok); if (!r) throw new Error('NONE'); hackWrites(tx, tok, r, ph); });
+      closeModal(); toast('해커톤 신청을 취소했어요'); ticket(tok);
+    } catch (err) { console.error(err); e.textContent = '취소가 안 됐어요. (' + (err.code || err.message) + ')'; e.style.display = 'block'; $('#hxgo').disabled = false; }
+  };
 }
 
 function cancelFlow(tok, d) {
-  modal(`<h2>참가를 취소할까요?</h2><div class="sub">취소하면 자리가 다른 선생님께 돌아가요. 확인을 위해 신청한 휴대폰 번호 전체를 넣어 주세요.</div>
+  modal(`<h2>참가를 취소할까요?</h2><div class="sub">취소하면 자리가 다른 선생님께 돌아가요. 해커톤을 신청했다면 그것도 함께 취소돼요. 확인을 위해 신청한 휴대폰 번호 전체를 넣어 주세요.</div>
     <div class="field"><input type="tel" id="cxp" inputmode="numeric" placeholder="01012345678"></div><div class="err" id="cxe"></div>
     <button class="btn" id="cxgo" style="background:var(--red)">참가 취소하기</button><div class="gap"></div><button class="btn2" id="cxno">그대로 둘게요</button>`);
   $('#cxno').onclick = closeModal;
@@ -478,8 +640,10 @@ function cancelFlow(tok, d) {
       await runTransaction(db, async tx => {
         const cRef = doc(db, 'counters', 'main'); const pRef = doc(db, 'participants', tok);
         const c = await tx.get(cRef); const p = await tx.get(pRef);
+        const hr = await hackReads(tx, tok);
         if (p.data().status !== 'active') throw new Error('ALREADY');
         const cd = c.data(), t = p.data().type;
+        if (hr) hackWrites(tx, tok, hr, ph);
         tx.update(pRef, { status: 'cancelled', cancelledAt: serverTimestamp(), cancelPhone: ph });
         tx.update(cRef, { total: cd.total - 1, [t]: (cd[t] || 1) - 1, last: tok });
         tx.delete(doc(db, 'phones', p.data().phoneKey));
@@ -539,6 +703,7 @@ async function route() {
     if (h.startsWith('/t/')) return ticket(h.slice(3));
     if (h === '/apply') return apply();
     if (h === '/find') return find();
+    if (h === '/hack') return hack();
     return home();
   } catch (e) { console.error(e); view.innerHTML = `<div class="wrap"><div class="err" style="display:block">화면을 불러오지 못했어요. 새로고침해 주세요.</div></div>`; }
 }
