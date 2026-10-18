@@ -152,10 +152,10 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 <div class="app">
   <div id="kakao" class="kakao" style="display:none"><span>카톡 안에서 열렸어요. 여권을 잃지 않으려면 기본 브라우저로 열어 주세요.</span><button id="openExt">브라우저로 열기</button></div>
   <div class="bar"><a href="#/" class="t">G-DEAL · 제3회 지딜 한마당</a><svg viewBox="0 0 4080 2040" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-<mask id="g9_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
+<mask id="g1_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
 <path d="M0 0H4080V2040H0V0Z" fill="white"/>
 </mask>
-<g mask="url(#g9_mask0_469_582)">
+<g mask="url(#g1_mask0_469_582)">
 <path d="M390.488 928.94C390.488 1023.28 477.999 1056.23 541.008 1056.23H705.222V991.222H510.706V866.592H856.01V1068.62C856.01 1192.78 715.037 1180.86 651.254 1180.86H478.335C343.271 1180.86 231.708 1073.43 231.002 942.169C229.906 739.219 383.359 665.56 536.923 665.56H856.01V801.646H546.84C483.832 801.646 390.488 815.228 390.488 928.94Z" fill="#C9A24A"/>
 <path d="M1280.07 1002.64H946.407V872.258H1280.07V1002.64Z" fill="#C9A24A"/>
 <path d="M2570.95 801.645H2053.61V665.558H2570.95V801.645Z" fill="#C9A24A"/>
@@ -214,7 +214,9 @@ const WEBINARS = [['1차', '11.10(화) 21:00', '바이브코딩 툴 실습 · �
 const AL = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789', UP = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 let S = null, C = null;
 const testKey = () => sessionStorage.getItem('hm_test');
-const testBanner = () => testKey() ? '<div class="notice" style="background:#EFE7FB;border-color:#7A4FD0"><b>운영진 테스트 모드</b> · 날짜와 상관없이 신청해 볼 수 있어요. 여기서 남긴 기록은 관리자 화면에서 한 번에 지워요.</div>' : '';
+const staffKey = () => sessionStorage.getItem('hm_staff');
+const early = () => testKey() || staffKey();
+const testBanner = () => staffKey() ? '<div class="notice" style="background:#E3F4EA;border-color:#45AF76"><b>운영진 TF 사전 접수</b> · 접수 날짜 전이어도 신청할 수 있어요. 이 신청은 정식 신청으로 남아요.</div>' : testKey() ? '<div class="notice" style="background:#EFE7FB;border-color:#7A4FD0"><b>운영진 테스트 모드</b> · 날짜와 상관없이 신청해 볼 수 있어요. 여기서 남긴 기록은 관리자 화면에서 한 번에 지워요.</div>' : '';
 
 /* ---------- helpers ---------- */
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -296,7 +298,7 @@ async function home() {
   if (ph === 'closed') status = '접수가 마감됐어요';
   const full = seatsLeft() <= 0;
   const active = me && me.status === 'active';
-  const canApply = (testKey() || ['nanum', 'baeum', 'open'].includes(ph)) && !full && !active;
+  const canApply = (early() || ['nanum', 'baeum', 'open'].includes(ph)) && !full && !active;
   const dateLbl = d => d ? kst(d, { month: 'numeric', day: 'numeric' }) : '';
   view.innerHTML = `
   <section class="hero">
@@ -353,7 +355,7 @@ async function home() {
 
 async function apply() {
   const ph = phase();
-  const types = testKey() ? ['nanum', 'baeum', 'outside'] : allowed(ph);
+  const types = early() ? ['nanum', 'baeum', 'outside'] : allowed(ph);
   const me = await myParticipant();
   if (me && me.status === 'active') { location.hash = '#/t/' + me.tok; return; }
   if (!types.length || seatsLeft() <= 0) {
@@ -396,7 +398,7 @@ async function apply() {
     </form>
   </div>`;
   const f = $('#f');
-  const syncCode = () => { const t = f.querySelector('input[name=type]:checked')?.value; $('#codeF').style.display = t === 'nanum' ? 'block' : 'none'; };
+  const syncCode = () => { const t = f.querySelector('input[name=type]:checked')?.value; $('#codeF').style.display = t === 'nanum' && !staffKey() ? 'block' : 'none'; };
   f.querySelectorAll('input[name=type]').forEach(r => r.addEventListener('change', syncCode)); syncCode();
   f.addEventListener('submit', async e => {
     e.preventDefault();
@@ -405,7 +407,7 @@ async function apply() {
     const type = f.querySelector('input[name=type]:checked')?.value;
     const name = $('#name').value.trim(), school = $('#school').value.trim(), phone = digits($('#phone').value), email = $('#email').value.trim(), code = digits($('#code').value);
     if (!type) return fail('회원 구분을 골라 주세요.');
-    if (type === 'nanum' && code.length !== 4) return fail('나눔회원 코드 4자리를 넣어 주세요.');
+    if (type === 'nanum' && !staffKey() && code.length !== 4) return fail('나눔회원 코드 4자리를 넣어 주세요.');
     if (!name) return fail('이름을 넣어 주세요.');
     if (!school) return fail('소속 학교(기관)를 넣어 주세요.');
     if (!/^01\d{8,9}$/.test(phone)) return fail('휴대폰 번호를 숫자로 정확히 넣어 주세요.');
@@ -425,8 +427,9 @@ async function apply() {
       const pno = 'GD-' + rnd(5, 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789');
       const data = { pno, name, school, phone, type, status: 'active', createdAt: serverTimestamp(), consent: true, photoAck: true, phoneKey, lookupKey };
       if (email) data.email = email;
-      if (type === 'nanum') data.code = code;
-      if (testKey()) { data.test = true; data.testKey = testKey(); }
+      if (type === 'nanum' && !staffKey()) data.code = code;
+      if (staffKey()) { data.staff = true; data.staffKey = staffKey(); }
+      else if (testKey()) { data.test = true; data.testKey = testKey(); }
       await runTransaction(db, async tx => {
         const cRef = doc(db, 'counters', 'main');
         const c = await tx.get(cRef);
@@ -466,7 +469,7 @@ async function ticket(tok) {
     ${isNew ? `<h2>탑승권이 발권됐어요</h2><div class="sub">12월 19일, 마산대학교에서 만나요</div>` : `<h2>내 탑승권</h2><div class="sub">${cancelled ? '취소된 탑승권이에요' : '12월 19일, 마산대학교에서 만나요'}</div>`}
     <div class="bp" id="bp">
       <div class="hd"><span>BOARDING PASS</span><span>G-DEAL AIR</span></div>
-      <div class="nm">${esc(d.name)} 선생님 <span class="pill ${TYPEPILL[d.type]}" style="font-family:var(--sans);font-size:11px">${TYPE[d.type]}</span>${d.test ? ' <span class="pill" style="background:#7A4FD0;font-family:var(--sans);font-size:11px">테스트</span>' : ''}</div>
+      <div class="nm">${esc(d.name)} 선생님 <span class="pill ${TYPEPILL[d.type]}" style="font-family:var(--sans);font-size:11px">${TYPE[d.type]}</span>${d.test ? ' <span class="pill" style="background:#7A4FD0;font-family:var(--sans);font-size:11px">테스트</span>' : ''}${d.staff ? ' <span class="pill" style="background:#1E5B3C;font-family:var(--sans);font-size:11px">운영진 TF</span>' : ''}</div>
       <div class="route"><div><div class="code">KOR</div><div class="sm">부울경·전국 어디서나</div></div><div style="color:var(--g);font-size:22px">✈</div><div><div class="code">MSU</div><div class="sm">마산대학교</div></div></div>
       <div class="ft"><div>DATE<b>12.19 SAT</b></div><div>BOARDING<b>10:00</b></div><div>PASSPORT<b>${esc(d.pno)}</b></div></div>
       ${cancelled ? '<div class="void">취소됨</div>' : ''}
@@ -503,7 +506,7 @@ async function hackCard(tok, d) {
   const box = $('#hackCard'); if (!box) return;
   let st; try { st = await loadHack(tok); } catch (e) { return; }
   const { hacker, team, hc } = st;
-  const cap = S?.hackCap || 40, left = Math.max(0, cap - (hc.total || 0)), hs = d.test ? 'open' : hackState();
+  const cap = S?.hackCap || 40, left = Math.max(0, cap - (hc.total || 0)), hs = (d.test || d.staff) ? 'open' : hackState();
   if (hacker && hacker.status === 'active') {
     box.innerHTML = `<div class="hk"><h3>해커톤 챌린지 신청 완료</h3>
       ${team ? `<p>팀 <b>${esc(team.name)}</b> · ${team.count}/${S?.hackTeamMax || 4}명<br>팀원: ${team.names.map(esc).join(', ')}</p><div class="code">${esc(hacker.team)}</div><p>아직 안 들어온 팀원에게 이 팀 코드를 보내 주세요. 팀원도 한마당 신청을 먼저 해야 해요.</p><div class="gap"></div><button class="btn" id="hkShare">팀 코드 보내기</button>`
@@ -527,7 +530,7 @@ async function hack() {
   if (!p || p.status !== 'active') { view.innerHTML = `<div class="wrap"><h2>해커톤 챌린지</h2><div class="card"><p>해커톤은 한마당 참가 신청(탑승 수속)을 마친 선생님만 신청할 수 있어요. 이미 신청했다면 "내 여권 찾기"로 탑승권을 열어 주세요.</p></div><a class="btn" href="#/">초대장으로</a><div class="gap"></div><a class="btn2" href="#/find">내 여권 찾기</a></div>`; return; }
   const st = await loadHack(tok);
   if (st.hacker && st.hacker.status === 'active') { location.hash = '#/t/' + tok; return; }
-  const cap = S?.hackCap || 40, left = Math.max(0, cap - (st.hc.total || 0)), hs = p.test ? 'open' : hackState();
+  const cap = S?.hackCap || 40, left = Math.max(0, cap - (st.hc.total || 0)), hs = (p.test || p.staff) ? 'open' : hackState();
   if (hs !== 'open' || left <= 0) { view.innerHTML = `<div class="wrap"><h2>해커톤 챌린지</h2><div class="card"><p>${left <= 0 ? '자리가 모두 찼어요.' : hs === 'before' ? '신청은 ' + md(ts(S.hackOpen)) + '에 열려요.' : '지금은 신청을 받지 않아요.'}</p></div><a class="btn2" href="#/t/${tok}">내 탑승권으로</a></div>`; return; }
   view.innerHTML = `
   <div class="wrap">
@@ -704,7 +707,8 @@ async function route() {
   clearInterval(timer);
   const h = location.hash.replace(/^#/, '') || '/';
   window.scrollTo(0, 0);
-  if (h.startsWith('/test/')) { sessionStorage.setItem('hm_test', h.slice(6)); localStorage.removeItem('hm_tok'); location.hash = '#/'; return; }
+  if (h.startsWith('/test/')) { sessionStorage.setItem('hm_test', h.slice(6)); sessionStorage.removeItem('hm_staff'); localStorage.removeItem('hm_tok'); location.hash = '#/'; return; }
+  if (h.startsWith('/tf/')) { sessionStorage.setItem('hm_staff', h.slice(4)); sessionStorage.removeItem('hm_test'); location.hash = '#/'; return; }
   try {
     if (h.startsWith('/t/')) return ticket(h.slice(3));
     if (h === '/apply') return apply();
