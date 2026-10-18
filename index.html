@@ -163,10 +163,10 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 <div class="app">
   <div id="kakao" class="kakao" style="display:none"><span>카톡 안에서 열렸어요. 여권을 잃지 않으려면 기본 브라우저로 열어 주세요.</span><button id="openExt">브라우저로 열기</button></div>
   <div class="bar"><a href="#/" class="t">G-DEAL · 제3회 지딜 한마당</a><svg viewBox="0 0 4080 2040" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-<mask id="g6_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
+<mask id="g7_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
 <path d="M0 0H4080V2040H0V0Z" fill="white"/>
 </mask>
-<g mask="url(#g6_mask0_469_582)">
+<g mask="url(#g7_mask0_469_582)">
 <path d="M390.488 928.94C390.488 1023.28 477.999 1056.23 541.008 1056.23H705.222V991.222H510.706V866.592H856.01V1068.62C856.01 1192.78 715.037 1180.86 651.254 1180.86H478.335C343.271 1180.86 231.708 1073.43 231.002 942.169C229.906 739.219 383.359 665.56 536.923 665.56H856.01V801.646H546.84C483.832 801.646 390.488 815.228 390.488 928.94Z" fill="#C9A24A"/>
 <path d="M1280.07 1002.64H946.407V872.258H1280.07V1002.64Z" fill="#C9A24A"/>
 <path d="M2570.95 801.645H2053.61V665.558H2570.95V801.645Z" fill="#C9A24A"/>
@@ -178,7 +178,7 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 </g>
 </svg></div>
   <main id="view"><div class="loading">불러오는 중…</div></main>
-  <div class="foot">G-DEAL 경상디지털교육자연합 · 문의 <a href="mailto:admin@gdeal.io">admin@gdeal.io</a><br><a href="#/find">내 여권 찾기</a> · <a href="https://gdeal.io" target="_blank" rel="noopener">gdeal.io</a></div>
+  <div class="foot">G-DEAL 경상디지털교육자연합<br>행사·가입 문의 <a href="mailto:angelpeace@gdeal.io">angelpeace@gdeal.io</a><br><a href="#/find">내 여권 찾기</a> · <a href="https://gdeal.io" target="_blank" rel="noopener">G-DEAL 홈페이지</a> · <a href="https://docs.google.com/forms/d/e/1FAIpQLSeFRB4DL6X3I77R9ksukcSvs-f-B0zVcxduF2_LPNxdQXDTGA/viewform?usp=send_form" target="_blank" rel="noopener">회원 가입 신청</a></div>
 </div>
 
 <div id="intro" class="intro" style="display:none">
@@ -353,6 +353,9 @@ async function home() {
       <div class="row2"><a class="btn2" target="_blank" rel="noopener" href="https://map.kakao.com/link/search/마산대학교 창의관">카카오맵</a><a class="btn2" target="_blank" rel="noopener" href="https://map.naver.com/p/search/마산대학교 창의관">네이버지도</a></div>
     </div>
     <div class="card"><h3>이미 신청했나요?</h3><p>탑승권 링크를 잃어버렸다면 이름과 휴대폰 번호로 찾을 수 있어요.</p><div class="gap"></div><a class="btn2" href="#/find">내 여권 찾기</a></div>
+    <div class="card" style="border-top:5px solid var(--g)"><h3>G-DEAL이 처음이세요?</h3><p>G-DEAL(경상디지털교육자연합)은 선생님들이 디지털·AI 교육을 함께 배우고 나누는 교사 커뮤니티예요. 한마당 말고도 연수와 나눔 활동이 일 년 내내 이어져요.</p><div class="gap"></div>
+      <div class="row2"><a class="btn2" href="https://gdeal.io" target="_blank" rel="noopener">홈페이지 gdeal.io</a><a class="btn2" href="https://docs.google.com/forms/d/e/1FAIpQLSeFRB4DL6X3I77R9ksukcSvs-f-B0zVcxduF2_LPNxdQXDTGA/viewform?usp=send_form" target="_blank" rel="noopener">회원 가입 신청</a></div>
+      <p style="margin-top:8px;font-size:12.5px">행사·가입 문의 <a href="mailto:angelpeace@gdeal.io">angelpeace@gdeal.io</a></p></div>
   </div>`;
   if (target) {
     const cd = $('#cd');
@@ -388,7 +391,7 @@ async function apply() {
     <form id="f" novalidate>
       <div class="field"><label>회원 구분</label><div class="types">
         ${['nanum', 'baeum', 'outside'].map(t => `<label class="${types.includes(t) ? '' : 'dis'}"><input type="radio" name="type" value="${t}" ${types.includes(t) ? '' : 'disabled'} ${types[0] === t && types.length === 1 ? 'checked' : ''}><span>${tLabel[t][0]}<small>${types.includes(t) ? tLabel[t][1] : (t === 'baeum' ? md(ts(S.baeumStart)) + '부터' : md(ts(S.openStart)) + '부터')}</small></span></label>`).join('')}
-      </div></div>
+      </div><div class="hint" style="font-size:12px;color:#6b8577;margin-top:6px">지딜 회원이 되고 싶다면 <a href="https://docs.google.com/forms/d/e/1FAIpQLSeFRB4DL6X3I77R9ksukcSvs-f-B0zVcxduF2_LPNxdQXDTGA/viewform?usp=send_form" target="_blank" rel="noopener">회원 가입 신청</a> · <a href="https://gdeal.io" target="_blank" rel="noopener">gdeal.io</a></div></div>
       <div class="field" id="codeF" style="display:none"><label>나눔회원 코드 (숫자 4자리)</label><input type="password" id="code" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="● ● ● ●"></div>
       <div class="field"><label>이름</label><input type="text" id="name" maxlength="30" autocomplete="name" placeholder="김지딜"></div>
       <div class="field"><label>소속 학교 (기관)</label><input type="text" id="school" maxlength="60" placeholder="○○고등학교"></div>
