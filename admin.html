@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>운영실 · G-DEAL 한마당 2026</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{--g:#45AF76;--deep:#1E5B3C;--ink:#14402A;--mint:#E3F4EA;--cream:#FBF6E9;--gold:#C9A24A;--red:#D2493F;--blue:#2F6FD6;--orange:#E8892B;--purple:#7A4FD0;
+--sans:"Pretendard",system-ui,-apple-system,"Malgun Gothic",sans-serif;--mono:ui-monospace,Consolas,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);color:var(--ink);background:#F2F7F3;font-size:14.5px;line-height:1.55}
+header{background:var(--deep);color:#fff;display:flex;align-items:center;gap:16px;padding:12px 22px;position:sticky;top:0;z-index:5;flex-wrap:wrap}
+header .lg{display:flex;align-items:center;gap:8px;font-weight:800}
+header .lg svg{height:18px;width:auto}
+header nav{display:flex;gap:4px}
+header nav button{background:none;border:0;color:#d9f0e2;font:inherit;font-weight:700;padding:6px 12px;border-radius:99px;cursor:pointer}
+header nav button.on{background:rgba(255,255,255,.16);color:#fff}
+header .me{margin-left:auto;font-size:12.5px;color:#cfe8da;display:flex;gap:10px;align-items:center}
+header .me button{background:#fff2;border:0;color:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;font:inherit}
+main{max-width:1200px;margin:0 auto;padding:20px}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+.kpi{background:#fff;border-radius:14px;padding:14px 16px;border-left:5px solid var(--g)}
+.kpi .l{font-size:12.5px;color:#5b7566}.kpi .v{font-size:30px;font-weight:800;font-family:var(--mono)}.kpi .s{font-size:12px;color:#6b8577}
+.panel{background:#fff;border-radius:14px;padding:16px 18px;margin-bottom:14px}
+.panel h3{font-size:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.bar{height:16px;background:#edf2ee;border-radius:99px;overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input,select,textarea{font:inherit;border:1.5px solid #d3e2d8;border-radius:9px;padding:7px 10px;background:#fff;color:var(--ink)}
+textarea{width:100%;min-height:60px}
+.b{background:var(--g);color:#fff;border:0;border-radius:9px;padding:8px 14px;font:inherit;font-weight:800;cursor:pointer}
+.b2{background:#fff;color:var(--deep);border:1.5px solid var(--g);border-radius:9px;padding:7px 12px;font:inherit;font-weight:700;cursor:pointer}
+.bx{background:#fff;color:var(--red);border:1.5px solid var(--red);border-radius:8px;padding:3px 9px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{background:var(--deep);color:#fff;text-align:left;padding:8px 9px;font-size:12.5px;position:sticky;top:52px}
+td{padding:8px 9px;border-bottom:1px solid #e6efe9;vertical-align:middle}
+tr.cx td{color:#9aa9a0;text-decoration:line-through}
+tr.cx td:last-child,tr.cx td:nth-last-child(2){text-decoration:none}
+tr.dup td{background:#FFF7E1}
+.pill{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;color:#fff}
+.pg{background:var(--g)}.pb{background:var(--blue)}.po{background:var(--orange)}.pd{background:#9aa9a0}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 18px}
+.f label{display:block;font-size:12.5px;font-weight:700;margin-bottom:4px;color:#3d5a4a}
+.f input{width:100%}
+.note{font-size:12.5px;color:#6b8577;margin-top:6px}
+.login{max-width:420px;margin:12vh auto;background:#fff;border-radius:18px;padding:30px;text-align:center}
+.login h1{font-size:22px;margin-bottom:8px}
+.ok{color:var(--deep);font-weight:700}
+.warn{background:#FFF7E1;border:1.5px solid var(--gold);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:13.5px}
+.hidden{display:none}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="loginView" class="login hidden">
+  <h1>지딜 한마당 운영실</h1>
+  <p style="color:#5b7566;margin-bottom:18px">운영진 구글 계정으로 들어와 주세요</p>
+  <button class="b" id="loginBtn" style="width:100%;padding:12px">Google로 로그인</button>
+  <p id="loginMsg" style="margin-top:12px;color:var(--red);font-size:13px"></p>
+</div>
+
+<div id="appView" class="hidden">
+<header>
+  <div class="lg"><svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   viewBox="0 0 793.70001 408.34"
+  
+  
+   xml:space="preserve"
+   id="w2_svg2"
+   version="1.1" aria-hidden="true"><defs
+     id="w2_defs6"><clipPath
+       id="w2_clipPath18"
+       clipPathUnits="userSpaceOnUse"><path
+         id="w2_path16"
+         d="M 0,306.255 H 595.275 V 0 H 0 Z" /></clipPath></defs><g
+     transform="matrix(1.3333333,0,0,-1.3333333,0,408.34)"
+     id="w2_g10"><g
+       id="w2_g12"><g
+         clip-path="url(#w2_clipPath18)"
+         id="w2_g14"><g
+           transform="translate(56.9726,166.7977)"
+           id="w2_g20"><path
+             id="w2_path22"
+             style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             d="M 0,0 C 0,-14.163 12.768,-19.11 21.961,-19.11 H 45.92 v 9.76 H 17.54 V 9.36 h 50.38 v -30.329 c 0,-18.64 -20.568,-16.851 -29.874,-16.851 H 12.817 c -19.706,0 -35.983,16.128 -36.086,35.834 -0.16,30.468 22.229,41.526 44.634,41.526 H 67.92 V 19.11 H 22.812 C 13.619,19.11 0,17.071 0,0" /></g><path
+           id="w2_path24"
+           style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+           d="m 186.763,155.733 h -48.681 v 19.574 h 48.681 z" /><path
+           id="w2_path26"
+           style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+           d="m 375.103,185.908 h -75.48 v 20.43 h 75.48 z" /><g
+           transform="translate(561.5727,148.2077)"
+           id="w2_g28"><path
+             id="w2_path30"
+             style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             d="m 0,0 v -20 h -66.98 v 78.13 h 21.36 l 0,-58.13 z" /></g><g
+           transform="translate(268.2127,167.0577)"
+           id="w2_g32"><path
+             id="w2_path34"
+             style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             d="M 0,0 C 0,-14.848 -10.939,-18.85 -22.785,-18.85 H -45.7 v 37.7 h 24.804 C -9.79,18.85 0,14.848 0,0 M 22.13,0.215 C 22.13,23.194 7.955,39.28 -17.322,39.28 H -67.7 v -78.13 h 46.293 c 20.201,0 43.537,8.683 43.537,39.065" /></g><g
+           transform="translate(320.9727,157.8277)"
+           id="w2_g36"><path
+             id="w2_path38"
+             style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             d="m 0,0 v -9.62 h 54.13 v -20 H -21.35 V 20 H 54.13 V 0 Z" /></g><g
+           transform="translate(492.6327,128.2077)"
+           id="w2_g40"><path
+             id="w2_path42"
+             style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             d="m 0,0 h -25.32 l -8.081,13.18 H -74.38 l 14.21,20 h 16.5 L -56.043,54.934 -90.04,0 h -24.25 l 17.49,29.267 13.136,20.643 c 4.877,6.998 7.949,14.535 14.165,19.793 5.946,5.021 16.526,7.581 24.069,9.937 z" /></g><g
+           transform="translate(427.2727,276.3777)"
+           id="w2_g44"><path
+             id="w2_path46"
+             style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+             d="m 0,0 h -259.19 c -7.99,0 -14.47,-6.48 -14.47,-14.47 v -51.14 h 8.51 v 51.14 c 0,3.29 2.67,5.97 5.96,5.97 H 0 c 3.29,0 5.97,-2.68 5.97,-5.97 v -47.75 c 3.88,0.87 6.65,1.61 8.5,2.17 v 45.58 C 14.47,-6.48 7.99,0 0,0 m -96.5,-237.99 h -66.18 v 20.76 h 66.18 z m 102.47,35.23 c 0,-3.29 -2.68,-5.97 -5.97,-5.97 h -259.19 c -3.29,0 -5.96,2.68 -5.96,5.97 v 38.14 c -3.68,1.54 -6.59,2.82 -8.51,3.69 v -41.83 c 0,-7.99 6.48,-14.47 14.47,-14.47 h 88.01 v -20.76 h -32.61 c -2.34,0 -4.25,-1.91 -4.25,-4.25 0,-1.18 0.48,-2.24 1.25,-3.01 0.77,-0.77 1.83,-1.25 3,-1.25 h 148.25 c 2.35,0 4.26,1.91 4.26,4.26 0,1.17 -0.48,2.23 -1.25,3 -0.77,0.77 -1.83,1.25 -3.01,1.25 H -88 v 20.76 H 0 c 7.99,0 14.47,6.48 14.47,14.47 v 53.83 c -4.86,0.52 -8.5,0.76 -8.5,0.76 z" /></g></g></g></g></svg> 운영실</div>
+  <nav><button data-tab="dash" class="on">현황</button><button data-tab="list">명단</button><button data-tab="set">설정</button></nav>
+  <div class="me"><span id="meEmail"></span><button id="logout">로그아웃</button></div>
+</header>
+<main>
+  <div id="initWarn" class="warn hidden">아직 초기 설정이 없어요. <button class="b" id="initBtn">초기 설정 만들기</button> (접수 날짜·정원 기본값이 들어가요. 설정 탭에서 바꿀 수 있어요)</div>
+  <div id="codeWarn" class="warn hidden">나눔회원 코드가 아직 없어요. 설정 탭에서 4자리 코드를 저장해야 나눔회원 신청이 돼요.</div>
+
+  <section id="tab-dash">
+    <div class="kpis">
+      <div class="kpi"><div class="l">신청 (취소 제외)</div><div class="v" id="kTotal">-</div><div class="s" id="kCap"></div></div>
+      <div class="kpi" style="border-left-color:var(--g)"><div class="l">나눔회원</div><div class="v" id="kN">-</div></div>
+      <div class="kpi" style="border-left-color:var(--blue)"><div class="l">배움회원</div><div class="v" id="kB">-</div></div>
+      <div class="kpi" style="border-left-color:var(--orange)"><div class="l">지딜 외</div><div class="v" id="kO">-</div></div>
+      <div class="kpi" style="border-left-color:var(--red)"><div class="l">취소</div><div class="v" id="kX">-</div></div>
+    </div>
+    <div class="panel"><h3>정원 채움 <span id="phaseNow" style="font-size:13px;font-weight:600;color:#5b7566"></span></h3><div class="bar" id="capBar"></div><p class="note" id="capNote"></p></div>
+    <div class="panel"><h3>날짜별 신청</h3><div id="byDay"></div></div>
+    <div class="panel"><h3>최근 신청</h3><div id="recent"></div></div>
+  </section>
+
+  <section id="tab-list" class="hidden">
+    <div class="panel">
+      <h3>참가자 명단 <span class="tools">
+        <input id="q" placeholder="이름·학교·번호 검색">
+        <select id="fType"><option value="">구분 전체</option><option value="nanum">나눔회원</option><option value="baeum">배움회원</option><option value="outside">지딜 외</option></select>
+        <select id="fStatus"><option value="active">신청 중</option><option value="">취소 포함</option><option value="cancelled">취소만</option></select>
+        <button class="b2" id="csv">엑셀(CSV) 받기</button></span></h3>
+      <p class="note">노란 줄 = 같은 휴대폰 번호로 신청 중인 사람이 둘 이상. 링크 버튼 = 그 사람의 탑승권 주소 복사 (여권을 잃어버린 선생님께 보내 줄 때)</p>
+      <div style="overflow:auto;margin-top:8px"><table><thead><tr><th>#</th><th>신청 시각</th><th>이름</th><th>소속</th><th>휴대폰</th><th>이메일</th><th>구분</th><th>여권번호</th><th>상태</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="tab-set" class="hidden">
+    <div class="panel"><h3>접수 일정 · 정원 <button class="b" id="saveSet">저장</button></h3>
+      <div class="grid2">
+        <div class="f"><label>나눔회원 접수 시작</label><input type="datetime-local" id="sNanum"></div>
+        <div class="f"><label>배움회원 접수 시작 (나눔 단독 접수 끝)</label><input type="datetime-local" id="sBaeum"></div>
+        <div class="f"><label>모두 공개 시작</label><input type="datetime-local" id="sOpen"></div>
+        <div class="f"><label>접수 마감</label><input type="datetime-local" id="sClose"></div>
+        <div class="f"><label>참가자 스스로 취소할 수 있는 마감</label><input type="datetime-local" id="sCancel"></div>
+        <div class="f"><label>정원</label><input type="number" id="sCap" min="1" max="2000"></div>
+        <div class="f"><label>장소 짧게 (초대장 카드)</label><input id="sVenueShort"></div>
+        <div class="f"><label>장소 자세히 (행사 안내)</label><input id="sVenue"></div>
+        <div class="f"><label>개인정보 보유 기간 문구</label><input id="sRet"></div>
+        <div class="f"><label>공지 (초대장 아래 노란 칸, 비우면 안 보임)</label><input id="sNotice"></div>
+      </div>
+      <p class="note">시간은 모두 한국 시간이에요. 저장하면 초대장 화면에 바로 반영돼요.</p>
+    </div>
+    <div class="panel"><h3>나눔회원 코드 <button class="b" id="saveCode">코드 저장</button></h3>
+      <div class="tools"><input id="code" inputmode="numeric" maxlength="4" placeholder="숫자 4자리" style="width:140px;font-family:var(--mono);font-size:18px;letter-spacing:.3em"><span id="codeNow" class="note"></span></div>
+      <p class="note">나눔회원 단톡방에만 알려 주세요. 바꾸면 그때부터 새 코드만 통과해요.</p>
+    </div>
+    <div class="panel"><h3>운영진 계정</h3>
+      <div class="tools"><input id="adminEmail" placeholder="추가할 구글 이메일" style="width:280px"><button class="b2" id="addAdmin">추가</button></div>
+      <div id="adminList" style="margin-top:10px"></div>
+      <p class="note">shineonyou1274@gmail.com은 기본 운영진이에요.</p>
+    </div>
+    <div class="panel"><h3>숫자 다시 세기</h3><p class="note" style="margin-bottom:8px">현황 숫자와 명단이 다를 때만 눌러요. 신청 중인 명단을 세서 숫자를 맞춰요.</p><button class="b2" id="recount">다시 세기</button> <span id="recountMsg" class="note"></span></div>
+  </section>
+</main>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, collection, query, orderBy, onSnapshot, writeBatch, serverTimestamp, increment, Timestamp, getDocs, deleteDoc } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+
+const app = initializeApp({
+  apiKey: "AIzaSyAm-uo720r9Lq4ZzbTgwVnCmrej6Yohf2w",
+  authDomain: "gdeal-hanmadang.firebaseapp.com",
+  projectId: "gdeal-hanmadang",
+  storageBucket: "gdeal-hanmadang.firebasestorage.app",
+  messagingSenderId: "428027399816",
+  appId: "1:428027399816:web:4d8a8177dd5e69b79cd93d"
+});
+const auth = getAuth(app), db = getFirestore(app);
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const TYPE = { nanum: '나눔회원', baeum: '배움회원', outside: '지딜 외' }, PILL = { nanum: 'pg', baeum: 'pb', outside: 'po' };
+const ts = v => v?.toDate ? v.toDate() : null;
+const kst = (d, o) => d ? d.toLocaleString('ko-KR', Object.assign({ timeZone: 'Asia/Seoul' }, o)) : '';
+const toLocalInput = d => { if (!d) return ''; const k = new Date(d.getTime() + 9 * 3600e3); return k.toISOString().slice(0, 16); };
+const fromLocalInput = v => v ? Timestamp.fromDate(new Date(v + ':00+09:00')) : null;
+let S = null, C = null, P = [], unsub = [];
+
+$('#loginBtn').onclick = async () => { try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (e) { $('#loginMsg').textContent = '로그인이 안 됐어요: ' + (e.code || e.message); } };
+$('#logout').onclick = () => signOut(auth);
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+  ['dash', 'list', 'set'].forEach(t => $('#tab-' + t).classList.toggle('hidden', t !== b.dataset.tab));
+});
+
+onAuthStateChanged(auth, async user => {
+  unsub.forEach(f => f()); unsub = [];
+  if (!user) { $('#loginView').classList.remove('hidden'); $('#appView').classList.add('hidden'); return; }
+  try { await getDoc(doc(db, 'secrets', 'nanum')); }
+  catch (e) { $('#loginMsg').textContent = user.email + ' 계정은 운영진으로 등록되어 있지 않아요.'; await signOut(auth); return; }
+  $('#loginView').classList.add('hidden'); $('#appView').classList.remove('hidden'); $('#meEmail').textContent = user.email;
+  start();
+});
+
+function start() {
+  unsub.push(onSnapshot(doc(db, 'settings', 'main'), s => { S = s.exists() ? s.data() : null; $('#initWarn').classList.toggle('hidden', !!S); fillSettings(); renderDash(); }));
+  unsub.push(onSnapshot(doc(db, 'counters', 'main'), c => { C = c.exists() ? c.data() : null; renderDash(); }));
+  unsub.push(onSnapshot(query(collection(db, 'participants'), orderBy('createdAt', 'desc')), q => { P = q.docs.map(d => ({ id: d.id, ...d.data() })); renderDash(); renderList(); }));
+  unsub.push(onSnapshot(doc(db, 'secrets', 'nanum'), s => { const has = s.exists() && s.data().code; $('#codeWarn').classList.toggle('hidden', !!has); $('#codeNow').textContent = has ? '현재 코드: ' + s.data().code : '아직 코드 없음'; }));
+  unsub.push(onSnapshot(collection(db, 'admins'), q => { $('#adminList').innerHTML = q.docs.map(d => `<div style="display:flex;gap:8px;align-items:center;margin:4px 0">${esc(d.id)} <button class="bx" data-del="${esc(d.id)}">빼기</button></div>`).join('') || '<span class="note">추가된 운영진 없음</span>'; document.querySelectorAll('[data-del]').forEach(b => b.onclick = () => confirm(b.dataset.del + ' 를 운영진에서 뺄까요?') && deleteDoc(doc(db, 'admins', b.dataset.del))); }));
+}
+
+function phaseNow() {
+  if (!S) return '설정 없음'; const n = new Date();
+  if (n < ts(S.nanumStart)) return '접수 전'; if (n < ts(S.baeumStart)) return '지금: 나눔회원 접수'; if (n < ts(S.openStart)) return '지금: 배움회원 접수'; if (n < ts(S.closeAt)) return '지금: 모두 공개'; return '접수 마감';
+}
+function renderDash() {
+  const act = P.filter(p => p.status === 'active');
+  const cnt = t => act.filter(p => p.type === t).length;
+  const cap = S?.capacity || 300;
+  $('#kTotal').textContent = C ? C.total : act.length;
+  $('#kCap').textContent = `정원 ${cap} · 남은 자리 ${cap - (C ? C.total : act.length)}`;
+  $('#kN').textContent = cnt('nanum'); $('#kB').textContent = cnt('baeum'); $('#kO').textContent = cnt('outside');
+  $('#kX').textContent = P.length - act.length;
+  $('#phaseNow').textContent = phaseNow();
+  const w = n => (n / cap * 100).toFixed(2) + '%';
+  $('#capBar').innerHTML = `<i style="width:${w(cnt('nanum'))};background:var(--g)"></i><i style="width:${w(cnt('baeum'))};background:var(--blue)"></i><i style="width:${w(cnt('outside'))};background:var(--orange)"></i>`;
+  const mismatch = C && C.total !== act.length;
+  $('#capNote').innerHTML = `초록 나눔 · 파랑 배움 · 주황 지딜 외` + (mismatch ? ` · <b style="color:var(--red)">현황 숫자(${C.total})와 명단(${act.length})이 달라요. 설정 탭의 "다시 세기"를 눌러 주세요</b>` : '');
+  const days = {}; act.forEach(p => { const k = kst(ts(p.createdAt), { month: 'numeric', day: 'numeric', weekday: 'short' }); days[k] = (days[k] || 0) + 1; });
+  $('#byDay').innerHTML = Object.entries(days).reverse().map(([k, v]) => `<div style="display:grid;grid-template-columns:110px 1fr 40px;gap:8px;align-items:center;margin:4px 0"><span>${k}</span><div class="bar"><i style="width:${Math.min(100, v / Math.max(...Object.values(days)) * 100)}%;background:var(--g)"></i></div><b>${v}</b></div>`).join('') || '<span class="note">아직 신청 없음</span>';
+  $('#recent').innerHTML = P.slice(0, 8).map(p => `<div style="display:flex;gap:10px;padding:5px 0;border-bottom:1px solid #eef3ef"><span style="font-family:var(--mono);color:#6b8577">${kst(ts(p.createdAt), { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span><b>${esc(p.name)}</b><span>${esc(p.school)}</span><span class="pill ${PILL[p.type]}">${TYPE[p.type]}</span>${p.status !== 'active' ? '<span class="pill pd">취소</span>' : ''}</div>`).join('') || '<span class="note">아직 신청 없음</span>';
+}
+function filtered() {
+  const q = $('#q').value.trim(), t = $('#fType').value, st = $('#fStatus').value;
+  return P.filter(p => (!t || p.type === t) && (!st || p.status === st) && (!q || [p.name, p.school, p.phone, p.pno, p.email].join(' ').includes(q)));
+}
+function renderList() {
+  const act = P.filter(p => p.status === 'active');
+  const dupPhones = new Set(act.map(p => p.phone).filter((x, i, a) => a.indexOf(x) !== i));
+  const rows = filtered();
+  $('#rows').innerHTML = rows.map((p, i) => `<tr class="${p.status !== 'active' ? 'cx' : ''} ${p.status === 'active' && dupPhones.has(p.phone) ? 'dup' : ''}">
+    <td>${rows.length - i}</td><td style="font-family:var(--mono);font-size:12.5px">${kst(ts(p.createdAt), { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+    <td><b>${esc(p.name)}</b></td><td>${esc(p.school)}</td><td style="font-family:var(--mono)">${esc(p.phone)}</td><td>${esc(p.email || '')}</td>
+    <td><span class="pill ${PILL[p.type]}">${TYPE[p.type]}</span></td><td style="font-family:var(--mono)">${esc(p.pno)}</td>
+    <td>${p.status === 'active' ? '<span class="ok">신청 중</span>' : '취소' + (p.cancelledBy ? '(운영진)' : '')}</td>
+    <td style="white-space:nowrap"><button class="b2" data-link="${p.id}" style="padding:3px 8px;font-size:12px">링크</button> ${p.status === 'active' ? `<button class="bx" data-cx="${p.id}">취소</button>` : ''}</td></tr>`).join('');
+  document.querySelectorAll('[data-link]').forEach(b => b.onclick = () => { const u = location.origin + '/#/t/' + b.dataset.link; navigator.clipboard.writeText(u).then(() => alert('복사했어요\n' + u)).catch(() => prompt('복사하세요', u)); });
+  document.querySelectorAll('[data-cx]').forEach(b => b.onclick = () => adminCancel(P.find(p => p.id === b.dataset.cx)));
+}
+['#q', '#fType', '#fStatus'].forEach(s => $(s).addEventListener('input', renderList));
+
+async function adminCancel(p) {
+  if (!confirm(`${p.name} (${p.school}) 선생님 신청을 운영진 권한으로 취소할까요?`)) return;
+  const b = writeBatch(db);
+  b.update(doc(db, 'participants', p.id), { status: 'cancelled', cancelledAt: serverTimestamp(), cancelledBy: auth.currentUser.email });
+  b.update(doc(db, 'counters', 'main'), { total: increment(-1), [p.type]: increment(-1), last: p.id });
+  if (p.phoneKey) b.delete(doc(db, 'phones', p.phoneKey));
+  await b.commit();
+}
+
+$('#csv').onclick = () => {
+  const rows = filtered();
+  const head = ['신청시각', '이름', '소속', '휴대폰', '이메일', '구분', '여권번호', '상태', '탑승권 링크'];
+  const body = rows.map(p => [kst(ts(p.createdAt)), p.name, p.school, p.phone, p.email || '', TYPE[p.type], p.pno, p.status === 'active' ? '신청 중' : '취소', location.origin + '/#/t/' + p.id]);
+  const csv = '\uFEFF' + [head, ...body].map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = '지딜한마당_신청명단_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
+};
+
+function fillSettings() {
+  if (!S) return;
+  $('#sNanum').value = toLocalInput(ts(S.nanumStart)); $('#sBaeum').value = toLocalInput(ts(S.baeumStart)); $('#sOpen').value = toLocalInput(ts(S.openStart));
+  $('#sClose').value = toLocalInput(ts(S.closeAt)); $('#sCancel').value = toLocalInput(ts(S.cancelDeadline)); $('#sCap').value = S.capacity || 300;
+  $('#sVenueShort').value = S.venueShort || ''; $('#sVenue').value = S.venueText || ''; $('#sRet').value = S.retention || ''; $('#sNotice').value = S.notice || '';
+}
+$('#saveSet').onclick = async () => {
+  const v = { nanumStart: fromLocalInput($('#sNanum').value), baeumStart: fromLocalInput($('#sBaeum').value), openStart: fromLocalInput($('#sOpen').value), closeAt: fromLocalInput($('#sClose').value), cancelDeadline: fromLocalInput($('#sCancel').value), capacity: Number($('#sCap').value) || 300, venueShort: $('#sVenueShort').value.trim(), venueText: $('#sVenue').value.trim(), retention: $('#sRet').value.trim(), notice: $('#sNotice').value.trim() };
+  if (!(v.nanumStart && v.baeumStart && v.openStart && v.closeAt && v.cancelDeadline)) return alert('날짜를 모두 넣어 주세요.');
+  if (!(v.nanumStart.toMillis() <= v.baeumStart.toMillis() && v.baeumStart.toMillis() <= v.openStart.toMillis() && v.openStart.toMillis() < v.closeAt.toMillis())) return alert('나눔 → 배움 → 모두 → 마감 순서가 맞는지 확인해 주세요.');
+  await setDoc(doc(db, 'settings', 'main'), v, { merge: true }); alert('저장했어요');
+};
+$('#saveCode').onclick = async () => { const c = $('#code').value.replace(/\D/g, ''); if (c.length !== 4) return alert('숫자 4자리를 넣어 주세요.'); await setDoc(doc(db, 'secrets', 'nanum'), { code: c, updatedAt: serverTimestamp() }); $('#code').value = ''; alert('코드를 저장했어요'); };
+$('#addAdmin').onclick = async () => { const e = $('#adminEmail').value.trim().toLowerCase(); if (!/^[^@\s]+@[^@\s]+$/.test(e)) return alert('이메일을 확인해 주세요.'); await setDoc(doc(db, 'admins', e), { addedBy: auth.currentUser.email, at: serverTimestamp() }); $('#adminEmail').value = ''; };
+$('#recount').onclick = async () => {
+  const act = P.filter(p => p.status === 'active'); const c = t => act.filter(p => p.type === t).length;
+  await setDoc(doc(db, 'counters', 'main'), { total: act.length, nanum: c('nanum'), baeum: c('baeum'), outside: c('outside'), last: C?.last || '' });
+  $('#recountMsg').textContent = '맞췄어요: ' + act.length + '명';
+};
+$('#initBtn').onclick = async () => {
+  const T = s => Timestamp.fromDate(new Date(s));
+  await setDoc(doc(db, 'settings', 'main'), {
+    nanumStart: T('2026-10-20T00:00:00+09:00'), baeumStart: T('2026-10-23T00:00:00+09:00'), openStart: T('2026-10-26T00:00:00+09:00'),
+    closeAt: T('2026-12-18T23:59:00+09:00'), cancelDeadline: T('2026-12-12T23:59:00+09:00'), capacity: 300,
+    venueShort: '마산대학교 창의관', venueText: '마산대학교 창의관 (경남 창원시 마산회원구 내서읍 함마대로 2640)', retention: '행사 종료 후 30일 이내 파기', notice: ''
+  });
+  const c = await getDoc(doc(db, 'counters', 'main'));
+  if (!c.exists()) await setDoc(doc(db, 'counters', 'main'), { total: 0, nanum: 0, baeum: 0, outside: 0, last: '' });
+};
+</script>
+</body>
+</html>
