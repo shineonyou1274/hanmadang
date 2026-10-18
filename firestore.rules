@@ -8,6 +8,13 @@ service cloud.firestore {
         && (request.auth.token.email == 'shineonyou1274@gmail.com'
             || exists(/databases/$(db)/documents/admins/$(request.auth.token.email)));
     }
+    function isOwner() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && (request.auth.token.email == 'shineonyou1274@gmail.com'
+            || (exists(/databases/$(db)/documents/admins/$(request.auth.token.email))
+                && get(/databases/$(db)/documents/admins/$(request.auth.token.email)).data.get('role', 'staff') == 'owner'));
+    }
     function S() { return get(/databases/$(db)/documents/settings/main).data; }
     function P(tok) { return /databases/$(db)/documents/participants/$(tok); }
     function C() { return /databases/$(db)/documents/counters/main; }
@@ -15,13 +22,14 @@ service cloud.firestore {
     // ---------- settings / secrets / admins ----------
     match /settings/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isOwner();
     }
     match /secrets/{id} {
-      allow read, write: if isAdmin();
+      allow read, write: if isOwner();
     }
     match /admins/{email} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin();
+      allow write: if isOwner();
     }
 
     // ---------- counter ----------
@@ -106,7 +114,7 @@ service cloud.firestore {
       allow list: if isAdmin();
       allow create: if validCreate(tok);
       allow update: if isAdmin() || validCancel(tok);
-      allow delete: if isAdmin();
+      allow delete: if isOwner();
     }
 
     // ---------- 전화번호 중복 방지 (읽기 불가) ----------
