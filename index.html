@@ -130,6 +130,17 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 .photo{border-radius:12px;overflow:hidden;margin:8px 0}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:99px;font-size:13.5px;z-index:90;opacity:0;transition:opacity .3s;pointer-events:none}
 .toast.on{opacity:1}
+.crown{width:30px;height:24px;vertical-align:-3px;margin-right:4px;display:inline-block;animation:bob 2.4s ease-in-out infinite;filter:drop-shadow(0 2px 2px rgba(201,162,74,.35))}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-3px) rotate(6deg)}}
+.tfpill{display:inline-block;background:linear-gradient(135deg,#FFD54F,#F2B32E);color:#6b4a00;font-weight:800;font-size:11px;border-radius:99px;padding:3px 9px;vertical-align:middle;font-family:var(--sans);box-shadow:0 1px 0 #C9A24A}
+.tfbox{background:linear-gradient(160deg,#FFF8DC,#FFF1BF);border:1.5px solid #E8C35A;border-radius:16px;padding:14px 16px;margin-bottom:12px}
+.tfbox h3{font-size:16px;margin-bottom:2px;display:flex;align-items:center;gap:4px}
+.tfbox .ro{font-size:11.5px;color:#8a6d1e;margin-bottom:10px}
+.tfgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.tfgrid div{background:#fff;border-radius:12px;padding:9px 11px;font-size:12px;color:#6b8577}
+.tfgrid b{display:block;font-size:20px;color:var(--ink);font-family:var(--mono)}
+.tfbar{height:10px;border-radius:99px;background:#efe6c4;overflow:hidden;display:flex;margin:10px 0 4px}
+.tfbar i{display:block;height:100%}
 /* hackathon */
 .hk{background:linear-gradient(160deg,#E8892B,#f2a65a);color:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:var(--paper)}
 .hk h3{font-size:17px;margin-bottom:4px}
@@ -152,10 +163,10 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 <div class="app">
   <div id="kakao" class="kakao" style="display:none"><span>카톡 안에서 열렸어요. 여권을 잃지 않으려면 기본 브라우저로 열어 주세요.</span><button id="openExt">브라우저로 열기</button></div>
   <div class="bar"><a href="#/" class="t">G-DEAL · 제3회 지딜 한마당</a><svg viewBox="0 0 4080 2040" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-<mask id="g1_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
+<mask id="g4_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
 <path d="M0 0H4080V2040H0V0Z" fill="white"/>
 </mask>
-<g mask="url(#g1_mask0_469_582)">
+<g mask="url(#g4_mask0_469_582)">
 <path d="M390.488 928.94C390.488 1023.28 477.999 1056.23 541.008 1056.23H705.222V991.222H510.706V866.592H856.01V1068.62C856.01 1192.78 715.037 1180.86 651.254 1180.86H478.335C343.271 1180.86 231.708 1073.43 231.002 942.169C229.906 739.219 383.359 665.56 536.923 665.56H856.01V801.646H546.84C483.832 801.646 390.488 815.228 390.488 928.94Z" fill="#C9A24A"/>
 <path d="M1280.07 1002.64H946.407V872.258H1280.07V1002.64Z" fill="#C9A24A"/>
 <path d="M2570.95 801.645H2053.61V665.558H2570.95V801.645Z" fill="#C9A24A"/>
@@ -193,7 +204,7 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
-import { getFirestore, doc, getDoc, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import { getFirestore, doc, getDoc, runTransaction, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 const app = initializeApp({
   apiKey: "AIzaSyAm-uo720r9Lq4ZzbTgwVnCmrej6Yohf2w",
@@ -214,7 +225,9 @@ const WEBINARS = [['1차', '11.10(화) 21:00', '바이브코딩 툴 실습 · �
 const AL = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789', UP = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 let S = null, C = null;
 const testKey = () => sessionStorage.getItem('hm_test');
-const staffKey = () => sessionStorage.getItem('hm_staff');
+const staffOpen = () => !S || new Date() < ts(S.nanumStart);
+const staffKey = () => { const k = sessionStorage.getItem('hm_staff'); if (k && !staffOpen()) { sessionStorage.removeItem('hm_staff'); return null; } return k; };
+const CROWN = '<svg class="crown" viewBox="0 0 32 26" aria-label="TF"><path d="M3 21 1.5 7.5l7.3 5.6L16 2.5l7.2 10.6 7.3-5.6L29 21z" fill="#FFD54F" stroke="#C9A24A" stroke-width="1.6" stroke-linejoin="round"/><rect x="3" y="20.5" width="26" height="4" rx="2" fill="#F2B32E" stroke="#C9A24A" stroke-width="1.2"/><circle cx="16" cy="14.5" r="2.3" fill="#E85D8A"/><circle cx="9" cy="16.5" r="1.5" fill="#45AF76"/><circle cx="23" cy="16.5" r="1.5" fill="#2F6FD6"/><circle cx="1.5" cy="7" r="1.6" fill="#FFD54F"/><circle cx="16" cy="2.2" r="1.8" fill="#FFD54F"/><circle cx="30.5" cy="7" r="1.6" fill="#FFD54F"/></svg>';
 const early = () => testKey() || staffKey();
 const testBanner = () => staffKey() ? '<div class="notice" style="background:#E3F4EA;border-color:#45AF76"><b>운영진 TF 사전 접수</b> · 접수 날짜 전이어도 신청할 수 있어요. 이 신청은 정식 신청으로 남아요.</div>' : testKey() ? '<div class="notice" style="background:#EFE7FB;border-color:#7A4FD0"><b>운영진 테스트 모드</b> · 날짜와 상관없이 신청해 볼 수 있어요. 여기서 남긴 기록은 관리자 화면에서 한 번에 지워요.</div>' : '';
 
@@ -304,7 +317,7 @@ async function home() {
   <section class="hero">
     <div class="inv">
       <div class="seal">G</div>
-      <div class="to">${active ? esc(me.name) + ' 선생님께' : '부울경과 전국의 선생님께'}</div>
+      <div class="to">${active ? (me.staff ? CROWN : '') + esc(me.name) + ' 선생님께' : '부울경과 전국의 선생님께'}</div>
       <h1>지딜 한마당에<br>초대합니다</h1>
       <div class="meta">2026. 12. 19. 토 · 10:00–17:00<br>${esc(S?.venueShort || '마산대학교')}</div>
       ${active ? `<a class="btn" href="#/t/${me.tok}">내 탑승권 보기</a>` : `
@@ -469,7 +482,7 @@ async function ticket(tok) {
     ${isNew ? `<h2>탑승권이 발권됐어요</h2><div class="sub">12월 19일, 마산대학교에서 만나요</div>` : `<h2>내 탑승권</h2><div class="sub">${cancelled ? '취소된 탑승권이에요' : '12월 19일, 마산대학교에서 만나요'}</div>`}
     <div class="bp" id="bp">
       <div class="hd"><span>BOARDING PASS</span><span>G-DEAL AIR</span></div>
-      <div class="nm">${esc(d.name)} 선생님 <span class="pill ${TYPEPILL[d.type]}" style="font-family:var(--sans);font-size:11px">${TYPE[d.type]}</span>${d.test ? ' <span class="pill" style="background:#7A4FD0;font-family:var(--sans);font-size:11px">테스트</span>' : ''}${d.staff ? ' <span class="pill" style="background:#1E5B3C;font-family:var(--sans);font-size:11px">운영진 TF</span>' : ''}</div>
+      <div class="nm">${d.staff ? CROWN : ''}${esc(d.name)} 선생님 <span class="pill ${TYPEPILL[d.type]}" style="font-family:var(--sans);font-size:11px">${TYPE[d.type]}</span>${d.test ? ' <span class="pill" style="background:#7A4FD0;font-family:var(--sans);font-size:11px">테스트</span>' : ''}${d.staff ? ' <span class="tfpill">운영진 TF</span>' : ''}</div>
       <div class="route"><div><div class="code">KOR</div><div class="sm">부울경·전국 어디서나</div></div><div style="color:var(--g);font-size:22px">✈</div><div><div class="code">MSU</div><div class="sm">마산대학교</div></div></div>
       <div class="ft"><div>DATE<b>12.19 SAT</b></div><div>BOARDING<b>10:00</b></div><div>PASSPORT<b>${esc(d.pno)}</b></div></div>
       ${cancelled ? '<div class="void">취소됨</div>' : ''}
@@ -479,6 +492,7 @@ async function ticket(tok) {
       <div class="row2"><button class="btn2" id="cp">링크 복사</button><button class="btn2" id="sh">나에게 보내기</button></div></div>
     <button class="btn" id="img">탑승권 이미지 저장</button><div class="gap"></div>
     <button class="btn2" id="inv">동료 선생님 초대하기</button><div class="gap"></div>
+    ${d.staff ? '<div class="tfbox" id="tfBox"><h3>' + CROWN + 'TF 운영 현황</h3><div class="ro">보기 전용 · 실시간 · 수정은 총괄 운영진만</div><div id="tfStat" class="note">불러오는 중…</div></div>' : ''}
     <div id="hackCard"></div>
     <div class="card"><h3>좌석(세션) 지정</h3><p>세션 목록과 교실 정원이 확정되면 이 화면에서 고를 수 있어요. 열리면 지딜 단톡방과 초대장에 알려 드려요.</p></div>
     <div class="card"><h3>신청 정보</h3><div class="kv"><b>소속</b><span>${esc(d.school)}</span><b>휴대폰</b><span>${esc(d.phone.replace(/(\d{3})\d+(\d{4})/, '$1-****-$2'))}</span><b>신청</b><span>${esc(kst(ts(d.createdAt), { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</span></div></div>
@@ -491,6 +505,22 @@ async function ticket(tok) {
   $('#img').onclick = () => drawPass(d);
   if (canCancel) $('#cx').onclick = () => cancelFlow(tok, d);
   hackCard(tok, d);
+  if (d.staff) tfStatus();
+}
+let tfUnsub = [];
+function tfStatus() {
+  tfUnsub.forEach(f => f()); tfUnsub = [];
+  let c = null, h = null;
+  const draw = () => {
+    const el = $('#tfStat'); if (!el || !c) return;
+    const cap = S?.capacity || 300, hcap = S?.hackCap || 40, w = n => (n / cap * 100).toFixed(2) + '%';
+    const ph = { unset: '설정 전', before: '접수 전 (TF 사전 접수 중)', nanum: '나눔회원 접수 중', baeum: '배움회원 접수 중', open: '모두 공개', closed: '접수 마감' }[phase()];
+    el.innerHTML = `<div class="tfgrid"><div>한마당 신청<b>${c.total} / ${cap}</b></div><div>남은 자리<b>${Math.max(0, cap - c.total)}</b></div><div>해커톤 신청<b>${h ? h.total : 0} / ${hcap}</b></div><div>지금 단계<b style="font-size:13px;font-family:var(--sans)">${ph}</b></div></div>
+      <div class="tfbar"><i style="width:${w(c.nanum || 0)};background:var(--g)"></i><i style="width:${w(c.baeum || 0)};background:var(--blue)"></i><i style="width:${w(c.outside || 0)};background:var(--orange)"></i></div>
+      <div style="font-size:12px;color:#5b7566">나눔회원 ${c.nanum || 0} · 배움회원 ${c.baeum || 0} · 지딜 외 ${c.outside || 0}</div>`;
+  };
+  tfUnsub.push(onSnapshot(doc(db, 'counters', 'main'), s => { c = s.data() || { total: 0 }; draw(); }));
+  tfUnsub.push(onSnapshot(doc(db, 'hcounters', 'main'), s => { h = s.data() || { total: 0 }; draw(); }));
 }
 
 /* ---------- hackathon ---------- */
@@ -705,10 +735,14 @@ function drawPass(d) {
 /* ---------- router ---------- */
 async function route() {
   clearInterval(timer);
+  tfUnsub.forEach(f => f()); tfUnsub = [];
   const h = location.hash.replace(/^#/, '') || '/';
   window.scrollTo(0, 0);
   if (h.startsWith('/test/')) { sessionStorage.setItem('hm_test', h.slice(6)); sessionStorage.removeItem('hm_staff'); localStorage.removeItem('hm_tok'); location.hash = '#/'; return; }
-  if (h.startsWith('/tf/')) { sessionStorage.setItem('hm_staff', h.slice(4)); sessionStorage.removeItem('hm_test'); location.hash = '#/'; return; }
+  if (h.startsWith('/tf/')) {
+    if (!staffOpen()) { view.innerHTML = `<div class="wrap"><h2>TF 사전 접수가 끝났어요</h2><div class="card"><p>지금은 정식 접수 기간이에요. 초대장에서 신청해 주세요.</p></div><a class="btn" href="#/">초대장으로</a></div>`; return; }
+    sessionStorage.setItem('hm_staff', h.slice(4)); sessionStorage.removeItem('hm_test'); location.hash = '#/'; return;
+  }
   try {
     if (h.startsWith('/t/')) return ticket(h.slice(3));
     if (h === '/apply') return apply();
