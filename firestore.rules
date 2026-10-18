@@ -1,0 +1,129 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && (request.auth.token.email == 'shineonyou1274@gmail.com'
+            || exists(/databases/$(db)/documents/admins/$(request.auth.token.email)));
+    }
+    function S() { return get(/databases/$(db)/documents/settings/main).data; }
+    function P(tok) { return /databases/$(db)/documents/participants/$(tok); }
+    function C() { return /databases/$(db)/documents/counters/main; }
+
+    // ---------- settings / secrets / admins ----------
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /secrets/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /admins/{email} {
+      allow read, write: if isAdmin();
+    }
+
+    // ---------- counter ----------
+    function counterPlusOk(n, o) {
+      let t = getAfter(P(n.last)).data.type;
+      return n.total == o.total + 1
+        && n.total <= S().capacity
+        && !exists(P(n.last))
+        && existsAfter(P(n.last))
+        && n[t] == o[t] + 1
+        && n.diff(o).affectedKeys().hasOnly(['total', t, 'last']);
+    }
+    function counterMinusOk(n, o) {
+      let t = get(P(n.last)).data.type;
+      return n.total == o.total - 1
+        && get(P(n.last)).data.status == 'active'
+        && getAfter(P(n.last)).data.status == 'cancelled'
+        && n[t] == o[t] - 1
+        && n.diff(o).affectedKeys().hasOnly(['total', t, 'last']);
+    }
+    match /counters/{id} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (id == 'main'
+            && request.resource.data.keys().hasOnly(['total', 'nanum', 'baeum', 'outside', 'last'])
+            && (counterPlusOk(request.resource.data, resource.data)
+                || counterMinusOk(request.resource.data, resource.data)));
+    }
+
+    // ---------- participants ----------
+    function typeTimeOk(d) {
+      return request.time < S().closeAt
+        && ((d.type == 'nanum' && request.time >= S().nanumStart
+              && d.code == get(/databases/$(db)/documents/secrets/nanum).data.code)
+          || (d.type == 'baeum' && request.time >= S().baeumStart)
+          || (d.type == 'outside' && request.time >= S().openStart));
+    }
+    function validCreate(tok) {
+      let d = request.resource.data;
+      return tok.size() >= 20
+        && d.keys().hasOnly(['pno', 'name', 'school', 'phone', 'email', 'type', 'status',
+                             'createdAt', 'consent', 'photoAck', 'code', 'phoneKey', 'lookupKey'])
+        && d.status == 'active'
+        && d.consent == true
+        && d.createdAt == request.time
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 30
+        && d.school is string && d.school.size() > 0 && d.school.size() <= 60
+        && d.phone is string && d.phone.matches('^01[0-9]{8,9}$')
+        && d.pno is string && d.pno.size() <= 12
+        && (!('email' in d) || (d.email is string && d.email.size() <= 80))
+        && d.phoneKey is string && d.lookupKey is string
+        && typeTimeOk(d)
+        && getAfter(C()).data.last == tok
+        && getAfter(C()).data.total == get(C()).data.total + 1
+        && existsAfter(/databases/$(db)/documents/phones/$(d.phoneKey))
+        && existsAfter(/databases/$(db)/documents/lookups/$(d.lookupKey));
+    }
+    function validCancel(tok) {
+      let d = request.resource.data;
+      return resource.data.status == 'active'
+        && d.status == 'cancelled'
+        && d.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelledAt', 'cancelPhone'])
+        && d.cancelPhone == resource.data.phone
+        && d.cancelledAt == request.time
+        && request.time < S().cancelDeadline
+        && getAfter(C()).data.last == tok
+        && getAfter(C()).data.total == get(C()).data.total - 1
+        && !existsAfter(/databases/$(db)/documents/phones/$(resource.data.phoneKey));
+    }
+    match /participants/{tok} {
+      allow get: if true;            // 추측할 수 없는 토큰 = 개인 링크
+      allow list: if isAdmin();
+      allow create: if validCreate(tok);
+      allow update: if isAdmin() || validCancel(tok);
+      allow delete: if isAdmin();
+    }
+
+    // ---------- 전화번호 중복 방지 (읽기 불가) ----------
+    match /phones/{key} {
+      allow read: if isAdmin();
+      allow create: if request.resource.data.keys().hasOnly(['tok'])
+        && !exists(P(request.resource.data.tok))
+        && getAfter(P(request.resource.data.tok)).data.phoneKey == key;
+      allow delete: if isAdmin()
+        || getAfter(P(resource.data.tok)).data.status == 'cancelled';
+      allow update: if isAdmin();
+    }
+
+    // ---------- 이름+전화로 내 여권 찾기 ----------
+    match /lookups/{key} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if request.resource.data.keys().hasOnly(['tok'])
+        && !exists(P(request.resource.data.tok))
+        && getAfter(P(request.resource.data.tok)).data.lookupKey == key;
+      allow update: if isAdmin()
+        || (request.resource.data.keys().hasOnly(['tok'])
+            && get(P(resource.data.tok)).data.status == 'cancelled'
+            && !exists(P(request.resource.data.tok))
+            && getAfter(P(request.resource.data.tok)).data.lookupKey == key);
+      allow delete: if isAdmin();
+    }
+  }
+}
