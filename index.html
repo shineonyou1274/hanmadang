@@ -156,10 +156,12 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 .cel .pass .rt{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;text-align:center;padding:6px 16px 14px}
 .cel .pass .cd{font-family:var(--mono);font-weight:700;font-size:28px;line-height:1}
 .cel .pass .sm{font-size:10.5px;color:#5b7566}
-.cel .stamp{position:absolute;right:14px;bottom:10px;width:110px;height:110px;border-radius:50%;border:4px solid var(--red);color:var(--red);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;text-align:center;line-height:1.15;opacity:0;transform:rotate(-14deg) scale(2.2);animation:thump2 .45s 1.45s ease-out forwards;background:rgba(255,255,255,.55)}
+.cel .pass .ft2{border-top:2px dashed #dfe9e2;display:grid;grid-template-columns:1fr 1fr 96px;padding:10px 16px 14px;font-size:10px;color:#5b7566;min-height:86px}
+.cel .pass .ft2 b{display:block;font-family:var(--mono);font-size:14px;color:var(--ink)}
+.cel .stamp{position:absolute;right:12px;bottom:8px;width:92px;height:92px;border-radius:50%;border:4px solid var(--red);color:var(--red);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;text-align:center;line-height:1.15;opacity:0;transform:rotate(-14deg) scale(2.2);animation:thump2 .45s 1.45s ease-out forwards;background:rgba(255,255,255,.55)}
 .cel .stamp::before{content:"";position:absolute;inset:6px;border-radius:50%;border:1.5px dashed currentColor}
-.cel .stamp b{font-family:var(--serif);font-size:17px}
-.cel .stamp small{font-family:var(--mono);font-size:9px;letter-spacing:.08em}
+.cel .stamp b{font-family:var(--serif);font-size:14px;line-height:1.15}
+.cel .stamp small{font-family:var(--mono);font-size:7.5px;letter-spacing:.06em;margin:1px 0}
 @keyframes thump2{0%{opacity:0;transform:rotate(-14deg) scale(2.2)}70%{opacity:.95;transform:rotate(-14deg) scale(.92)}100%{opacity:.9;transform:rotate(-14deg) scale(1)}}
 .cel .msg{margin-top:26px;text-align:center;opacity:0;animation:tk .6s 1.9s ease-out forwards}
 .cel .msg b{display:block;font-family:var(--serif);font-size:26px;color:var(--ink)}
@@ -202,10 +204,10 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 <div class="app">
   <div id="kakao" class="kakao" style="display:none"><span>카톡 안에서 열렸어요. 여권을 잃지 않으려면 기본 브라우저로 열어 주세요.</span><button id="openExt">브라우저로 열기</button></div>
   <div class="bar"><a href="#/" class="t">G-DEAL · 제3회 지딜 한마당</a><svg viewBox="0 0 4080 2040" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-<mask id="g8_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
+<mask id="g9_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
 <path d="M0 0H4080V2040H0V0Z" fill="white"/>
 </mask>
-<g mask="url(#g8_mask0_469_582)">
+<g mask="url(#g9_mask0_469_582)">
 <path d="M390.488 928.94C390.488 1023.28 477.999 1056.23 541.008 1056.23H705.222V991.222H510.706V866.592H856.01V1068.62C856.01 1192.78 715.037 1180.86 651.254 1180.86H478.335C343.271 1180.86 231.708 1073.43 231.002 942.169C229.906 739.219 383.359 665.56 536.923 665.56H856.01V801.646H546.84C483.832 801.646 390.488 815.228 390.488 928.94Z" fill="#C9A24A"/>
 <path d="M1280.07 1002.64H946.407V872.258H1280.07V1002.64Z" fill="#C9A24A"/>
 <path d="M2570.95 801.645H2053.61V665.558H2570.95V801.645Z" fill="#C9A24A"/>
@@ -440,7 +442,8 @@ function celebrate({ name = '', title = '발권 완료!', sub = '12월 19일, �
   let cf = ''; for (let i = 0; i < 46; i++) cf += `<i class="cf" style="left:${Math.random() * 100}%;background:${colors[i % colors.length]};animation-duration:${2.2 + Math.random() * 1.8}s;animation-delay:${1.5 + Math.random() * .9}s;width:${6 + Math.random() * 6}px;height:${9 + Math.random() * 8}px"></i>`;
   el.innerHTML = `<div class="slot"></div><div class="clip"><div class="pass"><div class="hd"><span>${head}</span><span>G-DEAL AIR</span></div>
     <div class="nm">${esc(name)}${name ? ' 선생님' : ''}${label}</div>
-    <div class="rt"><div><div class="cd">KOR</div><div class="sm">부울경·전국</div></div><div style="color:var(--g);font-size:20px">✈</div><div><div class="cd">MSU</div><div class="sm">12.19 · 10:00</div></div></div>
+    <div class="rt"><div><div class="cd">KOR</div><div class="sm">부울경·전국</div></div><div style="color:var(--g);font-size:20px">✈</div><div><div class="cd">MSU</div><div class="sm">마산대학교</div></div></div>
+    <div class="ft2"><div>DATE<b>12.19 SAT</b></div><div>BOARDING<b>10:00</b></div><div></div></div>
     <div class="stamp" style="border-color:${color};color:${color}"><small>G-DEAL · 2026</small><b>${stamp[0]}</b><b>${stamp[1]}</b><small>APPROVED</small></div></div></div>
     <div class="msg"><b>${title}</b><span>${sub}</span></div>
     <svg class="pp" viewBox="0 0 64 64"><path d="M4 30 60 6 44 58 30 40 52 14 24 36z" fill="#fff" stroke="#1E5B3C" stroke-width="2.5" stroke-linejoin="round"/></svg>
