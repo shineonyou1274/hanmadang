@@ -6,10 +6,10 @@
 <title>제3회 지딜 한마당 · 초대장</title>
 <meta name="description" content="2026.12.19(토) 마산대학교. 지딜 한마당에 선생님을 초대합니다.">
 <meta property="og:title" content="제3회 지딜 한마당 · 선생님을 초대합니다">
-<meta property="og:description" content="12월 19일 토요일 10:00–17:00 · 마산대학교 · 탑승 수속(참가 신청)은 여기서">
+<meta property="og:description" content="12월 19일 토요일 09:00–17:00 · 마산대학교 · 탑승 수속(참가 신청)은 여기서">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://hanmadang.peace.re.kr/">
-<meta property="og:image" content="https://hanmadang.peace.re.kr/og.png?v=3">
+<meta property="og:image" content="https://hanmadang.peace.re.kr/og.png?v=4">
 <meta name="theme-color" content="#1E5B3C">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -204,10 +204,10 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 <div class="app">
   <div id="kakao" class="kakao" style="display:none"><span>카톡 안에서 열렸어요. 여권을 잃지 않으려면 기본 브라우저로 열어 주세요.</span><button id="openExt">브라우저로 열기</button></div>
   <div class="bar"><a href="#/" class="t">G-DEAL · 제3회 지딜 한마당</a><svg viewBox="0 0 4080 2040" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-<mask id="g9_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
+<mask id="g2_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
 <path d="M0 0H4080V2040H0V0Z" fill="white"/>
 </mask>
-<g mask="url(#g9_mask0_469_582)">
+<g mask="url(#g2_mask0_469_582)">
 <path d="M390.488 928.94C390.488 1023.28 477.999 1056.23 541.008 1056.23H705.222V991.222H510.706V866.592H856.01V1068.62C856.01 1192.78 715.037 1180.86 651.254 1180.86H478.335C343.271 1180.86 231.708 1073.43 231.002 942.169C229.906 739.219 383.359 665.56 536.923 665.56H856.01V801.646H546.84C483.832 801.646 390.488 815.228 390.488 928.94Z" fill="#C9A24A"/>
 <path d="M1280.07 1002.64H946.407V872.258H1280.07V1002.64Z" fill="#C9A24A"/>
 <path d="M2570.95 801.645H2053.61V665.558H2570.95V801.645Z" fill="#C9A24A"/>
@@ -235,7 +235,7 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
     <div class="tk"><div class="bp" style="margin:0">
       <div class="hd"><span>BOARDING PASS</span><span>G-DEAL AIR</span></div>
       <div class="route"><div><div class="code">KOR</div><div class="sm">부울경·전국 어디서나</div></div><div style="color:var(--g);font-size:22px">✈</div><div><div class="code">MSU</div><div class="sm">마산대학교</div></div></div>
-      <div class="ft"><div>DATE<b>12.19</b></div><div>BOARDING<b>10:00</b></div><div>DAY<b>SAT</b></div></div>
+      <div class="ft"><div>DATE<b>12.19</b></div><div>BOARDING<b>09:00</b></div><div>DAY<b>SAT</b></div></div>
     </div></div>
   </div>
 </div>
@@ -360,7 +360,7 @@ async function home() {
       <div class="seal">G</div>
       <div class="to">${active ? (me.staff ? CROWN : '') + esc(me.name) + ' 선생님께' : '부울경과 전국의 선생님께'}</div>
       <h1>지딜 한마당에<br>초대합니다</h1>
-      <div class="meta">2026. 12. 19. 토 · 10:00–17:00<br>${esc(S?.venueShort || '마산대학교')}</div>
+      <div class="meta">2026. 12. 19. 토 · 09:00–17:00<br>${esc(S?.venueShort || '마산대학교')}</div>
       ${active ? `<a class="btn" href="#/t/${me.tok}">내 탑승권 보기</a>` : `
       <div class="phase">
         <div class="${stepCls('nanum')}">나눔회원<small>${S ? dateLbl(ts(S.nanumStart)) + '~' : ''}</small></div>
@@ -385,13 +385,14 @@ async function home() {
     </div>
     ${S?.notice ? `<div class="notice">${esc(S.notice)}</div>` : ''}
     <div class="card"><h3>행사 안내</h3>
-      <div class="kv"><b>일시</b><span>2026년 12월 19일 토요일 10:00–17:00 (점심 1시간 30분)</span>
+      <div class="kv"><b>일시</b><span>2026년 12월 19일 토요일 09:00–17:00 (점심 1시간 30분)</span>
+      <b>시간</b><span>09:00 네트워킹으로 시작 · 10:00부터 세션·부스·해커톤</span>
       <b>장소</b><span>${esc(S?.venueText || '마산대학교 (경남 창원시 마산회원구 내서읍 함마대로 2640)')}</span>
       <b>규모</b><span>${S?.capacity || 300}명</span>
       <b>접수</b><span>나눔회원 → 배움회원 → 모두 순서로 열려요</span></div>
     </div>
     <div class="card"><h3>여행 코스</h3>
-      <ul><li>커뮤니티·기업 <b>세션</b> (교실별 정원 있음)</li><li>커뮤니티·기업 <b>부스</b> 체험</li><li><b>해커톤</b>, <b>마스코트</b> 공개, 방탈출 같은 <b>복도 세션</b></li><li>오전·오후 <b>네트워킹</b>, 마지막 전체 모임과 추첨</li></ul>
+      <ul><li><b>09:00</b> 네트워킹으로 문을 열어요</li><li><b>10:00부터</b> 커뮤니티·기업 <b>세션</b> (교실별 정원 있음)</li><li>커뮤니티·기업 <b>부스</b> 체험</li><li><b>해커톤</b>, <b>마스코트</b> 공개, 방탈출 같은 <b>복도 세션</b></li><li>오전·오후 <b>네트워킹</b>, 마지막 전체 모임과 추첨</li></ul>
       <p style="margin-top:8px">세션 목록과 좌석(세션) 지정은 프로그램이 확정되면 따로 열려요.</p>
     </div>
     <div class="card" id="way"><h3>오시는 길</h3>
@@ -443,7 +444,7 @@ function celebrate({ name = '', title = '발권 완료!', sub = '12월 19일, �
   el.innerHTML = `<div class="slot"></div><div class="clip"><div class="pass"><div class="hd"><span>${head}</span><span>G-DEAL AIR</span></div>
     <div class="nm">${esc(name)}${name ? ' 선생님' : ''}${label}</div>
     <div class="rt"><div><div class="cd">KOR</div><div class="sm">부울경·전국</div></div><div style="color:var(--g);font-size:20px">✈</div><div><div class="cd">MSU</div><div class="sm">마산대학교</div></div></div>
-    <div class="ft2"><div>DATE<b>12.19 SAT</b></div><div>BOARDING<b>10:00</b></div><div></div></div>
+    <div class="ft2"><div>DATE<b>12.19 SAT</b></div><div>BOARDING<b>09:00</b></div><div></div></div>
     <div class="stamp" style="border-color:${color};color:${color}"><small>G-DEAL · 2026</small><b>${stamp[0]}</b><b>${stamp[1]}</b><small>APPROVED</small></div></div></div>
     <div class="msg"><b>${title}</b><span>${sub}</span></div>
     <svg class="pp" viewBox="0 0 64 64"><path d="M4 30 60 6 44 58 30 40 52 14 24 36z" fill="#fff" stroke="#1E5B3C" stroke-width="2.5" stroke-linejoin="round"/></svg>
@@ -572,7 +573,7 @@ async function ticket(tok) {
       <div class="hd"><span>BOARDING PASS</span><span>G-DEAL AIR</span></div>
       <div class="nm">${d.staff ? CROWN : ''}${esc(d.name)} 선생님 <span class="pill ${TYPEPILL[d.type]}" style="font-family:var(--sans);font-size:11px">${TYPE[d.type]}</span>${d.test ? ' <span class="pill" style="background:#7A4FD0;font-family:var(--sans);font-size:11px">테스트</span>' : ''}${d.staff ? ' <span class="tfpill">운영진 TF</span>' : ''}</div>
       <div class="route"><div><div class="code">KOR</div><div class="sm">부울경·전국 어디서나</div></div><div style="color:var(--g);font-size:22px">✈</div><div><div class="code">MSU</div><div class="sm">마산대학교</div></div></div>
-      <div class="ft"><div>DATE<b>12.19 SAT</b></div><div>BOARDING<b>10:00</b></div><div>PASSPORT<b>${esc(d.pno)}</b></div></div>
+      <div class="ft"><div>DATE<b>12.19 SAT</b></div><div>BOARDING<b>09:00</b></div><div>PASSPORT<b>${esc(d.pno)}</b></div></div>
       ${cancelled ? '<div class="void">취소됨</div>' : ''}
     </div>
     ${cancelled ? `<a class="btn" href="#/apply">다시 신청하기</a>` : `
@@ -814,7 +815,7 @@ function drawPass(d) {
   x.fillStyle = '#45AF76'; x.font = F(700, 64); x.fillText('✈', W / 2, 370);
   x.fillStyle = '#5b7566'; x.font = F(500, 24); x.textAlign = 'left'; x.fillText('부울경·전국 어디서나', 82, 418); x.textAlign = 'right'; x.fillText('마산대학교', W - 82, 418);
   x.setLineDash([14, 12]); x.strokeStyle = '#cfe0d5'; x.lineWidth = 4; x.beginPath(); x.moveTo(80, 460); x.lineTo(W - 80, 460); x.stroke(); x.setLineDash([]);
-  x.textAlign = 'left'; const cols = [['DATE', '12.19 SAT'], ['BOARDING', '10:00'], ['PASSPORT', d.pno]];
+  x.textAlign = 'left'; const cols = [['DATE', '12.19 SAT'], ['BOARDING', '09:00'], ['PASSPORT', d.pno]];
   cols.forEach(([k, v], i) => { const X = 80 + i * 320; x.fillStyle = '#5b7566'; x.font = F(600, 22); x.fillText(k, X, 510); x.fillStyle = '#14402A'; x.font = F(800, 38, 'ui-monospace, Consolas, monospace'); x.fillText(v, X, 556); });
   c.toBlob(b => {
     const url = URL.createObjectURL(b);
