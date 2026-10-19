@@ -204,10 +204,10 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 <div class="app">
   <div id="kakao" class="kakao" style="display:none"><span>카톡 안에서 열렸어요. 여권을 잃지 않으려면 기본 브라우저로 열어 주세요.</span><button id="openExt">브라우저로 열기</button></div>
   <div class="bar"><a href="#/" class="t">G-DEAL · 제3회 지딜 한마당</a><svg viewBox="0 0 4080 2040" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-<mask id="g2_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
+<mask id="g3_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
 <path d="M0 0H4080V2040H0V0Z" fill="white"/>
 </mask>
-<g mask="url(#g2_mask0_469_582)">
+<g mask="url(#g3_mask0_469_582)">
 <path d="M390.488 928.94C390.488 1023.28 477.999 1056.23 541.008 1056.23H705.222V991.222H510.706V866.592H856.01V1068.62C856.01 1192.78 715.037 1180.86 651.254 1180.86H478.335C343.271 1180.86 231.708 1073.43 231.002 942.169C229.906 739.219 383.359 665.56 536.923 665.56H856.01V801.646H546.84C483.832 801.646 390.488 815.228 390.488 928.94Z" fill="#C9A24A"/>
 <path d="M1280.07 1002.64H946.407V872.258H1280.07V1002.64Z" fill="#C9A24A"/>
 <path d="M2570.95 801.645H2053.61V665.558H2570.95V801.645Z" fill="#C9A24A"/>
@@ -376,13 +376,7 @@ async function home() {
   </section>
   <div class="wrap">
     ${testBanner()}
-    <div class="card promo" style="padding:14px"><h3>홍보영상</h3>
-      <div class="vmain"><video id="vMain" src="promo-hanmadang.mp4" poster="poster-hanmadang.jpg" muted autoplay loop playsinline preload="metadata"></video><button class="vsnd" id="vSnd">소리 켜기</button></div>
-      <div class="vrow">
-        <div class="vside"><span class="lab" style="background:var(--purple)">마스코트 공모전</span><video src="promo-mascot.mp4" poster="poster-mascot.jpg" playsinline preload="none"></video><button class="vplay" aria-label="마스코트 공모전 영상 재생"><span></span></button></div>
-        <div class="vside"><span class="lab" style="background:var(--orange)">해커톤 챌린지</span><video src="promo-hackathon.mp4" poster="poster-hackathon.jpg" playsinline preload="none"></video><button class="vplay" aria-label="해커톤 영상 재생"><span></span></button></div>
-      </div>
-    </div>
+    ${promoHTML()}
     ${S?.notice ? `<div class="notice">${esc(S.notice)}</div>` : ''}
     <div class="card"><h3>행사 안내</h3>
       <div class="kv"><b>일시</b><span>2026년 12월 19일 토요일 09:00–17:00 (점심 1시간 30분)</span>
@@ -419,6 +413,15 @@ async function home() {
   }
 }
 
+function promoHTML() {
+  return `<div class="card promo" style="padding:14px"><h3>홍보영상</h3>
+      <div class="vmain"><video id="vMain" src="promo-hanmadang.mp4" poster="poster-hanmadang.jpg" muted autoplay loop playsinline preload="metadata"></video><button class="vsnd" id="vSnd">소리 켜기</button></div>
+      <div class="vrow">
+        <div class="vside"><span class="lab" style="background:var(--purple)">마스코트 공모전</span><video src="promo-mascot.mp4" poster="poster-mascot.jpg" playsinline preload="none"></video><button class="vplay" aria-label="마스코트 공모전 영상 재생"><span></span></button></div>
+        <div class="vside"><span class="lab" style="background:var(--orange)">해커톤 챌린지</span><video src="promo-hackathon.mp4" poster="poster-hackathon.jpg" playsinline preload="none"></video><button class="vplay" aria-label="해커톤 영상 재생"><span></span></button></div>
+      </div>
+    </div>`;
+}
 function setupVideos() {
   const m = $('#vMain'), snd = $('#vSnd');
   if (m && snd) {
@@ -583,6 +586,7 @@ async function ticket(tok) {
     <button class="btn2" id="inv">동료 선생님 초대하기</button><div class="gap"></div>
     ${d.staff ? '<div class="tfbox" id="tfBox"><h3>' + CROWN + 'TF 운영 현황</h3><div class="ro">보기 전용 · 실시간 · 수정은 총괄 운영진만</div><div id="tfStat" class="note">불러오는 중…</div></div>' : ''}
     <div id="hackCard"></div>
+    ${promoHTML()}
     <div class="card"><h3>좌석(세션) 지정</h3><p>세션 목록과 교실 정원이 확정되면 이 화면에서 고를 수 있어요. 열리면 지딜 단톡방과 초대장에 알려 드려요.</p></div>
     <div class="card"><h3>신청 정보</h3><div class="kv"><b>소속</b><span>${esc(d.school)}</span><b>휴대폰</b><span>${esc(d.phone.replace(/(\d{3})\d+(\d{4})/, '$1-****-$2'))}</span><b>신청</b><span>${esc(kst(ts(d.createdAt), { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</span></div></div>
     ${canCancel ? `<div style="text-align:center"><button class="btn3" id="cx">참가 취소 (${md(ts(S.cancelDeadline))}까지 가능)</button></div>` : (S ? `<p style="text-align:center;font-size:12.5px;color:#6b8577">취소 마감(${md(ts(S.cancelDeadline))})이 지났어요. 취소는 운영진에게 문의해 주세요.</p>` : '')}`}
@@ -595,6 +599,7 @@ async function ticket(tok) {
   $('#img').onclick = () => drawPass(d);
   if (canCancel) $('#cx').onclick = () => cancelFlow(tok, d);
   hackCard(tok, d);
+  setupVideos();
   if (d.staff) tfStatus();
 }
 let tfUnsub = [];
