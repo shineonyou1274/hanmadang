@@ -184,6 +184,40 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 .kids input[type=checkbox]{width:18px;height:18px;accent-color:var(--g)}
 .kids select{font:inherit;border:1.5px solid #d3e2d8;border-radius:10px;padding:6px 10px}
 .need{border:2px solid var(--orange)!important}
+/* tabs + accordion */
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:#fff;border-radius:14px;padding:4px;box-shadow:var(--paper);margin-bottom:12px;position:sticky;top:51px;z-index:5}
+.tabs button{font-family:inherit;font-weight:800;font-size:13.5px;border:0;background:none;color:#5b7566;border-radius:10px;padding:10px 2px;cursor:pointer}
+.tabs button.on{background:var(--deep);color:#fff}
+.tp[hidden]{display:none}
+.herolink{display:block;text-align:center;font-size:12.5px;color:#5b7566;margin-top:10px;text-decoration:underline}
+.acct{font-size:12.5px;font-weight:800;color:#6b8577;margin:14px 2px 6px;letter-spacing:.02em}
+.acc{padding:0 16px!important;overflow:hidden}
+.acc h3.acch{display:flex;align-items:center;gap:8px;margin:0 -16px!important;padding:15px 16px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
+.acc .accs{margin-left:auto;font-size:12.5px;font-weight:700;color:#5b7566;text-align:right;max-width:58%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acc .accs .warn{color:#c4621a}
+.acc .accs .okk{color:var(--deep)}
+.acc .acci{flex:none;width:9px;height:9px;border-right:2.5px solid #8aa596;border-bottom:2.5px solid #8aa596;transform:rotate(45deg);margin:-4px 4px 0 2px;transition:transform .2s}
+.acc.open .acci{transform:rotate(-135deg);margin-top:4px}
+.acc:not(.open) h3.acch ~ *{display:none!important}
+.acc.open h3.acch ~ *:first-of-type{margin-top:0}
+.acc.open{padding-bottom:14px!important}
+#hackCard.acc{background:none;box-shadow:none;margin-bottom:12px;border-radius:16px}
+#hackCard.acc:empty{display:none}
+#hackCard.acc{padding:0!important}
+#hackCard.acc .hk{padding:0 16px;margin:0}
+#hackCard.acc.open .hk{padding:0 16px 14px}
+#hackCard .accs,#hackCard .accs .okk{color:#fff}
+#hackCard .acci{border-color:#fff}
+.tfbox.acc h3.acch{padding:13px 16px}
+.save .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}
+.save .row3 .btn2{padding:10px 4px;font-size:13px;border-radius:11px}
+.lunch img{aspect-ratio:16/9!important}
+.sestog{display:flex;width:100%;align-items:center;justify-content:space-between;gap:8px;font-family:inherit;font-weight:800;font-size:14px;background:#fff;border:1.5px solid #d3e2d8;border-radius:12px;padding:12px 14px;cursor:pointer;color:var(--deep)}
+.sestog small{font-weight:700;color:#6b8577;font-size:12.5px;text-align:right}
+.sestog.on small{color:var(--deep)}
+#sesBody{margin-top:8px}
+.sestog::after{content:'';width:8px;height:8px;border-right:2.5px solid #8aa596;border-bottom:2.5px solid #8aa596;transform:rotate(45deg);flex:none;margin:-4px 2px 0 4px}
+.sestog small{margin-left:auto}
 .sopt{display:flex;align-items:center;gap:9px;background:#fff;border:1.5px solid #e2ece5;border-radius:11px;padding:9px 11px;margin-bottom:6px;cursor:pointer;font-size:14px}
 .sopt input{width:18px;height:18px;accent-color:var(--g);flex:none}
 .sopt b{font-weight:800}
@@ -468,14 +502,16 @@ async function home() {
       <div class="status">${status}</div>
       ${target ? `<div style="font-size:12.5px;color:#6b8577">${targetLabel}</div><div class="cd" id="cd"></div>` : ''}
       <div class="seats">${full ? '자리가 모두 찼어요' : `남은 자리 ${seatsLeft()} / ${S?.capacity || 300}`}</div>
-      <a class="btn" href="#/apply" ${canApply ? '' : 'onclick="return false" style="opacity:.45;pointer-events:none"'}>초대에 응하기 (탑승 수속)</a>`}
+      <a class="btn" href="#/apply" ${canApply ? '' : 'onclick="return false" style="opacity:.45;pointer-events:none"'}>초대에 응하기 (탑승 수속)</a>
+      <a class="herolink" href="#/find">이미 신청했다면 · 내 여권 찾기</a>`}
       <div class="from">초대한 사람들 · G-DEAL 운영진과 커뮤니티 선생님들</div>
     </div>
   </section>
   <div class="wrap">
     ${testBanner()}
-    ${promoHTML()}
     ${S?.notice ? `<div class="notice">${esc(S.notice)}</div>` : ''}
+    <div class="tabs" id="homeTabs" role="tablist"><button data-t="info">행사 안내</button><button data-t="tt">시간표</button><button data-t="way">오시는 길</button><button data-t="vid">홍보영상</button></div>
+    <div class="tp" data-p="info">
     <div class="card"><h3>행사 안내</h3>
       <div class="kv"><b>일시</b><span>2026년 12월 19일 토요일 09:00–17:00 (점심 1시간 30분)</span>
       <b>시간</b><span>09:00 네트워킹으로 시작 · 10:00부터 세션·부스·해커톤</span>
@@ -483,20 +519,28 @@ async function home() {
       <b>규모</b><span>${S?.capacity || 300}명</span>
       <b>접수</b><span>나눔회원 → 배움회원 → 모두 순서로 열려요</span></div>
     </div>
+    <div class="card" style="border-top:5px solid var(--g)"><h3>G-DEAL이 처음이세요?</h3><p>G-DEAL(경상디지털교육자연합)은 선생님들이 디지털·AI 교육을 함께 배우고 나누는 교사 커뮤니티예요. 한마당 말고도 연수와 나눔 활동이 일 년 내내 이어져요.</p><div class="gap"></div>
+      <div class="row2"><a class="btn2" href="https://gdeal.io" target="_blank" rel="noopener">홈페이지 gdeal.io</a><a class="btn2" href="https://docs.google.com/forms/d/e/1FAIpQLSeFRB4DL6X3I77R9ksukcSvs-f-B0zVcxduF2_LPNxdQXDTGA/viewform?usp=send_form" target="_blank" rel="noopener">회원 가입 신청</a></div>
+      <p style="margin-top:8px;font-size:12.5px">행사·가입 문의 <a href="mailto:angelpeace@gdeal.io">angelpeace@gdeal.io</a></p></div>
+    </div>
+    <div class="tp" data-p="tt" hidden>
     <div class="card" id="ttCard"><h3>전체 시간표</h3><div class="note" style="font-size:13px;color:#6b8577">불러오는 중…</div></div>
+    </div>
+    <div class="tp" data-p="way" hidden>
     <div class="card" id="way"><h3>오시는 길</h3>
       <p><b>버스</b> · 마산대학교 종점 정류장 하차<br>마산 쪽 54·254·258 / 창원 쪽 110·710 / 진해 쪽 3002</p>
       <p style="margin-top:6px"><b>자가용</b> · 내서IC에서 함안 방면, 함마대로를 따라 약 900m 후 좌회전. 주차 안내는 곧 올라와요.</p>
       <div class="gap"></div>
       <div class="row2"><a class="btn2" target="_blank" rel="noopener" href="https://map.kakao.com/link/search/마산대학교 창의관">카카오맵</a><a class="btn2" target="_blank" rel="noopener" href="https://map.naver.com/p/search/마산대학교 창의관">네이버지도</a></div>
     </div>
-    <div class="card"><h3>이미 신청했나요?</h3><p>탑승권 링크를 잃어버렸다면 이름과 휴대폰 번호로 찾을 수 있어요.</p><div class="gap"></div><a class="btn2" href="#/find">내 여권 찾기</a></div>
-    <div class="card" style="border-top:5px solid var(--g)"><h3>G-DEAL이 처음이세요?</h3><p>G-DEAL(경상디지털교육자연합)은 선생님들이 디지털·AI 교육을 함께 배우고 나누는 교사 커뮤니티예요. 한마당 말고도 연수와 나눔 활동이 일 년 내내 이어져요.</p><div class="gap"></div>
-      <div class="row2"><a class="btn2" href="https://gdeal.io" target="_blank" rel="noopener">홈페이지 gdeal.io</a><a class="btn2" href="https://docs.google.com/forms/d/e/1FAIpQLSeFRB4DL6X3I77R9ksukcSvs-f-B0zVcxduF2_LPNxdQXDTGA/viewform?usp=send_form" target="_blank" rel="noopener">회원 가입 신청</a></div>
-      <p style="margin-top:8px;font-size:12.5px">행사·가입 문의 <a href="mailto:angelpeace@gdeal.io">angelpeace@gdeal.io</a></p></div>
+    </div>
+    <div class="tp" data-p="vid" hidden>
+    ${promoHTML()}
+    </div>
   </div>`;
   setupVideos();
   renderTimetable();
+  homeTabs();
   if (target && $('#cd')) {
     const cd = $('#cd');
     const tick = () => {
@@ -508,6 +552,40 @@ async function home() {
     tick(); timer = setInterval(tick, 1000);
   }
 }
+
+function homeTabs() {
+  const bar = $('#homeTabs'); if (!bar) return;
+  const show = t => {
+    bar.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+    document.querySelectorAll('.tp').forEach(p => p.hidden = p.dataset.p !== t);
+    document.querySelectorAll('.tp video').forEach(v => { if (t !== 'vid') v.pause(); });
+    if (t === 'vid') { const v = $('#vMain'); if (v) v.play().catch(() => { }); }
+    sessionStorage.setItem('hm_tab', t);
+  };
+  bar.querySelectorAll('button').forEach(b => b.onclick = () => show(b.dataset.t));
+  show(sessionStorage.getItem('hm_tab') || 'info');
+}
+/* accordion: 카드 제목을 누르면 열고 닫힘. 제목 옆에 지금 상태를 한 줄로 보여 줌 */
+function acc(el, sum, open = false) {
+  if (!el) return;
+  el.classList.add('acc'); if (open) el.classList.add('open');
+  const paint = () => {
+    const h = el.querySelector('h3'); if (!h) return;
+    if (!h.classList.contains('acch')) { h.classList.add('acch'); h.setAttribute('role', 'button'); h.tabIndex = 0; h.insertAdjacentHTML('beforeend', '<span class="accs"></span><span class="acci"></span>'); }
+    const v = sum ? sum(el) || '' : '';
+    const sp = h.querySelector('.accs'); if (sp.innerHTML !== v) sp.innerHTML = v;
+    if (el.classList.contains('need') && !el.dataset.auto) { el.dataset.auto = '1'; el.classList.add('open'); }
+  };
+  paint(); new MutationObserver(paint).observe(el, { childList: true, subtree: true });
+}
+document.addEventListener('click', e => { const h = e.target.closest('h3.acch'); if (!h) return; const a = h.closest('.acc'); a.classList.toggle('open'); if (!a.classList.contains('open')) a.querySelectorAll('video').forEach(v => v.pause()); });
+document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('h3.acch')) { e.preventDefault(); e.target.click(); } });
+const SUM = {
+  seat: el => { if (/불러오는 중/.test(el.textContent)) return ''; const nm = x => x.querySelector('.nm2')?.textContent.replace('✓', '').trim(); const on = [...el.querySelectorAll('.ses.on')].map(nm); const wt = [...el.querySelectorAll('.ses')].filter(x => !x.classList.contains('on') && /대기 \d+번/.test(x.textContent)).map(x => nm(x) + ' 대기'); const all = [...on, ...wt]; return all.length ? '<span class="okk">' + all.map(esc).join(' · ') + '</span>' : '안 골랐어요 (선택)'; },
+  extra: el => { if (/불러오는 중/.test(el.textContent)) return ''; if (el.classList.contains('need')) return '<span class="warn">도시락을 골라 주세요</span>'; const b = el.querySelector('p b'); if (!b) return ''; const t = el.querySelector('p').textContent; const k = (t.match(/자녀 (\d+)명/) || [])[1]; return '<span class="okk">' + esc(b.textContent.replace(' 함박스테이크', '')) + (k ? ' · 자녀 ' + k : '') + '</span>'; },
+  hack: el => { const t = el.textContent; if (/신청 완료/.test(t)) return '<span class="okk">신청 완료</span>'; if (/모두 찼어요/.test(t)) return '마감'; if (el.querySelector('a[href="#/hack"]')) return '신청 가능'; if (/열려요/.test(t)) return '곧 열려요'; return ''; },
+  tf: el => { const b = el.querySelector('#tfStat b'); return b ? '신청 ' + esc(b.textContent) : ''; },
+};
 
 function promoHTML() {
   return `<div class="card promo" style="padding:14px"><h3>홍보영상</h3>
@@ -713,15 +791,20 @@ async function formSessions(f) {
   const none = name => `<label class="sopt"><input type="radio" name="${name}" value="" checked><span>안 들을래요 (부스 둘러보기)</span></label>`;
   box.innerHTML = `<label>세션 신청 (선택)</label>
     <div class="hint" style="margin-bottom:8px">세션은 안 골라도 돼요. 애플·LG 등 부스가 여러 곳 있어서 자유롭게 둘러보면 돼요. 선착순이고, 마감된 세션은 대기로 신청돼요.</div>
+    <button type="button" class="sestog" id="sesTog">세션 고르기<small id="sesSum">안 골랐어요 · 부스 자유 관람</small></button>
+    <div id="sesBody" hidden>
     <div class="grp">오전 10:00–11:30</div>${none('sAM')}${am.map(s => opt('sAM', s, 'radio')).join('')}
     <div class="grp">오후 13:00–</div>${none('sPM')}${pm.map(s => opt('sPM', s, 'radio')).join('')}
-    ${late.length ? '<div class="grp">오후 15:00–16:20</div>' + late.map(s => opt('sLate', s, 'checkbox')).join('') : ''}`;
+    ${late.length ? '<div class="grp">오후 15:00–16:20</div>' + late.map(s => opt('sLate', s, 'checkbox')).join('') : ''}
+    </div>`;
+  box.querySelector('#sesTog').onclick = () => { const b = box.querySelector('#sesBody'); b.hidden = !b.hidden; };
   const sync = () => {
     const pick = ss.find(s => s.id === box.querySelector('input[name=sPM]:checked')?.value);
     const busy = new Set(pick ? pick.slots : []);
     box.querySelectorAll('input[name=sLate]').forEach(i => { const s = ss.find(x => x.id === i.value); const off = s.slots.some(k => busy.has(k)); i.disabled = off; if (off) i.checked = false; i.closest('.sopt').classList.toggle('off', off); });
   };
-  box.querySelectorAll('input').forEach(i => i.addEventListener('change', sync)); sync();
+  const sumUp = () => { const n = [...box.querySelectorAll('#sesBody input:checked')].map(i => i.value).filter(Boolean).map(v => ss.find(x => x.id === v)?.name); box.querySelector('#sesSum').textContent = n.length ? n.join(' · ') : '안 골랐어요 · 부스 자유 관람'; box.querySelector('#sesTog').classList.toggle('on', !!n.length); };
+  box.querySelectorAll('input').forEach(i => i.addEventListener('change', () => { sync(); sumUp(); })); sync(); sumUp();
 }
 const readSesPicks = f => [...f.querySelectorAll('#sesF input:checked')].map(i => i.value).filter(Boolean);
 
@@ -746,17 +829,17 @@ async function ticket(tok) {
       ${cancelled ? '<div class="void">취소됨</div>' : ''}
     </div>
     ${cancelled ? `<a class="btn" href="#/apply">다시 신청하기</a>` : `
-    <div class="save"><b>이 링크를 꼭 저장해 주세요</b>당일 여권과 도장이 이 링크로 열려요. 카톡 "나와의 채팅"에 보내 두면 안전해요.<div class="lnk">${esc(link)}</div>
-      <div class="row2"><button class="btn2" id="cp">링크 복사</button><button class="btn2" id="sh">나에게 보내기</button></div></div>
-    <button class="btn" id="img">탑승권 이미지 저장</button><div class="gap"></div>
-    <button class="btn2" id="inv">동료 선생님 초대하기</button><div class="gap"></div>
+    <div class="save"><b>이 링크를 꼭 저장해 주세요</b>당일 여권과 도장이 이 링크로 열려요. 카톡 "나와의 채팅"에 보내 두면 안전해요.
+      <div class="row3"><button class="btn2" id="cp">링크 복사</button><button class="btn2" id="sh">나에게 보내기</button><button class="btn2" id="img">이미지 저장</button></div></div>
+    <button class="btn2" id="inv">동료 선생님 초대하기</button>
+    <div class="acct">내 신청 관리 · 제목을 누르면 열려요</div>
     ${d.staff ? '<div class="tfbox" id="tfBox"><h3>' + CROWN + 'TF 운영 현황</h3><div class="ro">보기 전용 · 실시간 · 수정은 총괄 운영진만</div><div id="tfStat" class="note">불러오는 중…</div></div>' : ''}
     <div class="card" id="seatCard"><h3>세션 신청</h3><p>불러오는 중…</p></div>
     <div class="card" id="extraCard"><h3>점심 도시락 · 자녀 동반</h3><p>불러오는 중…</p></div>
     <div id="hackCard"></div>
     ${promoHTML()}
-    <div class="card"><h3>신청 정보</h3><div class="kv"><b>소속</b><span>${esc(d.school)}</span><b>휴대폰</b><span>${esc(d.phone.replace(/(\d{3})\d+(\d{4})/, '$1-****-$2'))}</span><b>신청</b><span>${esc(kst(ts(d.createdAt), { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</span></div></div>
-    ${canCancel ? `<div style="text-align:center"><button class="btn3" id="cx">참가 취소 (${md(ts(S.cancelDeadline))}까지 가능)</button></div>` : (S ? `<p style="text-align:center;font-size:12.5px;color:#6b8577">취소 마감(${md(ts(S.cancelDeadline))})이 지났어요. 취소는 운영진에게 문의해 주세요.</p>` : '')}`}
+    <div class="card" id="infoCard"><h3>신청 정보 · 취소</h3><div class="kv"><b>소속</b><span>${esc(d.school)}</span><b>휴대폰</b><span>${esc(d.phone.replace(/(\d{3})\d+(\d{4})/, '$1-****-$2'))}</span><b>신청</b><span>${esc(kst(ts(d.createdAt), { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</span></div>
+    ${canCancel ? `<div style="text-align:center;margin-top:10px"><button class="btn3" id="cx">참가 취소 (${md(ts(S.cancelDeadline))}까지 가능)</button></div>` : (S ? `<p style="text-align:center;font-size:12.5px;color:#6b8577;margin-top:8px">취소 마감(${md(ts(S.cancelDeadline))})이 지났어요. 취소는 운영진에게 문의해 주세요.</p>` : '')}</div>`}
   </div>`;
   if (cancelled) return;
   if (isNew) celebrate({ name: d.name, label: d.staff ? ' ' + CROWN : '' });
@@ -770,6 +853,13 @@ async function ticket(tok) {
   extraCard(tok, d);
   setupVideos();
   if (d.staff) tfStatus();
+  acc($('#tfBox'), SUM.tf);
+  acc($('#seatCard'), SUM.seat);
+  acc($('#extraCard'), SUM.extra);
+  acc($('#hackCard'), SUM.hack);
+  acc(document.querySelector('#view .promo'), () => '영상 3편');
+  acc($('#infoCard'), () => S && canCancel ? '취소는 ' + md(ts(S.cancelDeadline)) + '까지' : '');
+  document.querySelectorAll('#view .promo video').forEach(v => v.pause());
 }
 let tfUnsub = [];
 function tfStatus() {
