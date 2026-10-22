@@ -238,10 +238,10 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 <div class="app">
   <div id="kakao" class="kakao" style="display:none"><span>카톡 안에서 열렸어요. 여권을 잃지 않으려면 기본 브라우저로 열어 주세요.</span><button id="openExt">브라우저로 열기</button></div>
   <div class="bar"><a href="#/" class="t">G-DEAL · 제3회 지딜 한마당</a><svg viewBox="0 0 4080 2040" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-<mask id="g1_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
+<mask id="g3_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
 <path d="M0 0H4080V2040H0V0Z" fill="white"/>
 </mask>
-<g mask="url(#g1_mask0_469_582)">
+<g mask="url(#g3_mask0_469_582)">
 <path d="M390.488 928.94C390.488 1023.28 477.999 1056.23 541.008 1056.23H705.222V991.222H510.706V866.592H856.01V1068.62C856.01 1192.78 715.037 1180.86 651.254 1180.86H478.335C343.271 1180.86 231.708 1073.43 231.002 942.169C229.906 739.219 383.359 665.56 536.923 665.56H856.01V801.646H546.84C483.832 801.646 390.488 815.228 390.488 928.94Z" fill="#C9A24A"/>
 <path d="M1280.07 1002.64H946.407V872.258H1280.07V1002.64Z" fill="#C9A24A"/>
 <path d="M2570.95 801.645H2053.61V665.558H2570.95V801.645Z" fill="#C9A24A"/>
@@ -304,26 +304,33 @@ const LUNCH_IMG = { galbi: 'lunch-galbi.jpg', chipotle: 'lunch-chipotle.jpg' };
 const SLOTKEYS = ['AM', 'PM1', 'PM2'];
 const dday = () => { const k = new Date(Date.now() + 9 * 3600e3); const today = Date.UTC(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate()); const n = Math.round((Date.UTC(2026, 11, 19) - today) / 864e5); return n > 0 ? 'D-' + n : n === 0 ? 'D-DAY' : '행사 종료'; };
 let SESS = null;
+const rid = (n = 20) => { const a = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'; const x = new Uint32Array(n); crypto.getRandomValues(x); return [...x].map(v => a[v % a.length]).join(''); };
+const mark = (tx, tok) => { const m = rid(20); tx.set(doc(db, 'marks', m), { tok }); return m; };
+const waitN = s => Math.max(0, (s.wq || 0) - (s.wh || 0));
 async function loadSessions(force) { if (SESS && !force) return SESS; try { const q = await getDocs(collection(db, 'sessions')); SESS = q.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0)); } catch (e) { SESS = []; } return SESS; }
 const sesLeft = s => Math.max(0, (s.cap || 0) - (s.count || 0));
 function lunchFields(cur = {}) {
-  const l = cur.lunch || '', k = cur.kids || 0;
+  const l = cur.lunch || '';
   return `<div class="lunch">${['galbi', 'chipotle'].map(x => `<label class="${l === x ? 'on' : ''}"><input type="radio" name="lunch" value="${x}" ${l === x ? 'checked' : ''}><img src="${LUNCH_IMG[x]}" alt="${LUNCH[x]}" loading="lazy"><span>${LUNCH[x]}</span></label>`).join('')}</div>
     <label class="lnone"><input type="radio" name="lunch" value="none" ${l === 'none' ? 'checked' : ''}> 도시락 필요 없어요</label>
-    <div class="hint" style="font-size:12px;color:#6b8577;margin-top:4px">한솥도시락 사각 도시락 · 점심시간(11:30–13:00)에 나눠 드려요</div>`;
+    <div class="hint" style="font-size:12px;color:#6b8577;margin-top:4px">한솥도시락 사각 도시락 · 점심시간(11:30–13:00)에 나눠 드려요 · 신청·변경은 12/12까지</div>`;
 }
+const klOpts = (k, v) => Array.from({ length: k + 1 }, (_, i) => `<option value="${i}" ${v === i ? 'selected' : ''}>${i ? i + '개' : '필요 없어요'}</option>`).join('');
 function kidsFields(cur = {}) {
-  const k = cur.kids || 0;
+  const k = cur.kids || 0, kl = cur.klunch || 0;
   return `<div class="kids"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="kidsOn" ${k ? 'checked' : ''}> 자녀와 함께 와요</label>
-    <select id="kidsN" ${k ? '' : 'disabled'}>${[1, 2, 3, 4, 5].map(n => `<option value="${n}" ${k === n ? 'selected' : ''}>${n}명</option>`).join('')}</select></div>
+    <select id="kidsN" ${k ? '' : 'disabled'}>${Array.from({ length: 10 }, (_, i) => i + 1).map(n => `<option value="${n}" ${k === n ? 'selected' : ''}>${n}명</option>`).join('')}</select></div>
+    <div class="kids" id="klRow" style="margin-top:8px;${k ? '' : 'display:none'}"><span>아이 도시락</span><select id="klN">${klOpts(k || 1, kl)}</select></div>
     <div class="hint" style="font-size:12px;color:#6b8577;margin-top:4px">아이돌봄(초등)을 준비하고 있어요. 자세한 내용은 추후 업데이트할게요.</div>`;
 }
 function wireLunchKids(root) {
   root.querySelectorAll('input[name=lunch]').forEach(r => r.addEventListener('change', () => root.querySelectorAll('.lunch label').forEach(lb => lb.classList.toggle('on', lb.querySelector('input').checked))));
-  const on = root.querySelector('#kidsOn'), n = root.querySelector('#kidsN');
-  if (on) on.addEventListener('change', () => { n.disabled = !on.checked; });
+  const on = root.querySelector('#kidsOn'), n = root.querySelector('#kidsN'), row = root.querySelector('#klRow'), kl = root.querySelector('#klN');
+  if (!on) return;
+  const sync = () => { n.disabled = !on.checked; row.style.display = on.checked ? '' : 'none'; const v = Math.min(Number(kl.value) || 0, Number(n.value)); kl.innerHTML = klOpts(Number(n.value), v); };
+  on.addEventListener('change', sync); n.addEventListener('change', sync);
 }
-const readLunchKids = root => ({ lunch: root.querySelector('input[name=lunch]:checked')?.value || '', kids: root.querySelector('#kidsOn')?.checked ? Number(root.querySelector('#kidsN').value) : 0 });
+const readLunchKids = root => { const k = root.querySelector('#kidsOn')?.checked ? Number(root.querySelector('#kidsN').value) : 0; return { lunch: root.querySelector('input[name=lunch]:checked')?.value || '', kids: k, klunch: k ? Number(root.querySelector('#klN').value) || 0 : 0 }; };
 const testKey = () => sessionStorage.getItem('hm_test');
 const staffOpen = () => !S || new Date() < ts(S.nanumStart);
 const staffKey = () => { const k = sessionStorage.getItem('hm_staff'); if (k && !staffOpen()) { sessionStorage.removeItem('hm_staff'); return null; } return k; };
@@ -483,7 +490,7 @@ function promoHTML() {
 async function renderTimetable() {
   const box = $('#ttCard'); if (!box) return;
   const ss = await loadSessions(true);
-  const row = s => `<div class="row"><span><b>${esc(s.name)}</b> <small>${esc(s.room)}${s.slots.length === 1 && s.slots[0] !== 'AM' ? ' · ' + s.start + '–' + s.end : ''}</small></span><span class="left ${sesLeft(s) ? '' : 'full'}">${sesLeft(s) ? '남은 ' + sesLeft(s) + ' / ' + s.cap : '마감'}</span></div>`;
+  const row = s => { const full = s.count >= s.cap || waitN(s) > 0; return `<div class="row"><span><b>${esc(s.name)}</b> <small>${esc(s.room)}${s.slots.length === 1 && s.slots[0] !== 'AM' ? ' · ' + s.start + '–' + s.end : ''}</small></span><span class="left ${full ? 'full' : ''}">${full ? '마감' + (waitN(s) ? ' · 대기 ' + waitN(s) : '') : '남은 ' + sesLeft(s) + ' / ' + s.cap}</span></div>`; };
   const fixed = (t, x) => `<div class="row"><span><b>${t}</b> <small>${x}</small></span><span class="left" style="color:#8a9a90">신청 없음</span></div>`;
   const am = ss.filter(s => s.group === 'AM'), pm = ss.filter(s => s.group === 'PM');
   box.innerHTML = `<h3>전체 시간표</h3><p style="font-size:12.5px;margin-bottom:8px">장소는 모두 마산대학교 창의관이에요. 세션은 탑승권 화면에서 골라요.</p><div class="tt2">
@@ -558,7 +565,7 @@ async function apply() {
       <div class="field"><label>소속 학교 (기관)</label><input type="text" id="school" maxlength="60" placeholder="○○고등학교"></div>
       <div class="field"><label>휴대폰 번호</label><input type="tel" id="phone" inputmode="numeric" maxlength="13" autocomplete="tel" placeholder="01012345678"><div class="hint">안내, 여권 찾기, 신청 취소 확인에 써요</div></div>
       <div class="field"><label>이메일 (선택)</label><input type="email" id="email" maxlength="80" autocomplete="email" placeholder="안내를 메일로도 받고 싶다면"></div>
-      <div class="field"><label>점심 도시락 (무료 제공)</label>${lunchFields()}</div>
+      <div class="field"><label>점심 도시락</label>${lunchFields()}</div>
       <div class="field"><label>자녀 동반</label>${kidsFields()}</div>
       <div class="consent">
         <b>개인정보 수집·이용 동의 (필수)</b><br>
@@ -620,10 +627,10 @@ async function apply() {
         const lRef = doc(db, 'lookups', lookupKey);
         await tx.get(lRef);
         tx.set(doc(db, 'participants', tok), data);
-        tx.update(cRef, { total: cd.total + 1, [type]: (cd[type] || 0) + 1, last: tok });
+        tx.update(cRef, { total: cd.total + 1, [type]: (cd[type] || 0) + 1, last: mark(tx, tok) });
         tx.set(doc(db, 'phones', phoneKey), { tok });
         tx.set(lRef, { tok });
-        tx.set(doc(db, 'extras', tok), { lunch: lk.lunch, kids: lk.kids, at: serverTimestamp() });
+        tx.set(doc(db, 'extras', tok), { lunch: lk.lunch, kids: lk.kids, klunch: lk.klunch, at: serverTimestamp() });
       });
       localStorage.setItem('hm_tok', tok);
       sessionStorage.setItem('hm_new', '1');
@@ -699,75 +706,145 @@ function tfStatus() {
   tfUnsub.push(onSnapshot(doc(db, 'hcounters', 'main'), s => { h = s.data() || { total: 0 }; draw(); }));
 }
 
-/* ---------- seats ---------- */
+/* ---------- seats + waitlist ---------- */
 async function mySlots(tok) {
   const out = {};
   await Promise.all(SLOTKEYS.map(async k => { try { const s = await getDoc(doc(db, 'slots', tok + '_' + k)); if (s.exists()) out[k] = s.data().sid; } catch (e) { } }));
   return out;
 }
-async function releaseSeat(tok, sid) {
-  await runTransaction(db, async tx => {
-    const sRef = doc(db, 'sessions', sid), seRef = doc(db, 'seats', sid + '__' + tok);
-    const s = await tx.get(sRef), se = await tx.get(seRef);
-    if (!se.exists()) return;
-    const sl = s.data().slots, slotDocs = [];
-    for (const k of sl) { const r = doc(db, 'slots', tok + '_' + k); const x = await tx.get(r); slotDocs.push([r, x]); }
-    tx.delete(seRef);
-    tx.update(sRef, { count: s.data().count - 1, last: tok });
-    for (const [r, x] of slotDocs) if (x.exists() && x.data().sid === sid) tx.delete(r);
-  });
+async function myHold(tok, slots) {
+  const st = {};
+  await Promise.all([...new Set(Object.values(slots))].map(async sid => {
+    const [a, b] = await Promise.all([getDoc(doc(db, 'seats', sid + '__' + tok)), getDoc(doc(db, 'waits', sid + '__' + tok))]);
+    if (a.exists()) st[sid] = { seat: true }; else if (b.exists()) st[sid] = { n: b.data().n };
+  }));
+  return st;
+}
+const sRef = sid => doc(db, 'sessions', sid);
+async function trySes(sid, fn) { try { await runTransaction(db, async tx => { const x = (await tx.get(sRef(sid))).data(); const u = fn(x); if (!u) throw new Error('STALE'); tx.update(sRef(sid), u); }); return true; } catch (e) { return false; } }
+// 대기줄 정리: 그만둔 번호 건너뛰기, 빈자리 있으면 대기 1번 올리기
+async function settle(sid) {
+  let s;
+  for (let i = 0; i < 60; i++) {
+    s = (await getDoc(sRef(sid))).data();
+    if ((s.wh || 0) >= (s.wq || 0)) return s;
+    const wh = s.wh;
+    if (s.count < s.cap && await trySes(sid, x => x.wh === wh && x.count < x.cap ? { count: x.count + 1, wh: wh + 1 } : null)) continue;
+    if (await trySes(sid, x => x.wh === wh ? { wh: wh + 1 } : null)) continue;
+    const s2 = (await getDoc(sRef(sid))).data(); if (s2.wh === wh) return s2;
+  }
+  return s;
 }
 async function reserveSeat(tok, sid) {
   await runTransaction(db, async tx => {
-    const sRef = doc(db, 'sessions', sid), seRef = doc(db, 'seats', sid + '__' + tok);
-    const s = await tx.get(sRef); const sd = s.data();
-    if ((await tx.get(seRef)).exists()) return;
-    if (sd.count >= sd.cap) throw new Error('FULL');
-    for (const k of sd.slots) { if ((await tx.get(doc(db, 'slots', tok + '_' + k))).exists()) throw new Error('CONFLICT'); }
-    tx.set(seRef, { sid, tok, at: serverTimestamp() });
-    tx.update(sRef, { count: sd.count + 1, last: tok });
+    const sd = (await tx.get(sRef(sid))).data();
+    if (sd.count >= sd.cap || (sd.wh || 0) < (sd.wq || 0)) throw new Error('FULL');
+    tx.set(doc(db, 'seats', sid + '__' + tok), { sid, tok, at: serverTimestamp() });
+    tx.update(sRef(sid), { count: sd.count + 1, last: mark(tx, tok) });
     for (const k of sd.slots) tx.set(doc(db, 'slots', tok + '_' + k), { sid, tok, k });
   });
+}
+async function joinWait(tok, sid) {
+  await runTransaction(db, async tx => {
+    const sd = (await tx.get(sRef(sid))).data();
+    const wq = sd.wq || 0;
+    if (!(sd.count >= sd.cap || (sd.wh || 0) < wq)) throw new Error('ROOM');
+    tx.set(doc(db, 'waits', sid + '__' + tok), { sid, tok, n: wq, at: serverTimestamp() });
+    tx.set(doc(db, 'wq', sid + '_' + wq), { sid, n: wq, tok });
+    tx.update(sRef(sid), { wq: wq + 1 });
+    for (const k of sd.slots) tx.set(doc(db, 'slots', tok + '_' + k), { sid, tok, k, w: true });
+  });
+}
+// 좌석·대기 놓기. 확정 자리를 놓으면 대기 1번이 자동으로 확정됨
+async function releaseSeat(tok, sid) {
+  let err;
+  for (let a = 0; a < 4; a++) {
+    await settle(sid);
+    try {
+      await runTransaction(db, async tx => {
+        const s = (await tx.get(sRef(sid))).data();
+        const seRef = doc(db, 'seats', sid + '__' + tok), wRef = doc(db, 'waits', sid + '__' + tok);
+        const se = await tx.get(seRef), w = await tx.get(wRef);
+        const sl = []; for (const k of s.slots) { const r = doc(db, 'slots', tok + '_' + k); if ((await tx.get(r)).exists()) sl.push(r); }
+        if (!se.exists() && !w.exists()) return;
+        const holder = se.exists() || w.data().n < (s.wh || 0);
+        tx.delete(se.exists() ? seRef : wRef);
+        sl.forEach(r => tx.delete(r));
+        if (!holder) return;
+        const m = mark(tx, tok);
+        if ((s.wh || 0) < (s.wq || 0)) tx.update(sRef(sid), { wh: s.wh + 1, last: m });
+        else tx.update(sRef(sid), { count: s.count - 1, last: m });
+      });
+      return;
+    } catch (e) { err = e; }
+  }
+  throw err;
 }
 async function seatCard(tok, d) {
   const box = $('#seatCard'); if (!box) return;
   const [ss, mine, hk] = await Promise.all([loadSessions(true), mySlots(tok), getDoc(doc(db, 'hackers', tok)).catch(() => null)]);
   if (!ss.length) { box.innerHTML = '<h3>좌석 지정 (세션)</h3><p>세션 목록을 준비하고 있어요.</p>'; return; }
+  const hold = await myHold(tok, mine);
   const hackOn = hk && hk.exists() && hk.data().status === 'active';
-  const mineSet = new Set(Object.values(mine));
-  const busy = new Set(Object.keys(mine)); if (hackOn) { busy.add('AM'); busy.add('PM1'); }
+  const isOpen = S && (new Date() >= ts(S.nanumStart) || d.test);
   const canEdit = S && new Date() < ts(S.cancelDeadline);
   const item = s => {
-    const on = mineSet.has(s.id), hackHit = hackOn && s.slots.some(k => k === 'AM' || k === 'PM1');
-    const clash = s.slots.filter(k => mine[k] && mine[k] !== s.id).map(k => mine[k]);
-    let act = '';
-    if (on) act = canEdit ? `<button class="drop" data-drop="${s.id}">취소</button>` : '<span class="tag2">선택함</span>';
+    const h = hold[s.id], held = h && (h.seat || h.n < (s.wh || 0)), waiting = h && !held;
+    const hackHit = hackOn && s.slots.some(k => k === 'AM' || k === 'PM1');
+    const clash = s.slots.some(k => mine[k] && mine[k] !== s.id);
+    const full = s.count >= s.cap || waitN(s) > 0;
+    let act = '', stat = '';
+    if (held) { stat = h.seat ? '' : ' · 대기에서 확정됐어요'; act = canEdit ? `<button class="drop" data-drop="${s.id}">취소</button>` : '<span class="tag2">확정</span>'; }
+    else if (waiting) { stat = ` · <b style="color:var(--orange)">대기 ${Math.max(1, h.n - (s.wh || 0) + 1)}번</b>`; act = canEdit ? `<button class="drop" data-drop="${s.id}">대기 취소</button>` : ''; }
     else if (hackHit) act = '<span class="tag2">해커톤 시간</span>';
-    else if (!sesLeft(s)) act = '<span class="tag2" style="color:var(--red)">마감</span>';
     else if (!canEdit) act = '';
-    else if (clash.length) act = `<button class="swap" data-pick="${s.id}">이걸로 바꾸기</button>`;
-    else act = `<button class="pick" data-pick="${s.id}">선택</button>`;
-    return `<div class="ses ${on ? 'on' : ''}"><div><div class="nm2">${on ? '✓ ' : ''}${esc(s.name)}</div><small>${esc(s.room)} · ${s.start}–${s.end} · 남은 ${sesLeft(s)}/${s.cap}</small></div><div class="act">${act}</div></div>`;
+    else if (!isOpen) act = '<span class="tag2">' + md(ts(S.nanumStart)) + ' 열림</span>';
+    else if (full) act = `<button class="swap" data-wait="${s.id}">${clash ? '대기로 바꾸기' : '대기 신청'}</button>`;
+    else act = `<button class="${clash ? 'swap' : 'pick'}" data-pick="${s.id}">${clash ? '이걸로 바꾸기' : '선택'}</button>`;
+    const left = full ? `<b style="color:var(--red)">마감</b>${waitN(s) ? ' · 대기 ' + waitN(s) + '명' : ''}` : '남은 ' + sesLeft(s) + '/' + s.cap;
+    return `<div class="ses ${held ? 'on' : ''}"><div><div class="nm2">${held ? '✓ ' : ''}${esc(s.name)}</div><small>${esc(s.room)} · ${s.start}–${s.end} · ${left}${stat}</small></div><div class="act">${act}</div></div>`;
   };
   const am = ss.filter(s => s.group === 'AM'), pm = ss.filter(s => s.group === 'PM');
-  box.innerHTML = `<h3>좌석 지정 (세션)</h3><p style="font-size:13px">오전·오후 세션을 골라요. 시간이 겹치지 않으면 여러 개 고를 수 있어요. 고르지 않아도 수업사례발표(세미나실 송원홀)는 자유롭게 들어갈 수 있어요.${hackOn ? ' <b>해커톤 신청자는 10:00–14:50 세션을 고를 수 없어요.</b>' : ''}</p>
+  box.innerHTML = `<h3>좌석 지정 (세션)</h3>
+    <p style="font-size:13px">세션은 안 골라도 괜찮아요. 부스와 디지털 방탈출 이벤트도 있어요.</p>
+    <p style="font-size:13px;margin-top:4px">시간이 겹치지 않으면 여러 개 신청할 수 있어요. 자리가 다 차면 대기 신청을 받고, 취소가 나오면 대기 순서대로 자동 확정돼요.${hackOn ? ' <b>해커톤 신청자는 10:00–14:50 세션을 고를 수 없어요.</b>' : ''}</p>
+    ${!isOpen && canEdit ? '<p style="font-size:13px;margin-top:4px"><b>세션 신청은 ' + md(ts(S.nanumStart)) + ' ' + String(new Date(ts(S.nanumStart).getTime() + 9 * 3600e3).getUTCHours()).padStart(2, '0') + ':' + String(new Date(ts(S.nanumStart).getTime() + 9 * 3600e3).getUTCMinutes()).padStart(2, '0') + '에 열려요.</b></p>' : ''}
     <div class="grp">오전 10:00–11:30</div>${am.map(item).join('')}
     <div class="grp">오후 13:00–16:20</div>${pm.map(item).join('')}
-    <p style="font-size:12px;color:#6b8577;margin-top:6px">${canEdit ? md(ts(S.cancelDeadline)) + '까지 바꾸거나 취소할 수 있어요.' : '변경 마감이 지났어요. 바꾸려면 운영진에게 문의해 주세요.'}</p>`;
+    <div style="background:#FFF4E5;border-radius:10px;padding:9px 11px;margin-top:8px;font-size:12.5px;line-height:1.55">못 오시게 되면 <b>${md(ts(S.cancelDeadline))}까지</b> 꼭 취소해 주세요. 대기하시는 분께 자리가 넘어가요.<br>말없이 오지 않으면 이후 지딜 행사 신청에 불이익이 있어요.</div>`;
+  const lock = () => box.querySelectorAll('button').forEach(x => x.disabled = true);
+  const releaseClash = async s => { for (const c of [...new Set(s.slots.filter(k => mine[k] && mine[k] !== s.id).map(k => mine[k]))]) await releaseSeat(tok, c); };
+  const clashNames = s => [...new Set(s.slots.filter(k => mine[k] && mine[k] !== s.id).map(k => mine[k]))].map(c => ss.find(x => x.id === c)?.name || c).join(', ');
   box.querySelectorAll('[data-pick]').forEach(b => b.onclick = async () => {
-    const s = ss.find(x => x.id === b.dataset.pick); const clash = [...new Set(s.slots.filter(k => mine[k] && mine[k] !== s.id).map(k => mine[k]))];
-    if (clash.length && !confirm(clash.map(c => ss.find(x => x.id === c)?.name).join(', ') + ' 신청을 취소하고 ' + s.name + '(으)로 바꿀까요?')) return;
-    box.querySelectorAll('button').forEach(x => x.disabled = true); b.textContent = '처리 중…';
+    const s = ss.find(x => x.id === b.dataset.pick); const cn = clashNames(s);
+    if (cn && !confirm(cn + ' 신청을 취소하고 ' + s.name + '(으)로 바꿀까요?')) return;
+    lock(); b.textContent = '처리 중…';
     try {
-      const fresh = (await getDoc(doc(db, 'sessions', s.id))).data(); if (fresh.count >= fresh.cap) throw new Error('FULL');
-      for (const c of clash) await releaseSeat(tok, c);
-      await reserveSeat(tok, s.id); toast(s.name + ' 좌석을 잡았어요');
-    } catch (e) { console.error(e); toast(e.message === 'FULL' ? '방금 자리가 다 찼어요' : '잠시 문제가 생겼어요. 다시 눌러 주세요'); }
+      const f = await settle(s.id);
+      if (f.count >= f.cap || (f.wh || 0) < (f.wq || 0)) throw new Error('FULL');
+      await releaseClash(s); await reserveSeat(tok, s.id); toast(s.name + ' 자리를 잡았어요');
+    } catch (e) {
+      console.error(e);
+      if (e.message === 'FULL') { if (confirm('방금 자리가 다 찼어요. 대기 신청할까요?')) { try { await releaseClash(s); await joinWait(tok, s.id); toast('대기 신청했어요'); } catch (e2) { toast('잠시 문제가 생겼어요. 다시 눌러 주세요'); } } }
+      else toast('잠시 문제가 생겼어요. 다시 눌러 주세요');
+    }
+    seatCard(tok, d);
+  });
+  box.querySelectorAll('[data-wait]').forEach(b => b.onclick = async () => {
+    const s = ss.find(x => x.id === b.dataset.wait); const cn = clashNames(s);
+    if (!confirm((cn ? cn + ' 신청을 취소하고 ' : '') + s.name + ' 대기 신청할까요?\n대기하는 동안 같은 시간 다른 세션은 고를 수 없어요.')) return;
+    lock(); b.textContent = '처리 중…';
+    try {
+      const f = await settle(s.id);
+      await releaseClash(s);
+      if (f.count < f.cap && (f.wh || 0) >= (f.wq || 0)) { await reserveSeat(tok, s.id); toast('빈자리가 나서 바로 확정됐어요'); }
+      else { await joinWait(tok, s.id); toast('대기 신청했어요'); }
+    } catch (e) { console.error(e); toast('잠시 문제가 생겼어요. 다시 눌러 주세요'); }
     seatCard(tok, d);
   });
   box.querySelectorAll('[data-drop]').forEach(b => b.onclick = async () => {
-    const s = ss.find(x => x.id === b.dataset.drop); if (!confirm(s.name + ' 신청을 취소할까요?')) return;
-    box.querySelectorAll('button').forEach(x => x.disabled = true);
+    const s = ss.find(x => x.id === b.dataset.drop); if (!confirm(s.name + (b.textContent.includes('대기') ? ' 대기를' : ' 신청을') + ' 취소할까요?')) return;
+    lock();
     try { await releaseSeat(tok, s.id); toast('취소했어요'); } catch (e) { console.error(e); toast('잠시 문제가 생겼어요. 다시 눌러 주세요'); }
     seatCard(tok, d);
   });
@@ -776,16 +853,16 @@ async function extraCard(tok, d) {
   const box = $('#extraCard'); if (!box) return;
   let cur = {}; try { const x = await getDoc(doc(db, 'extras', tok)); if (x.exists()) cur = x.data(); } catch (e) { }
   const canEdit = S && new Date() < ts(S.cancelDeadline);
-  const saved = cur.lunch ? `<b>${LUNCH[cur.lunch]}</b>${cur.kids ? ' · 자녀 ' + cur.kids + '명 동반' : ''}` : '';
+  const saved = cur.lunch ? `<b>${LUNCH[cur.lunch]}</b>${cur.kids ? ' · 자녀 ' + cur.kids + '명 동반' + (cur.klunch ? ' · 아이 도시락 ' + cur.klunch + '개' : '') : ''}` : '';
   box.classList.toggle('need', !cur.lunch);
   box.innerHTML = `<h3>점심 도시락 · 자녀 동반</h3>${cur.lunch ? '<p style="font-size:13px;margin-bottom:8px">지금 선택: ' + saved + '</p>' : '<p style="font-size:13px;margin-bottom:8px;color:#c4621a"><b>도시락을 아직 고르지 않았어요.</b></p>'}
-    ${canEdit ? lunchFields(cur) + '<div class="gap"></div>' + kidsFields(cur) + '<div class="gap"></div><button class="btn" id="exSave">저장하기</button>' : '<p style="font-size:12.5px;color:#6b8577">변경 마감이 지났어요.</p>'}`;
+    ${canEdit ? lunchFields(cur) + '<div class="gap"></div>' + kidsFields(cur) + '<div class="gap"></div><button class="btn" id="exSave">저장하기</button>' : '<p style="font-size:12.5px;color:#6b8577">도시락 신청·변경 마감(12/12)이 지났어요.</p>'}`;
   if (!canEdit) return;
   wireLunchKids(box);
   $('#exSave').onclick = async () => {
     const lk = readLunchKids(box); if (!lk.lunch) { toast('도시락을 골라 주세요'); return; }
     $('#exSave').disabled = true;
-    try { await setDoc(doc(db, 'extras', tok), { lunch: lk.lunch, kids: lk.kids, at: serverTimestamp() }); toast('저장했어요'); extraCard(tok, d); }
+    try { await setDoc(doc(db, 'extras', tok), { lunch: lk.lunch, kids: lk.kids, klunch: lk.klunch, at: serverTimestamp() }); toast('저장했어요'); extraCard(tok, d); }
     catch (e) { console.error(e); toast('저장이 안 됐어요. 다시 눌러 주세요'); $('#exSave').disabled = false; }
   };
 }
@@ -895,7 +972,7 @@ async function hack() {
         const hd = { name: p.name, pno: p.pno, mode, team: teamCode, topics, level, laptop: true, status: 'active', createdAt: serverTimestamp(), v };
         if (idea) hd.idea = idea;
         tx.set(doc(db, 'hackers', tok), hd);
-        tx.update(hcRef, { total: hc.total + 1, last: tok });
+        tx.update(hcRef, { total: hc.total + 1, last: mark(tx, tok) });
         if (mode === 'lead') { tx.set(doc(db, 'hjoins', v), { tok, team: teamCode, kind: 'lead' }); tx.set(tRef, { name: teamName, count: 1, names: [p.name], v, createdAt: serverTimestamp() }); }
         if (mode === 'join') { tx.set(doc(db, 'hjoins', v), { tok, team: teamCode, kind: 'join' }); tx.update(tRef, { count: t.count + 1, names: [...t.names, p.name], v }); }
       });
@@ -921,7 +998,7 @@ async function hackReads(tx, tok) {
 function hackWrites(tx, tok, r, phone) {
   const v = rnd(20, AL);
   tx.update(r.hRef, { status: 'cancelled', cancelledAt: serverTimestamp(), cancelPhone: phone, v });
-  tx.update(r.hcRef, { total: r.hc.total - 1, last: tok });
+  tx.update(r.hcRef, { total: r.hc.total - 1, last: mark(tx, tok) });
   if (r.tRef && r.t) { tx.set(doc(db, 'hjoins', v), { tok, team: r.h.team, kind: 'leave' }); tx.update(r.tRef, { count: r.t.count - 1, names: r.t.names.filter(n => n !== r.h.name), v }); }
 }
 function hackCancelFlow(tok, d) {
@@ -960,7 +1037,7 @@ function cancelFlow(tok, d) {
         const cd = c.data(), t = p.data().type;
         if (hr) hackWrites(tx, tok, hr, ph);
         tx.update(pRef, { status: 'cancelled', cancelledAt: serverTimestamp(), cancelPhone: ph });
-        tx.update(cRef, { total: cd.total - 1, [t]: (cd[t] || 1) - 1, last: tok });
+        tx.update(cRef, { total: cd.total - 1, [t]: (cd[t] || 1) - 1, last: mark(tx, tok) });
         tx.delete(doc(db, 'phones', p.data().phoneKey));
       });
       closeModal(); toast('취소했어요'); await loadMeta(); ticket(tok);
