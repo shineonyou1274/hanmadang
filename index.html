@@ -164,6 +164,17 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 .kids input[type=checkbox]{width:18px;height:18px;accent-color:var(--g)}
 .kids select{font:inherit;border:1.5px solid #d3e2d8;border-radius:10px;padding:6px 10px}
 .need{border:2px solid var(--orange)!important}
+.sopt{display:flex;align-items:center;gap:9px;background:#fff;border:1.5px solid #e2ece5;border-radius:11px;padding:9px 11px;margin-bottom:6px;cursor:pointer;font-size:14px}
+.sopt input{width:18px;height:18px;accent-color:var(--g);flex:none}
+.sopt b{font-weight:800}
+.sopt small{color:#6b8577;font-size:12px;margin-left:auto;text-align:right;white-space:nowrap}
+.sopt small.full{color:var(--orange);font-weight:800}
+.sopt.off{opacity:.45;cursor:not-allowed}
+.sopt:has(input:checked){border-color:var(--g);background:#EEF8F1}
+.field label.sopt{display:flex;align-items:center;gap:10px;font-weight:500;font-size:14px;margin:0 0 6px;color:var(--ink,#1c2b22)}
+.field .sopt input{width:18px;height:18px;padding:0;margin:0;border:0;box-shadow:none;flex:none}
+.field .sopt small{margin-left:auto;padding-left:8px}
+.field .sopt .sd{font-size:12px;color:#6b8577;font-weight:500}
 /* promo videos */
 .promo{margin-bottom:12px}
 .promo h3{font-size:16px;margin:2px 0 8px}
@@ -238,10 +249,10 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 <div class="app">
   <div id="kakao" class="kakao" style="display:none"><span>카톡 안에서 열렸어요. 여권을 잃지 않으려면 기본 브라우저로 열어 주세요.</span><button id="openExt">브라우저로 열기</button></div>
   <div class="bar"><a href="#/" class="t">G-DEAL · 제3회 지딜 한마당</a><svg viewBox="0 0 4080 2040" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-<mask id="g3_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
+<mask id="g6_mask0_469_582" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="0" width="4080" height="2040">
 <path d="M0 0H4080V2040H0V0Z" fill="white"/>
 </mask>
-<g mask="url(#g3_mask0_469_582)">
+<g mask="url(#g6_mask0_469_582)">
 <path d="M390.488 928.94C390.488 1023.28 477.999 1056.23 541.008 1056.23H705.222V991.222H510.706V866.592H856.01V1068.62C856.01 1192.78 715.037 1180.86 651.254 1180.86H478.335C343.271 1180.86 231.708 1073.43 231.002 942.169C229.906 739.219 383.359 665.56 536.923 665.56H856.01V801.646H546.84C483.832 801.646 390.488 815.228 390.488 928.94Z" fill="#C9A24A"/>
 <path d="M1280.07 1002.64H946.407V872.258H1280.07V1002.64Z" fill="#C9A24A"/>
 <path d="M2570.95 801.645H2053.61V665.558H2570.95V801.645Z" fill="#C9A24A"/>
@@ -495,9 +506,9 @@ async function renderTimetable() {
   const am = ss.filter(s => s.group === 'AM'), pm = ss.filter(s => s.group === 'PM');
   box.innerHTML = `<h3>전체 시간표</h3><p style="font-size:12.5px;margin-bottom:8px">장소는 모두 마산대학교 창의관이에요. 세션은 탑승권 화면에서 골라요.</p><div class="tt2">
     <div class="blk all"><div class="tm">09:00–09:50</div><div class="tt-t">오프닝 및 네트워킹</div></div>
-    <div class="blk"><div class="tm">10:00–11:30 · 오전 세션</div>${am.map(row).join('')}${fixed('수업사례발표', '세미나실(송원홀) · 자유 입장')}${fixed('해커톤', '305호 · 해커톤 신청자 (10:00–14:50)')}${fixed('아이돌봄 (초등)', '408호 · 자녀 동반 신청자')}</div>
+    <div class="blk"><div class="tm">10:00–11:30 · 오전 세션</div>${am.map(row).join('')}${fixed('부스', '애플·LG 외 여러 곳 · 자유 관람 · 목록은 곧 안내')}${fixed('수업사례발표', '세미나실(송원홀) · 자유 입장')}${fixed('해커톤', '305호 · 해커톤 신청자 (10:00–14:50)')}${fixed('아이돌봄 (초등)', '408호 · 자녀 동반 신청자')}</div>
     <div class="blk all"><div class="tm">11:30–13:00</div><div class="tt-t">점심시간 · 도시락 제공</div></div>
-    <div class="blk"><div class="tm">13:00–16:20 · 오후 세션</div>${pm.map(row).join('')}${fixed('수업사례발표', '세미나실(송원홀) · 자유 입장')}${fixed('해커톤', '305호 · 13:00–14:50')}${fixed('아이돌봄 (초등)', '408호 · 자녀 동반 신청자')}</div>
+    <div class="blk"><div class="tm">13:00–16:20 · 오후 세션</div>${pm.map(row).join('')}${fixed('부스', '애플·LG 외 여러 곳 · 자유 관람')}${fixed('수업사례발표', '세미나실(송원홀) · 자유 입장')}${fixed('해커톤', '305호 · 13:00–14:50')}${fixed('아이돌봄 (초등)', '408호 · 자녀 동반 신청자')}</div>
     <div class="blk all"><div class="tm">16:30–17:00</div><div class="tt-t">총회 및 폐막식</div></div></div>`;
 }
 
@@ -565,6 +576,7 @@ async function apply() {
       <div class="field"><label>소속 학교 (기관)</label><input type="text" id="school" maxlength="60" placeholder="○○고등학교"></div>
       <div class="field"><label>휴대폰 번호</label><input type="tel" id="phone" inputmode="numeric" maxlength="13" autocomplete="tel" placeholder="01012345678"><div class="hint">안내, 여권 찾기, 신청 취소 확인에 써요</div></div>
       <div class="field"><label>이메일 (선택)</label><input type="email" id="email" maxlength="80" autocomplete="email" placeholder="안내를 메일로도 받고 싶다면"></div>
+      <div class="field" id="sesF"><label>세션 신청 (선택)</label><div class="hint">불러오는 중…</div></div>
       <div class="field"><label>점심 도시락</label>${lunchFields()}</div>
       <div class="field"><label>자녀 동반</label>${kidsFields()}</div>
       <div class="consent">
@@ -587,6 +599,7 @@ async function apply() {
   const syncCode = () => { const t = f.querySelector('input[name=type]:checked')?.value; $('#codeF').style.display = t === 'nanum' && !staffKey() ? 'block' : 'none'; };
   f.querySelectorAll('input[name=type]').forEach(r => r.addEventListener('change', syncCode)); syncCode();
   wireLunchKids(f);
+  formSessions(f);
   f.addEventListener('submit', async e => {
     e.preventDefault();
     const err = $('#err'); err.style.display = 'none';
@@ -632,6 +645,8 @@ async function apply() {
         tx.set(lRef, { tok });
         tx.set(doc(db, 'extras', tok), { lunch: lk.lunch, kids: lk.kids, klunch: lk.klunch, at: serverTimestamp() });
       });
+      const picks = readSesPicks(f);
+      if (picks.length) { $('#go').textContent = '세션 자리 잡는 중…'; for (const sid of picks) { try { const s = await settle(sid); if (s.count < s.cap && (s.wh || 0) >= (s.wq || 0)) { try { await reserveSeat(tok, sid); } catch (e3) { if (e3.message === 'FULL') await joinWait(tok, sid); else throw e3; } } else await joinWait(tok, sid); } catch (e3) { console.error(e3); } } }
       localStorage.setItem('hm_tok', tok);
       sessionStorage.setItem('hm_new', '1');
       location.hash = '#/t/' + tok;
@@ -643,6 +658,30 @@ async function apply() {
     }
   });
 }
+
+async function formSessions(f) {
+  const box = f.querySelector('#sesF'); if (!box) return;
+  const ss = await loadSessions(true);
+  const isOpen = S && (new Date() >= ts(S.nanumStart) || testKey());
+  if (!ss.length) { box.style.display = 'none'; return; }
+  if (!isOpen) { box.innerHTML = '<label>세션 신청 (선택)</label><div class="hint">세션은 ' + md(ts(S.nanumStart)) + ' 10:00부터 탑승권 화면에서 선착순으로 고를 수 있어요.</div>'; return; }
+  const am = ss.filter(s => s.slots.includes('AM')), pm = ss.filter(s => s.slots.includes('PM1')), late = ss.filter(s => !s.slots.includes('AM') && !s.slots.includes('PM1'));
+  const st = s => { const full = s.count >= s.cap || waitN(s) > 0; return full ? '<small class="full">마감 · 대기 신청</small>' : '<small>남은 ' + sesLeft(s) + '/' + s.cap + '</small>'; };
+  const opt = (name, s, type) => `<label class="sopt"><input type="${type}" name="${name}" value="${s.id}"><span><b>${esc(s.name)}</b><br><span style="font-size:12px;color:#6b8577">${esc(s.room.replace('창의관 ', ''))} · ${s.start}–${s.end}</span></span>${st(s)}</label>`;
+  const none = name => `<label class="sopt"><input type="radio" name="${name}" value="" checked><span>안 들을래요 (부스 둘러보기)</span></label>`;
+  box.innerHTML = `<label>세션 신청 (선택)</label>
+    <div class="hint" style="margin-bottom:8px">세션은 안 골라도 돼요. 애플·LG 등 부스가 여러 곳 있어서 자유롭게 둘러보면 돼요. 선착순이고, 마감된 세션은 대기로 신청돼요.</div>
+    <div class="grp">오전 10:00–11:30</div>${none('sAM')}${am.map(s => opt('sAM', s, 'radio')).join('')}
+    <div class="grp">오후 13:00–</div>${none('sPM')}${pm.map(s => opt('sPM', s, 'radio')).join('')}
+    ${late.length ? '<div class="grp">오후 15:00–16:20</div>' + late.map(s => opt('sLate', s, 'checkbox')).join('') : ''}`;
+  const sync = () => {
+    const pick = ss.find(s => s.id === box.querySelector('input[name=sPM]:checked')?.value);
+    const busy = new Set(pick ? pick.slots : []);
+    box.querySelectorAll('input[name=sLate]').forEach(i => { const s = ss.find(x => x.id === i.value); const off = s.slots.some(k => busy.has(k)); i.disabled = off; if (off) i.checked = false; i.closest('.sopt').classList.toggle('off', off); });
+  };
+  box.querySelectorAll('input').forEach(i => i.addEventListener('change', sync)); sync();
+}
+const readSesPicks = f => [...f.querySelectorAll('#sesF input:checked')].map(i => i.value).filter(Boolean);
 
 async function ticket(tok) {
   let p;
@@ -806,7 +845,7 @@ async function seatCard(tok, d) {
   };
   const am = ss.filter(s => s.group === 'AM'), pm = ss.filter(s => s.group === 'PM');
   box.innerHTML = `<h3>좌석 지정 (세션)</h3>
-    <p style="font-size:13px">세션은 안 골라도 괜찮아요. 부스와 디지털 방탈출 이벤트도 있어요.</p>
+    <p style="font-size:13px">세션은 안 골라도 괜찮아요. 애플·LG 등 부스가 여러 곳 있고, 디지털 방탈출 이벤트도 있어요.</p>
     <p style="font-size:13px;margin-top:4px">시간이 겹치지 않으면 여러 개 신청할 수 있어요. 자리가 다 차면 대기 신청을 받고, 취소가 나오면 대기 순서대로 자동 확정돼요.${hackOn ? ' <b>해커톤 신청자는 10:00–14:50 세션을 고를 수 없어요.</b>' : ''}</p>
     ${!isOpen && canEdit ? '<p style="font-size:13px;margin-top:4px"><b>세션 신청은 ' + md(ts(S.nanumStart)) + ' ' + String(new Date(ts(S.nanumStart).getTime() + 9 * 3600e3).getUTCHours()).padStart(2, '0') + ':' + String(new Date(ts(S.nanumStart).getTime() + 9 * 3600e3).getUTCMinutes()).padStart(2, '0') + '에 열려요.</b></p>' : ''}
     <div class="grp">오전 10:00–11:30</div>${am.map(item).join('')}
