@@ -477,7 +477,7 @@ async function home() {
   </div>`;
   setupVideos();
   renderTimetable();
-  if (target) {
+  if (target && $('#cd')) {
     const cd = $('#cd');
     const tick = () => {
       const ms = target - new Date();
@@ -1146,7 +1146,7 @@ async function route() {
 }
 window.addEventListener('hashchange', route);
 runIntro();
-loadMeta().then(route).catch(e => { console.error(e); view.innerHTML = `<div class="wrap"><div class="err" style="display:block">연결이 원활하지 않아요. 잠시 뒤 새로고침해 주세요.</div></div>`; });
+loadMeta().catch(e => { console.error(e); }).then(() => route()).catch(e => { console.error(e); view.innerHTML = `<div class="wrap"><div class="err" style="display:block">연결이 원활하지 않아요. 잠시 뒤 새로고침해 주세요.</div></div>`; });
 </script>
 </body>
 </html>
