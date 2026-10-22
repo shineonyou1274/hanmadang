@@ -132,6 +132,26 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 .toast.on{opacity:1}
 .dday{display:inline-block;background:var(--deep);color:#FFD54F;font-family:var(--mono);font-weight:700;font-size:13px;border-radius:99px;padding:4px 12px;margin-bottom:6px;letter-spacing:.04em}
 .dday small{font-family:var(--sans);font-weight:600;color:#cfe8da;font-size:11px;margin-right:4px}
+.ttw{display:grid;grid-template-columns:72px 1fr;gap:10px;align-items:start}
+.ttr{display:flex;flex-direction:column;gap:6px;position:sticky;top:72px}
+.ttr button{border:0;border-radius:12px;padding:8px 2px;background:var(--mint);color:var(--deep);cursor:pointer;font:inherit;line-height:1.25}
+.ttr button b{display:block;font-family:var(--mono);font-size:15px}
+.ttr button span{font-size:11.5px}
+.ttr button.on{background:var(--deep);color:#fff}
+.ttp .tph{font-family:var(--mono);font-weight:700;color:var(--deep);font-size:13px;margin:2px 0 8px}
+.ttp .tph2{font-size:12px;font-weight:700;color:#6b8577;margin:12px 0 6px}
+.ttp .tc{background:#F5FAF6;border-radius:12px;padding:10px 12px;margin-bottom:8px;border-left:4px solid var(--g)}
+.ttp .tc.fx{border-left-color:#c9d8ce;background:#FAFBFA}
+.ttp .tc .nm{font-weight:800;font-size:15px;line-height:1.35}
+.ttp .rm{display:inline-block;margin-top:5px;background:#fff;border:1.5px solid var(--g);color:var(--deep);border-radius:8px;padding:2px 8px;font-size:13px;font-weight:800}
+.ttp .tc.fx .rm{border-color:#c9d8ce}
+.ttp .mt{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:#6b8577}
+.ttp .mt b{font-family:var(--mono);color:var(--deep);white-space:nowrap}
+.ttp .mt b.full{color:var(--red)}
+.ttp .tp1{background:#FFF7E1;border-left:4px solid var(--gold);border-radius:12px;padding:14px}
+.ttp .tp1 .tm{font-family:var(--mono);font-weight:700;color:var(--deep);font-size:13px}
+.ttp .tp1 .nm{font-weight:800;font-size:17px;margin:2px 0 4px}
+.ttp .tp1 p{font-size:13px;color:#4a6355}
 .tt2 .blk{border-left:4px solid var(--g);background:#fff;border-radius:12px;padding:10px 12px;margin-bottom:8px}
 .tt2 .blk.all{border-left-color:var(--gold);background:#FFF7E1}
 .tt2 .tm{font-family:var(--mono);font-weight:700;color:var(--deep);font-size:13px}
@@ -501,15 +521,37 @@ function promoHTML() {
 async function renderTimetable() {
   const box = $('#ttCard'); if (!box) return;
   const ss = await loadSessions(true);
-  const row = s => { const full = s.count >= s.cap || waitN(s) > 0; return `<div class="row"><span><b>${esc(s.name)}</b> <small>${esc(s.room)}${s.slots.length === 1 && s.slots[0] !== 'AM' ? ' · ' + s.start + '–' + s.end : ''}</small></span><span class="left ${full ? 'full' : ''}">${full ? '마감' + (waitN(s) ? ' · 대기 ' + waitN(s) : '') : '남은 ' + sesLeft(s) + ' / ' + s.cap}</span></div>`; };
-  const fixed = (t, x) => `<div class="row"><span><b>${t}</b> <small>${x}</small></span><span class="left" style="color:#8a9a90">신청 없음</span></div>`;
-  const am = ss.filter(s => s.group === 'AM'), pm = ss.filter(s => s.group === 'PM');
-  box.innerHTML = `<h3>전체 시간표</h3><p style="font-size:12.5px;margin-bottom:8px">장소는 모두 마산대학교 창의관이에요. 세션은 탑승권 화면에서 골라요.</p><div class="tt2">
-    <div class="blk all"><div class="tm">09:00–09:50</div><div class="tt-t">오프닝 및 네트워킹</div></div>
-    <div class="blk"><div class="tm">10:00–11:30 · 오전 세션</div>${am.map(row).join('')}${fixed('부스', '애플·LG 외 여러 곳 · 자유 관람 · 목록은 곧 안내')}${fixed('수업사례발표', '세미나실(송원홀) · 자유 입장')}${fixed('해커톤', '305호 · 해커톤 신청자 (10:00–14:50)')}${fixed('아이돌봄 (초등)', '408호 · 자녀 동반 신청자')}</div>
-    <div class="blk all"><div class="tm">11:30–13:00</div><div class="tt-t">점심시간 · 도시락 제공</div></div>
-    <div class="blk"><div class="tm">13:00–16:20 · 오후 세션</div>${pm.map(row).join('')}${fixed('부스', '애플·LG 외 여러 곳 · 자유 관람')}${fixed('수업사례발표', '세미나실(송원홀) · 자유 입장')}${fixed('해커톤', '305호 · 13:00–14:50')}${fixed('아이돌봄 (초등)', '408호 · 자녀 동반 신청자')}</div>
-    <div class="blk all"><div class="tm">16:30–17:00</div><div class="tt-t">총회 및 폐막식</div></div></div>`;
+  const T = t => +String(t || '0').replace(':', '');
+  const rng = s => s.group === 'AM' ? [s.start || '10:00', s.end || '11:30'] : [s.start || '13:00', s.end || '16:20'];
+  const room = r => String(r || '').replace('창의관 ', '').replace(/\s*\(/, ' · ').replace(/\)\s*$/, '');
+  const FX = [
+    { name: '부스', room: '위치 곧 안내', note: '애플·LG 외 여러 곳 · 자유 관람', start: '10:00', end: '16:20' },
+    { name: '수업사례발표', room: '세미나실 · 송원홀', note: '자유 입장', start: '10:00', end: '16:20' },
+    { name: '해커톤', room: '305호', note: '해커톤 신청자', start: '10:00', end: '14:50', show: 1 },
+    { name: '아이돌봄 (초등)', room: '408호', note: '자녀 동반 신청자', start: '10:00', end: '16:20' }];
+  const TABS = [
+    { k: '0900', tm: '09:00', lb: '오프닝', one: ['오프닝 및 네트워킹', '09:00–09:50', '창의관에 도착하면 탑승권을 보여 주세요.'] },
+    { k: '1000', tm: '10:00', lb: '오전', from: 1000, to: 1130, hd: '10:00–11:30 오전' },
+    { k: '1130', tm: '11:30', lb: '점심', one: ['점심시간', '11:30–13:00', '신청한 도시락을 나눠 드려요.'] },
+    { k: '1300', tm: '13:00', lb: '오후', from: 1300, to: 1500, hd: '13:00부터' },
+    { k: '1500', tm: '15:00', lb: '오후 후반', from: 1500, to: 1620, hd: '15:00부터' },
+    { k: '1630', tm: '16:30', lb: '폐막', one: ['총회 및 폐막식', '16:30–17:00', '마지막까지 함께해요.'] }];
+  const now = new Date(Date.now() + 9 * 3600e3), today = now.toISOString().slice(0, 10) === '2026-12-19';
+  let cur = window.__ttTab || '1000';
+  if (!window.__ttTab && today) { const hm = now.getUTCHours() * 100 + now.getUTCMinutes(); cur = [...TABS].reverse().find(t => hm >= +t.k)?.k || '0900'; }
+  const inWin = (a, b, t) => T(a) < t.to && T(b) > t.from;
+  const ses = (s, t) => { const [a, b] = rng(s); const full = s.count >= s.cap || waitN(s) > 0; const own = (T(a) !== t.from || T(b) !== t.to) ? a + '–' + b : '';
+    return `<div class="tc"><div class="nm">${esc(s.name)}</div><span class="rm">${esc(room(s.room))}</span><div class="mt"><span>${own}</span><b class="${full ? 'full' : ''}">${full ? '마감' + (waitN(s) ? ' · 대기 ' + waitN(s) : '') : '남은 자리 ' + sesLeft(s) + ' / ' + s.cap}</b></div></div>`; };
+  const fx = (f, t) => `<div class="tc fx"><div class="nm">${f.name}</div><span class="rm">${f.room}</span><div class="mt"><span>${f.note}${f.show ? ' · ' + f.start + '–' + f.end : ''}</span><b style="color:#8a9a90;font-family:var(--sans)">신청 없음</b></div></div>`;
+  const panel = t => {
+    if (t.one) return `<div class="tp1"><div class="tm">${t.one[1]}</div><div class="nm">${t.one[0]}</div><p>${t.one[2]}</p></div>`;
+    const list = ss.filter(s => { const [a, b] = rng(s); return inWin(a, b, t); });
+    return `<div class="tph">${t.hd}</div>${list.map(s => ses(s, t)).join('')}<div class="tph2">신청 없이 갈 수 있어요</div>${FX.filter(f => inWin(f.start, f.end, t)).map(f => fx(f, t)).join('')}`; };
+  const draw = () => { box.innerHTML = `<h3>전체 시간표</h3><p style="font-size:12.5px;margin-bottom:10px">장소는 모두 마산대학교 창의관이에요. 왼쪽 시간을 누르면 그 시간 프로그램과 교실만 보여요.</p>
+    <div class="ttw"><div class="ttr">${TABS.map(t => `<button type="button" data-tt="${t.k}" class="${t.k === cur ? 'on' : ''}"><b>${t.tm}</b><span>${t.lb}</span></button>`).join('')}</div>
+    <div class="ttp">${panel(TABS.find(t => t.k === cur))}</div></div>`;
+    box.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { cur = window.__ttTab = b.dataset.tt; draw(); }); };
+  draw();
 }
 
 function setupVideos() {
@@ -709,7 +751,7 @@ async function ticket(tok) {
     <button class="btn" id="img">탑승권 이미지 저장</button><div class="gap"></div>
     <button class="btn2" id="inv">동료 선생님 초대하기</button><div class="gap"></div>
     ${d.staff ? '<div class="tfbox" id="tfBox"><h3>' + CROWN + 'TF 운영 현황</h3><div class="ro">보기 전용 · 실시간 · 수정은 총괄 운영진만</div><div id="tfStat" class="note">불러오는 중…</div></div>' : ''}
-    <div class="card" id="seatCard"><h3>좌석 지정 (세션)</h3><p>불러오는 중…</p></div>
+    <div class="card" id="seatCard"><h3>세션 신청</h3><p>불러오는 중…</p></div>
     <div class="card" id="extraCard"><h3>점심 도시락 · 자녀 동반</h3><p>불러오는 중…</p></div>
     <div id="hackCard"></div>
     ${promoHTML()}
@@ -822,7 +864,7 @@ async function releaseSeat(tok, sid) {
 async function seatCard(tok, d) {
   const box = $('#seatCard'); if (!box) return;
   const [ss, mine, hk] = await Promise.all([loadSessions(true), mySlots(tok), getDoc(doc(db, 'hackers', tok)).catch(() => null)]);
-  if (!ss.length) { box.innerHTML = '<h3>좌석 지정 (세션)</h3><p>세션 목록을 준비하고 있어요.</p>'; return; }
+  if (!ss.length) { box.innerHTML = '<h3>세션 신청</h3><p>세션 목록을 준비하고 있어요.</p>'; return; }
   const hold = await myHold(tok, mine);
   const hackOn = hk && hk.exists() && hk.data().status === 'active';
   const isOpen = S && (new Date() >= ts(S.nanumStart) || d.test);
@@ -844,7 +886,7 @@ async function seatCard(tok, d) {
     return `<div class="ses ${held ? 'on' : ''}"><div><div class="nm2">${held ? '✓ ' : ''}${esc(s.name)}</div><small>${esc(s.room)} · ${s.start}–${s.end} · ${left}${stat}</small></div><div class="act">${act}</div></div>`;
   };
   const am = ss.filter(s => s.group === 'AM'), pm = ss.filter(s => s.group === 'PM');
-  box.innerHTML = `<h3>좌석 지정 (세션)</h3>
+  box.innerHTML = `<h3>세션 신청</h3>
     <p style="font-size:13px">세션은 안 골라도 괜찮아요. 애플·LG 등 부스가 여러 곳 있고, 디지털 방탈출 이벤트도 있어요.</p>
     <p style="font-size:13px;margin-top:4px">시간이 겹치지 않으면 여러 개 신청할 수 있어요. 자리가 다 차면 대기 신청을 받고, 취소가 나오면 대기 순서대로 자동 확정돼요.${hackOn ? ' <b>해커톤 신청자는 10:00–14:50 세션을 고를 수 없어요.</b>' : ''}</p>
     ${!isOpen && canEdit ? '<p style="font-size:13px;margin-top:4px"><b>세션 신청은 ' + md(ts(S.nanumStart)) + ' ' + String(new Date(ts(S.nanumStart).getTime() + 9 * 3600e3).getUTCHours()).padStart(2, '0') + ':' + String(new Date(ts(S.nanumStart).getTime() + 9 * 3600e3).getUTCMinutes()).padStart(2, '0') + '에 열려요.</b></p>' : ''}
