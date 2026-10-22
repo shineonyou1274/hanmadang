@@ -165,6 +165,8 @@ service cloud.firestore {
         && d.keys().hasOnly(['name', 'pno', 'mode', 'team', 'topics', 'level', 'laptop', 'idea', 'status', 'createdAt', 'v'])
         && d.name == p.name && d.pno == p.pno
         && d.status == 'active' && d.createdAt == request.time && d.laptop == true
+        && !exists(/databases/$(db)/documents/slots/$(tok + '_AM'))
+        && !exists(/databases/$(db)/documents/slots/$(tok + '_PM1'))
         && d.mode in ['lead', 'join', 'match']
         && d.topics is list && d.topics.size() >= 1 && d.topics.size() <= 2
         && d.level in ['new', 'some', 'often']
@@ -239,6 +241,86 @@ service cloud.firestore {
               && get(H(request.resource.data.tok)).data.team == request.resource.data.team
               && getAfter(H(request.resource.data.tok)).data.status == 'cancelled'));
       allow update, delete: if isAdmin();
+    }
+
+    // ---------- 세션 좌석 ----------
+    function SE(sid) { return /databases/$(db)/documents/sessions/$(sid); }
+    function SEAT(sid, tok) { return /databases/$(db)/documents/seats/$(sid + '__' + tok); }
+    function SLOT(tok, k) { return /databases/$(db)/documents/slots/$(tok + '_' + k); }
+    function hackBusy(tok) { return exists(H(tok)) && get(H(tok)).data.status == 'active'; }
+    function slotNew(tok, k, sid) {
+      return getAfter(SLOT(tok, k)).data.sid == sid
+        && (!exists(SLOT(tok, k)) || !existsAfter(SEAT(get(SLOT(tok, k)).data.sid, tok)));
+    }
+    function slotGone(tok, k, sid) {
+      return !existsAfter(SLOT(tok, k)) || getAfter(SLOT(tok, k)).data.sid != sid;
+    }
+    function seatCreateOk(id) {
+      let d = request.resource.data;
+      let s = get(SE(d.sid)).data;
+      return d.keys().hasOnly(['sid', 'tok', 'at'])
+        && id == d.sid + '__' + d.tok
+        && d.at == request.time
+        && get(P(d.tok)).data.status == 'active'
+        && request.time < S().cancelDeadline
+        && getAfter(SE(d.sid)).data.count == s.count + 1
+        && getAfter(SE(d.sid)).data.last == d.tok
+        && slotNew(d.tok, s.slots[0], d.sid)
+        && (s.slots.size() < 2 || slotNew(d.tok, s.slots[1], d.sid))
+        && (!s.slots.hasAny(['AM', 'PM1']) || !hackBusy(d.tok));
+    }
+    function seatDeleteOk() {
+      let d = resource.data;
+      let s = get(SE(d.sid)).data;
+      return request.time < S().cancelDeadline
+        && getAfter(SE(d.sid)).data.count == s.count - 1
+        && getAfter(SE(d.sid)).data.last == d.tok
+        && slotGone(d.tok, s.slots[0], d.sid)
+        && (s.slots.size() < 2 || slotGone(d.tok, s.slots[1], d.sid));
+    }
+    match /sessions/{sid} {
+      allow read: if true;
+      allow create, delete: if isOwner();
+      allow update: if isAdmin()
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count', 'last'])
+            && ((request.resource.data.count == resource.data.count + 1
+                  && request.resource.data.count <= resource.data.cap
+                  && !exists(SEAT(sid, request.resource.data.last))
+                  && existsAfter(SEAT(sid, request.resource.data.last)))
+              || (request.resource.data.count == resource.data.count - 1
+                  && exists(SEAT(sid, request.resource.data.last))
+                  && !existsAfter(SEAT(sid, request.resource.data.last)))));
+    }
+    match /seats/{id} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if isAdmin() || seatCreateOk(id);
+      allow delete: if isAdmin() || seatDeleteOk();
+    }
+    match /slots/{id} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create, update: if isAdmin()
+        || (request.resource.data.keys().hasOnly(['sid', 'tok', 'k'])
+            && id == request.resource.data.tok + '_' + request.resource.data.k
+            && existsAfter(SEAT(request.resource.data.sid, request.resource.data.tok))
+            && get(SE(request.resource.data.sid)).data.slots.hasAny([request.resource.data.k]));
+      allow delete: if isAdmin() || !existsAfter(SEAT(resource.data.sid, resource.data.tok));
+    }
+
+    // ---------- 도시락·자녀 동반 ----------
+    match /extras/{tok} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create, update: if isAdmin()
+        || (request.resource.data.keys().hasOnly(['lunch', 'kids', 'at'])
+            && request.resource.data.lunch in ['galbi', 'chipotle', 'none']
+            && request.resource.data.kids is int
+            && request.resource.data.kids >= 0 && request.resource.data.kids <= 5
+            && request.resource.data.at == request.time
+            && getAfter(P(tok)).data.status == 'active'
+            && request.time < S().cancelDeadline);
+      allow delete: if isAdmin();
     }
 
     // ---------- 이름+전화로 내 여권 찾기 ----------
