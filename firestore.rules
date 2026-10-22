@@ -18,6 +18,17 @@ service cloud.firestore {
     function S() { return get(/databases/$(db)/documents/settings/main).data; }
     function P(tok) { return /databases/$(db)/documents/participants/$(tok); }
     function C() { return /databases/$(db)/documents/counters/main; }
+    function MK(m) { return /databases/$(db)/documents/marks/$(m); }
+    function tokOf(m) { return getAfter(MK(m)).data.tok; }
+
+    // ---------- marks: 공개 문서에 토큰 대신 남기는 일회용 표 (읽기는 운영진만) ----------
+    match /marks/{m} {
+      allow read: if isAdmin();
+      allow create: if m.size() >= 16
+        && request.resource.data.keys().hasOnly(['tok'])
+        && request.resource.data.tok is string;
+      allow update, delete: if isAdmin();
+    }
 
     // ---------- settings / secrets / admins ----------
     match /settings/{id} {
@@ -34,19 +45,21 @@ service cloud.firestore {
 
     // ---------- counter ----------
     function counterPlusOk(n, o) {
-      let t = getAfter(P(n.last)).data.type;
+      let tk = tokOf(n.last);
+      let t = getAfter(P(tk)).data.type;
       return n.total == o.total + 1
         && n.total <= S().capacity
-        && !exists(P(n.last))
-        && existsAfter(P(n.last))
+        && !exists(P(tk))
+        && existsAfter(P(tk))
         && n[t] == o[t] + 1
         && n.diff(o).affectedKeys().hasOnly(['total', t, 'last']);
     }
     function counterMinusOk(n, o) {
-      let t = get(P(n.last)).data.type;
+      let tk = tokOf(n.last);
+      let t = get(P(tk)).data.type;
       return n.total == o.total - 1
-        && get(P(n.last)).data.status == 'active'
-        && getAfter(P(n.last)).data.status == 'cancelled'
+        && get(P(tk)).data.status == 'active'
+        && getAfter(P(tk)).data.status == 'cancelled'
         && n[t] == o[t] - 1
         && n.diff(o).affectedKeys().hasOnly(['total', t, 'last']);
     }
@@ -93,7 +106,7 @@ service cloud.firestore {
         && (!('email' in d) || (d.email is string && d.email.size() <= 80))
         && d.phoneKey is string && d.lookupKey is string
         && typeTimeOk(d)
-        && getAfter(C()).data.last == tok
+        && tokOf(getAfter(C()).data.last) == tok
         && getAfter(C()).data.total == get(C()).data.total + 1
         && existsAfter(/databases/$(db)/documents/phones/$(d.phoneKey))
         && existsAfter(/databases/$(db)/documents/lookups/$(d.lookupKey));
@@ -106,7 +119,7 @@ service cloud.firestore {
         && d.cancelPhone == resource.data.phone
         && d.cancelledAt == request.time
         && request.time < S().cancelDeadline
-        && getAfter(C()).data.last == tok
+        && tokOf(getAfter(C()).data.last) == tok
         && getAfter(C()).data.total == get(C()).data.total - 1
         && !existsAfter(/databases/$(db)/documents/phones/$(resource.data.phoneKey));
     }
@@ -143,11 +156,11 @@ service cloud.firestore {
             && request.resource.data.keys().hasOnly(['total', 'last'])
             && ((request.resource.data.total == resource.data.total + 1
                   && request.resource.data.total <= S().hackCap
-                  && !exists(H(request.resource.data.last))
-                  && existsAfter(H(request.resource.data.last)))
+                  && !exists(H(tokOf(request.resource.data.last)))
+                  && existsAfter(H(tokOf(request.resource.data.last))))
               || (request.resource.data.total == resource.data.total - 1
-                  && get(H(request.resource.data.last)).data.status == 'active'
-                  && getAfter(H(request.resource.data.last)).data.status == 'cancelled')));
+                  && get(H(tokOf(request.resource.data.last))).data.status == 'active'
+                  && getAfter(H(tokOf(request.resource.data.last))).data.status == 'cancelled')));
     }
 
     function teamLinkOk(d, tok) {
@@ -171,7 +184,7 @@ service cloud.firestore {
         && d.topics is list && d.topics.size() >= 1 && d.topics.size() <= 2
         && d.level in ['new', 'some', 'often']
         && (!('idea' in d) || (d.idea is string && d.idea.size() <= 100))
-        && getAfter(HC()).data.last == tok
+        && tokOf(getAfter(HC()).data.last) == tok
         && getAfter(HC()).data.total == get(HC()).data.total + 1
         && ((d.mode == 'match' && d.team == null) || (d.mode != 'match' && teamLinkOk(d, tok)));
     }
@@ -182,7 +195,7 @@ service cloud.firestore {
         && d.cancelPhone == get(P(tok)).data.phone
         && d.cancelledAt == request.time
         && request.time < S().cancelDeadline
-        && getAfter(HC()).data.last == tok
+        && tokOf(getAfter(HC()).data.last) == tok
         && getAfter(HC()).data.total == get(HC()).data.total - 1
         && (resource.data.team == null
             || (getAfter(T(resource.data.team)).data.count == get(T(resource.data.team)).data.count - 1
@@ -243,69 +256,140 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // ---------- 세션 좌석 ----------
+    // ---------- 세션 좌석 + 대기 ----------
+    // 확정 = seats 문서, 또는 대기표 번호(n)가 세션의 wh보다 작은 waits 문서 (대기에서 올라온 사람)
     function SE(sid) { return /databases/$(db)/documents/sessions/$(sid); }
     function SEAT(sid, tok) { return /databases/$(db)/documents/seats/$(sid + '__' + tok); }
+    function WAIT(sid, tok) { return /databases/$(db)/documents/waits/$(sid + '__' + tok); }
+    function WQ(sid, n) { return /databases/$(db)/documents/wq/$(sid + '_' + string(n)); }
     function SLOT(tok, k) { return /databases/$(db)/documents/slots/$(tok + '_' + k); }
     function hackBusy(tok) { return exists(H(tok)) && get(H(tok)).data.status == 'active'; }
-    function slotNew(tok, k, sid) {
-      return getAfter(SLOT(tok, k)).data.sid == sid
-        && (!exists(SLOT(tok, k)) || !existsAfter(SEAT(get(SLOT(tok, k)).data.sid, tok)));
+    function opened(p) { return request.time >= S().nanumStart || p.get('test', false) == true; }
+    function slotNew(tok, k, sid) { return !exists(SLOT(tok, k)) && getAfter(SLOT(tok, k)).data.sid == sid; }
+    function slotsNew(tok, sl, sid) { return slotNew(tok, sl[0], sid) && (sl.size() < 2 || slotNew(tok, sl[1], sid)); }
+    function slotsGone(tok, sl) { return !existsAfter(SLOT(tok, sl[0])) && (sl.size() < 2 || !existsAfter(SLOT(tok, sl[1]))); }
+    function aliveAt(sid, i) {
+      let t = get(WQ(sid, i)).data.tok;
+      return exists(WAIT(sid, t)) && get(WAIT(sid, t)).data.n == i;
     }
-    function slotGone(tok, k, sid) {
-      return !existsAfter(SLOT(tok, k)) || getAfter(SLOT(tok, k)).data.sid != sid;
+    function deadAt(sid, i) {
+      let t = get(WQ(sid, i)).data.tok;
+      return !exists(WAIT(sid, t)) || get(WAIT(sid, t)).data.n != i;
+    }
+    function released(sid, t, o) {
+      return (exists(SEAT(sid, t)) && !existsAfter(SEAT(sid, t)))
+        || (!exists(SEAT(sid, t)) && exists(WAIT(sid, t))
+            && get(WAIT(sid, t)).data.n < o.wh && !existsAfter(WAIT(sid, t)));
+    }
+    function sesOk(sid, n, o) {
+      let ch = n.diff(o).affectedKeys();
+      return ch.hasOnly(['count', 'last', 'wq', 'wh'])
+        && (
+          // A 빈자리에 앉기 (대기줄 없을 때만)
+          (ch.hasOnly(['count', 'last']) && n.count == o.count + 1 && n.count <= o.cap && o.wh == o.wq
+            && !exists(SEAT(sid, tokOf(n.last))) && existsAfter(SEAT(sid, tokOf(n.last))))
+          // B 자리 놓기 (대기줄 없을 때)
+          || (ch.hasOnly(['count', 'last']) && n.count == o.count - 1 && o.wh == o.wq
+            && released(sid, tokOf(n.last), o))
+          // C 자리 놓으면서 대기 1번을 확정으로 올리기
+          || (ch.hasOnly(['wh', 'last']) && n.wh == o.wh + 1 && aliveAt(sid, o.wh)
+            && released(sid, tokOf(n.last), o))
+          // F 빈자리가 있으면 대기 1번 올리기 (정원 늘렸을 때 등)
+          || (ch.hasOnly(['count', 'wh']) && n.count == o.count + 1 && n.count <= o.cap
+            && n.wh == o.wh + 1 && aliveAt(sid, o.wh))
+          // D 대기를 그만둔 번호 건너뛰기 (최대 3칸)
+          || (ch.hasOnly(['wh']) && n.wh > o.wh && n.wh <= o.wq && n.wh <= o.wh + 3
+            && deadAt(sid, o.wh)
+            && (n.wh < o.wh + 2 || deadAt(sid, o.wh + 1))
+            && (n.wh < o.wh + 3 || deadAt(sid, o.wh + 2)))
+          // E 대기줄 서기
+          || (ch.hasOnly(['wq']) && n.wq == o.wq + 1 && existsAfter(WQ(sid, o.wq)))
+        );
     }
     function seatCreateOk(id) {
       let d = request.resource.data;
       let s = get(SE(d.sid)).data;
+      let p = get(P(d.tok)).data;
       return d.keys().hasOnly(['sid', 'tok', 'at'])
         && id == d.sid + '__' + d.tok
         && d.at == request.time
-        && get(P(d.tok)).data.status == 'active'
+        && p.status == 'active' && opened(p)
         && request.time < S().cancelDeadline
         && getAfter(SE(d.sid)).data.count == s.count + 1
-        && getAfter(SE(d.sid)).data.last == d.tok
-        && slotNew(d.tok, s.slots[0], d.sid)
-        && (s.slots.size() < 2 || slotNew(d.tok, s.slots[1], d.sid))
+        && tokOf(getAfter(SE(d.sid)).data.last) == d.tok
+        && slotsNew(d.tok, s.slots, d.sid)
         && (!s.slots.hasAny(['AM', 'PM1']) || !hackBusy(d.tok));
     }
-    function seatDeleteOk() {
-      let d = resource.data;
-      let s = get(SE(d.sid)).data;
+    function holderGoneOk(sid, tok) {
+      let s = get(SE(sid)).data;
+      let n = getAfter(SE(sid)).data;
       return request.time < S().cancelDeadline
-        && getAfter(SE(d.sid)).data.count == s.count - 1
-        && getAfter(SE(d.sid)).data.last == d.tok
-        && slotGone(d.tok, s.slots[0], d.sid)
-        && (s.slots.size() < 2 || slotGone(d.tok, s.slots[1], d.sid));
+        && tokOf(n.last) == tok
+        && slotsGone(tok, s.slots)
+        && (n.count == s.count - 1 || (n.count == s.count && n.wh == s.wh + 1));
+    }
+    function waitCreateOk(id) {
+      let d = request.resource.data;
+      let s = get(SE(d.sid)).data;
+      let p = get(P(d.tok)).data;
+      return d.keys().hasOnly(['sid', 'tok', 'n', 'at'])
+        && id == d.sid + '__' + d.tok
+        && d.at == request.time
+        && p.status == 'active' && opened(p)
+        && request.time < S().cancelDeadline
+        && (s.count >= s.cap || s.wh < s.wq)
+        && d.n == s.wq
+        && getAfter(SE(d.sid)).data.wq == s.wq + 1
+        && getAfter(WQ(d.sid, d.n)).data.tok == d.tok
+        && !exists(SEAT(d.sid, d.tok))
+        && slotsNew(d.tok, s.slots, d.sid)
+        && (!s.slots.hasAny(['AM', 'PM1']) || !hackBusy(d.tok));
     }
     match /sessions/{sid} {
       allow read: if true;
       allow create, delete: if isOwner();
-      allow update: if isAdmin()
-        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['count', 'last'])
-            && ((request.resource.data.count == resource.data.count + 1
-                  && request.resource.data.count <= resource.data.cap
-                  && !exists(SEAT(sid, request.resource.data.last))
-                  && existsAfter(SEAT(sid, request.resource.data.last)))
-              || (request.resource.data.count == resource.data.count - 1
-                  && exists(SEAT(sid, request.resource.data.last))
-                  && !existsAfter(SEAT(sid, request.resource.data.last)))));
+      allow update: if isAdmin() || sesOk(sid, request.resource.data, resource.data);
     }
     match /seats/{id} {
       allow get: if true;
       allow list: if isAdmin();
       allow create: if isAdmin() || seatCreateOk(id);
-      allow delete: if isAdmin() || seatDeleteOk();
+      allow delete: if isAdmin() || holderGoneOk(resource.data.sid, resource.data.tok);
+    }
+    match /waits/{id} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if isAdmin() || waitCreateOk(id);
+      allow delete: if isAdmin()
+        || (resource.data.n >= get(SE(resource.data.sid)).data.wh
+            && slotsGone(resource.data.tok, get(SE(resource.data.sid)).data.slots))
+        || (resource.data.n < get(SE(resource.data.sid)).data.wh
+            && holderGoneOk(resource.data.sid, resource.data.tok));
+    }
+    match /wq/{id} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        || (request.resource.data.keys().hasOnly(['sid', 'n', 'tok'])
+            && id == request.resource.data.sid + '_' + string(request.resource.data.n)
+            && get(SE(request.resource.data.sid)).data.wq == request.resource.data.n
+            && getAfter(WAIT(request.resource.data.sid, request.resource.data.tok)).data.n == request.resource.data.n);
+      allow update, delete: if isAdmin();
     }
     match /slots/{id} {
       allow get: if true;
       allow list: if isAdmin();
-      allow create, update: if isAdmin()
-        || (request.resource.data.keys().hasOnly(['sid', 'tok', 'k'])
+      allow update: if isAdmin();
+      allow create: if isAdmin()
+        || (request.resource.data.keys().hasOnly(['sid', 'tok', 'k', 'w'])
             && id == request.resource.data.tok + '_' + request.resource.data.k
-            && existsAfter(SEAT(request.resource.data.sid, request.resource.data.tok))
+            && (request.resource.data.get('w', false) == true
+                  ? existsAfter(WAIT(request.resource.data.sid, request.resource.data.tok))
+                  : existsAfter(SEAT(request.resource.data.sid, request.resource.data.tok)))
             && get(SE(request.resource.data.sid)).data.slots.hasAny([request.resource.data.k]));
-      allow delete: if isAdmin() || !existsAfter(SEAT(resource.data.sid, resource.data.tok));
+      allow delete: if isAdmin()
+        || (resource.data.get('w', false) == true
+              ? !existsAfter(WAIT(resource.data.sid, resource.data.tok))
+              : !existsAfter(SEAT(resource.data.sid, resource.data.tok)));
     }
 
     // ---------- 도시락·자녀 동반 ----------
@@ -313,10 +397,13 @@ service cloud.firestore {
       allow get: if true;
       allow list: if isAdmin();
       allow create, update: if isAdmin()
-        || (request.resource.data.keys().hasOnly(['lunch', 'kids', 'at'])
+        || (request.resource.data.keys().hasOnly(['lunch', 'kids', 'klunch', 'at'])
             && request.resource.data.lunch in ['galbi', 'chipotle', 'none']
             && request.resource.data.kids is int
-            && request.resource.data.kids >= 0 && request.resource.data.kids <= 5
+            && request.resource.data.kids >= 0 && request.resource.data.kids <= 10
+            && request.resource.data.get('klunch', 0) is int
+            && request.resource.data.get('klunch', 0) >= 0
+            && request.resource.data.get('klunch', 0) <= request.resource.data.kids
             && request.resource.data.at == request.time
             && getAfter(P(tok)).data.status == 'active'
             && request.time < S().cancelDeadline);
