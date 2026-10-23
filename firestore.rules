@@ -410,6 +410,25 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ---------- 출장 공문: 참가자는 need만, 발송 표시는 운영진만 ----------
+    match /gm/{tok} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        || (request.resource.data.keys().hasOnly(['need', 'at'])
+            && request.resource.data.need is bool
+            && request.resource.data.at == request.time
+            && getAfter(P(tok)).data.status == 'active'
+            && request.time < S().cancelDeadline);
+      allow update: if isAdmin()
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['need', 'at'])
+            && request.resource.data.need is bool
+            && request.resource.data.at == request.time
+            && get(P(tok)).data.status == 'active'
+            && request.time < S().cancelDeadline);
+      allow delete: if isAdmin();
+    }
+
     // ---------- 이름+전화로 내 여권 찾기 ----------
     match /lookups/{key} {
       allow get: if true;
