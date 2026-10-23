@@ -121,7 +121,7 @@ tr.dup td{background:#FFF7E1}
              id="w4_path46"
              style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
              d="m 0,0 h -259.19 c -7.99,0 -14.47,-6.48 -14.47,-14.47 v -51.14 h 8.51 v 51.14 c 0,3.29 2.67,5.97 5.96,5.97 H 0 c 3.29,0 5.97,-2.68 5.97,-5.97 v -47.75 c 3.88,0.87 6.65,1.61 8.5,2.17 v 45.58 C 14.47,-6.48 7.99,0 0,0 m -96.5,-237.99 h -66.18 v 20.76 h 66.18 z m 102.47,35.23 c 0,-3.29 -2.68,-5.97 -5.97,-5.97 h -259.19 c -3.29,0 -5.96,2.68 -5.96,5.97 v 38.14 c -3.68,1.54 -6.59,2.82 -8.51,3.69 v -41.83 c 0,-7.99 6.48,-14.47 14.47,-14.47 h 88.01 v -20.76 h -32.61 c -2.34,0 -4.25,-1.91 -4.25,-4.25 0,-1.18 0.48,-2.24 1.25,-3.01 0.77,-0.77 1.83,-1.25 3,-1.25 h 148.25 c 2.35,0 4.26,1.91 4.26,4.26 0,1.17 -0.48,2.23 -1.25,3 -0.77,0.77 -1.83,1.25 -3.01,1.25 H -88 v 20.76 H 0 c 7.99,0 14.47,6.48 14.47,14.47 v 53.83 c -4.86,0.52 -8.5,0.76 -8.5,0.76 z" /></g></g></g></g></svg> 운영실</div>
-  <nav><button data-tab="dash" class="on">현황</button><button data-tab="list">명단</button><button data-tab="ses">세션·도시락</button><button data-tab="hack">해커톤</button><button data-tab="set">설정</button></nav>
+  <nav><button data-tab="dash" class="on">현황</button><button data-tab="list">명단</button><button data-tab="ses">세션·도시락·공문</button><button data-tab="hack">해커톤</button><button data-tab="set">설정</button></nav>
   <div class="me"><span id="meEmail"></span><button id="logout">로그아웃</button></div>
 </header>
 <main>
@@ -149,7 +149,7 @@ tr.dup td{background:#FFF7E1}
         <select id="fStatus"><option value="active">신청 중</option><option value="">취소 포함</option><option value="cancelled">취소만</option></select>
         <button class="b2" id="csv">엑셀(CSV) 받기</button></span></h3>
       <p class="note">노란 줄 = 같은 휴대폰 번호로 신청 중인 사람이 둘 이상. 링크 버튼 = 그 사람의 탑승권 주소 복사 (여권을 잃어버린 선생님께 보내 줄 때)</p>
-      <div style="overflow:auto;margin-top:8px"><table><thead><tr><th>#</th><th>신청 시각</th><th>이름</th><th>소속</th><th>휴대폰</th><th>이메일</th><th>구분</th><th>세션</th><th>도시락·자녀</th><th>여권번호</th><th>상태</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+      <div style="overflow:auto;margin-top:8px"><table><thead><tr><th>#</th><th>신청 시각</th><th>이름</th><th>소속</th><th>휴대폰</th><th>이메일</th><th>구분</th><th>세션</th><th>도시락·자녀·공문</th><th>여권번호</th><th>상태</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
     </div>
   </section>
 
@@ -165,6 +165,10 @@ tr.dup td{background:#FFF7E1}
     <div class="panel"><h3>세션별 신청 <span class="tools"><button class="b2" id="sescsv">세션 명단 엑셀(CSV)</button></span></h3>
       <p class="note">신청 중인 참가자 기준. 정원 칸은 총괄만 바꿀 수 있어요.</p>
       <div style="overflow:auto;margin-top:8px"><table><thead><tr><th>시간</th><th>세션</th><th>장소</th><th>신청/정원</th><th>신청자</th></tr></thead><tbody id="sesRows"></tbody></table></div>
+    </div>
+    <div class="panel"><h3>출장 공문 <span id="gmKpi" style="font-size:13px;font-weight:600;color:#5b7566;margin-left:6px"></span><span class="tools"><label style="font-size:12.5px;font-weight:600"><input type="checkbox" id="gmTodo"> 미발송만</label><button class="b2" id="gmcsv">공문 명단 엑셀(CSV)</button></span></h3>
+      <p class="note">참가자가 신청서·탑승권에서 "공문 필요"에 체크한 사람. 보냈으면 발송 칸을 체크하세요. 참가자 탑승권에 "발송 완료"로 바로 표시돼요.</p>
+      <div style="overflow:auto;margin-top:8px"><table><thead><tr><th>발송</th><th>소속</th><th>이름</th><th>휴대폰</th><th>이메일</th><th>공문 신청</th><th>발송일</th></tr></thead><tbody id="gmRows"></tbody></table></div>
     </div>
   </section>
 
@@ -245,7 +249,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const TYPE = { nanum: '나눔회원', baeum: '배움회원', outside: '지딜 외' }, PILL = { nanum: 'pg', baeum: 'pb', outside: 'po' };
 const LEVEL = { new: '처음', some: '조금', often: '자주' };
-let HK = [], TM = [], HCn = null, SE = [], SEATS = [], WT = [], EX = {};
+let HK = [], TM = [], HCn = null, SE = [], SEATS = [], WT = [], EX = {}, GM = {};
 const LUNCH = { galbi: '왕갈비맛', chipotle: '치폴레', none: '필요 없음' };
 const ts = v => v?.toDate ? v.toDate() : null;
 const kst = (d, o) => d ? d.toLocaleString('ko-KR', Object.assign({ timeZone: 'Asia/Seoul' }, o)) : '';
@@ -298,6 +302,7 @@ function start() {
   unsub.push(onSnapshot(collection(db, 'sessions'), q => { SE = q.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0)); renderSes(); }));
   unsub.push(onSnapshot(collection(db, 'seats'), q => { SEATS = q.docs.map(d => d.data()); renderSes(); renderList(); }));
   unsub.push(onSnapshot(collection(db, 'waits'), q => { WT = q.docs.map(d => d.data()); renderSes(); renderList(); }));
+  unsub.push(onSnapshot(collection(db, 'gm'), q => { GM = {}; q.docs.forEach(d => GM[d.id] = d.data()); renderGm(); renderList(); }));
   unsub.push(onSnapshot(collection(db, 'extras'), q => { EX = {}; q.docs.forEach(d => EX[d.id] = d.data()); renderSes(); renderList(); }));
   if (!OWNER) return;
   unsub.push(onSnapshot(doc(db, 'secrets', 'staff'), s => { const c = s.exists() ? s.data().code : ''; const u = location.origin + '/#/tf/' + c; $('#staffLink').innerHTML = c ? `<span>${esc(u)}</span> <button class="b2" id="cpStaff" style="padding:3px 9px;font-size:12px">복사</button>` : '<span class="note">아직 TF 링크 없음</span>'; const b = $('#cpStaff'); if (b) b.onclick = () => navigator.clipboard.writeText(u).then(() => alert('복사했어요')); }));
@@ -440,6 +445,26 @@ async function releaseAll(id) {
   }
 }
 
+const gmNeeders = () => { const act = actIds(); return Object.entries(GM).filter(([id, g]) => g.need && act.has(id)).map(([id, g]) => ({ id, g, p: P.find(q => q.id === id) || {} })).sort((a, b) => String(a.p.school).localeCompare(String(b.p.school), 'ko')); };
+const gmLabel = id => { const g = GM[id]; return !g || !g.need ? '' : g.sent ? '발송 완료' : '필요'; };
+function renderGm() {
+  if (!$('#gmRows')) return;
+  const all = gmNeeders(), sent = all.filter(x => x.g.sent).length;
+  $('#gmKpi').textContent = `필요 ${all.length}명 · 발송 ${sent} · 남음 ${all.length - sent}`;
+  const rows = $('#gmTodo').checked ? all.filter(x => !x.g.sent) : all;
+  const d8 = t => t ? kst(ts(t), { month: 'numeric', day: 'numeric' }) : '';
+  $('#gmRows').innerHTML = rows.map(({ id, g, p }) => `<tr style="${g.sent ? 'opacity:.6' : ''}"><td><input type="checkbox" data-gm="${id}" ${g.sent ? 'checked' : ''} style="width:18px;height:18px"></td><td>${esc(p.school || '')}</td><td><b>${esc(p.name || '?')}</b></td><td>${esc(OWNER ? p.phone || '' : maskPh(p.phone || ''))}</td><td style="font-size:12px">${esc(p.email || '')}</td><td style="font-size:12px">${d8(g.at)}</td><td style="font-size:12px">${g.sent ? d8(g.sentAt) + (g.sentBy ? '<br><span class="note">' + esc(g.sentBy.split('@')[0]) + '</span>' : '') : '-'}</td></tr>`).join('') || '<tr><td colspan="7" class="note">공문을 신청한 사람이 아직 없어요.</td></tr>';
+  document.querySelectorAll('[data-gm]').forEach(c => c.onchange = async () => { c.disabled = true; try { await setDoc(doc(db, 'gm', c.dataset.gm), c.checked ? { sent: true, sentAt: serverTimestamp(), sentBy: auth.currentUser.email } : { sent: false, sentAt: null, sentBy: '' }, { merge: true }); } catch (e) { alert('저장이 안 됐어요: ' + (e.code || e.message)); c.checked = !c.checked; } c.disabled = false; });
+}
+$('#gmTodo').onchange = renderGm;
+$('#gmcsv').onclick = () => {
+  const head = ['소속', '이름', '휴대폰', '이메일', '여권번호', '공문 신청일', '발송 여부', '발송일'];
+  const d8 = t => t ? kst(ts(t), { month: 'numeric', day: 'numeric' }) : '';
+  const body = gmNeeders().map(({ g, p }) => [p.school, p.name, OWNER ? p.phone : maskPh(p.phone), p.email || '', p.pno, d8(g.at), g.sent ? '발송 완료' : '미발송', g.sent ? d8(g.sentAt) : '']);
+  const csv = '\uFEFF' + [head, ...body].map(r => r.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = '지딜한마당_공문명단_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
+};
+
 function filtered() {
   const q = $('#q').value.trim(), t = $('#fType').value, st = $('#fStatus').value;
   return P.filter(p => (!t || p.type === t) && (!st || p.status === st) && (!q || [p.name, p.school, p.phone, p.pno, p.email].join(' ').includes(q)));
@@ -451,7 +476,7 @@ function renderList() {
   $('#rows').innerHTML = rows.map((p, i) => `<tr class="${p.status !== 'active' ? 'cx' : ''} ${p.status === 'active' && dupPhones.has(p.phone) ? 'dup' : ''}">
     <td>${rows.length - i}</td><td style="font-family:var(--mono);font-size:12.5px">${kst(ts(p.createdAt), { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
     <td><b>${esc(p.name)}</b>${p.test ? ' <span class="pill" style="background:var(--purple)">테스트</span>' : ''}${p.staff ? ' <span class="pill" style="background:var(--deep)">TF</span>' : ''}</td><td>${esc(p.school)}</td><td style="font-family:var(--mono)">${esc(maskPh(p.phone))}</td><td>${esc(OWNER ? (p.email || '') : (p.email ? p.email.replace(/^(.).*(@.*)$/, '$1***$2') : ''))}</td>
-    <td><span class="pill ${PILL[p.type]}">${TYPE[p.type]}</span></td><td style="font-size:12px">${[...seatsOf(p.id).map(s => esc(s.name)), ...waitsOf(p.id).map(s => '<span style="color:var(--orange)">' + esc(s.name) + ' (대기)</span>')].join('<br>') || '-'}</td><td style="font-size:12px">${(LUNCH[(EX[p.id] || {}).lunch] || '<span style="color:var(--orange)">미선택</span>') + ((EX[p.id] || {}).kids ? '<br>자녀 ' + EX[p.id].kids + ((EX[p.id] || {}).klunch ? ' · 아이도시락 ' + EX[p.id].klunch : '') : '')}</td><td style="font-family:var(--mono)">${esc(p.pno)}</td>
+    <td><span class="pill ${PILL[p.type]}">${TYPE[p.type]}</span></td><td style="font-size:12px">${[...seatsOf(p.id).map(s => esc(s.name)), ...waitsOf(p.id).map(s => '<span style="color:var(--orange)">' + esc(s.name) + ' (대기)</span>')].join('<br>') || '-'}</td><td style="font-size:12px">${(LUNCH[(EX[p.id] || {}).lunch] || '<span style="color:var(--orange)">미선택</span>') + ((EX[p.id] || {}).kids ? '<br>자녀 ' + EX[p.id].kids + ((EX[p.id] || {}).klunch ? ' · 아이도시락 ' + EX[p.id].klunch : '') : '') + (gmLabel(p.id) ? '<br><span style="color:' + (GM[p.id].sent ? 'var(--g)' : 'var(--orange)') + '">공문 ' + gmLabel(p.id) + '</span>' : '')}</td><td style="font-family:var(--mono)">${esc(p.pno)}</td>
     <td>${p.status === 'active' ? '<span class="ok">신청 중</span>' : '취소' + (p.cancelledBy ? '(운영진)' : '')}</td>
     <td style="white-space:nowrap"><button class="b2" data-link="${p.id}" style="padding:3px 8px;font-size:12px">링크</button> ${p.status === 'active' ? `<button class="bx" data-cx="${p.id}">취소</button>` : ''}</td></tr>`).join('');
   document.querySelectorAll('[data-link]').forEach(b => b.onclick = () => { const u = location.origin + '/#/t/' + b.dataset.link; navigator.clipboard.writeText(u).then(() => alert('복사했어요\n' + u)).catch(() => prompt('복사하세요', u)); });
@@ -471,8 +496,8 @@ async function adminCancel(p) {
 
 $('#csv').onclick = () => {
   const rows = filtered();
-  const head = ['신청시각', '이름', '소속', '휴대폰', '이메일', '구분', '여권번호', '상태', '오전 세션', '오후 세션', '대기', '도시락', '동반 자녀', '아이 도시락', '탑승권 링크'];
-  const body = rows.map(p => { const ss = seatsOf(p.id), e = EX[p.id] || {}; return [kst(ts(p.createdAt)), p.name, p.school, p.phone, p.email || '', TYPE[p.type], p.pno, p.status === 'active' ? '신청 중' : '취소', ss.filter(s => s.group === 'AM').map(s => s.name).join(' / '), ss.filter(s => s.group === 'PM').map(s => s.name).join(' / '), waitsOf(p.id).map(s => s.name).join(' / '), LUNCH[e.lunch] || '미선택', e.kids || 0, e.klunch || 0, location.origin + '/#/t/' + p.id]; });
+  const head = ['신청시각', '이름', '소속', '휴대폰', '이메일', '구분', '여권번호', '상태', '오전 세션', '오후 세션', '대기', '도시락', '동반 자녀', '아이 도시락', '출장 공문', '탑승권 링크'];
+  const body = rows.map(p => { const ss = seatsOf(p.id), e = EX[p.id] || {}; return [kst(ts(p.createdAt)), p.name, p.school, p.phone, p.email || '', TYPE[p.type], p.pno, p.status === 'active' ? '신청 중' : '취소', ss.filter(s => s.group === 'AM').map(s => s.name).join(' / '), ss.filter(s => s.group === 'PM').map(s => s.name).join(' / '), waitsOf(p.id).map(s => s.name).join(' / '), LUNCH[e.lunch] || '미선택', e.kids || 0, e.klunch || 0, gmLabel(p.id), location.origin + '/#/t/' + p.id]; });
   const csv = '\uFEFF' + [head, ...body].map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = '지딜한마당_신청명단_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
 };
