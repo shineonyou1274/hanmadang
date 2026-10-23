@@ -395,6 +395,8 @@ function wireLunchKids(root) {
   const sync = () => { n.disabled = !on.checked; row.style.display = on.checked ? '' : 'none'; const v = Math.min(Number(kl.value) || 0, Number(n.value)); kl.innerHTML = klOpts(Number(n.value), v); };
   on.addEventListener('change', sync); n.addEventListener('change', sync);
 }
+const gmField = (need, sent) => `<label class="lnone" style="margin-top:0"><input type="checkbox" id="gmOn" ${need ? 'checked' : ''} ${sent ? 'disabled' : ''} style="accent-color:var(--g)"> 소속 학교로 출장(참가 협조) 공문이 필요해요</label>
+    <div class="hint" style="font-size:12px;color:#6b8577;margin-top:4px">G-DEAL에서 소속 학교로 공문을 보내 드려요. 보내고 나면 탑승권에 "발송 완료"로 표시돼요.</div>`;
 const readLunchKids = root => { const k = root.querySelector('#kidsOn')?.checked ? Number(root.querySelector('#kidsN').value) : 0; return { lunch: root.querySelector('input[name=lunch]:checked')?.value || '', kids: k, klunch: k ? Number(root.querySelector('#klN').value) || 0 : 0 }; };
 const testKey = () => sessionStorage.getItem('hm_test');
 const staffOpen = () => !S || new Date() < ts(S.nanumStart);
@@ -584,6 +586,7 @@ const SUM = {
   seat: el => { if (/불러오는 중/.test(el.textContent)) return ''; const nm = x => x.querySelector('.nm2')?.textContent.replace('✓', '').trim(); const on = [...el.querySelectorAll('.ses.on')].map(nm); const wt = [...el.querySelectorAll('.ses')].filter(x => !x.classList.contains('on') && /대기 \d+번/.test(x.textContent)).map(x => nm(x) + ' 대기'); const all = [...on, ...wt]; return all.length ? '<span class="okk">' + all.map(esc).join(' · ') + '</span>' : '안 골랐어요 (선택)'; },
   extra: el => { if (/불러오는 중/.test(el.textContent)) return ''; if (el.classList.contains('need')) return '<span class="warn">도시락을 골라 주세요</span>'; const b = el.querySelector('p b'); if (!b) return ''; const t = el.querySelector('p').textContent; const k = (t.match(/자녀 (\d+)명/) || [])[1]; return '<span class="okk">' + esc(b.textContent.replace(' 함박스테이크', '')) + (k ? ' · 자녀 ' + k : '') + '</span>'; },
   hack: el => { const t = el.textContent; if (/신청 완료/.test(t)) return '<span class="okk">신청 완료</span>'; if (/모두 찼어요/.test(t)) return '마감'; if (el.querySelector('a[href="#/hack"]')) return '신청 가능'; if (/열려요/.test(t)) return '곧 열려요'; return ''; },
+  gm: el => { const v = el.dataset.st; return v === 'sent' ? '<span class="okk">발송 완료</span>' : v === 'need' ? '<span class="okk">신청함 · 발송 준비 중</span>' : v === 'no' ? '필요 없음' : ''; },
   tf: el => { const b = el.querySelector('#tfStat b'); return b ? '신청 ' + esc(b.textContent) : ''; },
 };
 
@@ -699,6 +702,7 @@ async function apply() {
       <div class="field" id="sesF"><label>세션 신청 (선택)</label><div class="hint">불러오는 중…</div></div>
       <div class="field"><label>점심 도시락</label>${lunchFields()}</div>
       <div class="field"><label>자녀 동반</label>${kidsFields()}</div>
+      <div class="field"><label>출장 공문</label>${gmField(false)}</div>
       <div class="consent">
         <b>개인정보 수집·이용 동의 (필수)</b><br>
         · 목적: 한마당 참가 신청 확인, 행사 안내, 당일 등록과 디지털 여권 운영<br>
@@ -733,6 +737,7 @@ async function apply() {
     if (!/^01\d{8,9}$/.test(phone)) return fail('휴대폰 번호를 숫자로 정확히 넣어 주세요.');
     if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail('이메일 주소를 확인해 주세요.');
     const lk = readLunchKids(f);
+    const gmNeed = !!f.querySelector('#gmOn')?.checked;
     if (!lk.lunch) return fail('점심 도시락을 골라 주세요. 필요 없으면 "도시락 필요 없어요"를 눌러 주세요.');
     if (!$('#consent').checked) return fail('개인정보 수집·이용에 동의해야 신청할 수 있어요.');
     if (!$('#photo').checked) return fail('사진 촬영 안내를 확인해 주세요.');
@@ -764,6 +769,7 @@ async function apply() {
         tx.set(doc(db, 'phones', phoneKey), { tok });
         tx.set(lRef, { tok });
         tx.set(doc(db, 'extras', tok), { lunch: lk.lunch, kids: lk.kids, klunch: lk.klunch, at: serverTimestamp() });
+        if (gmNeed) tx.set(doc(db, 'gm', tok), { need: true, at: serverTimestamp() });
       });
       const picks = readSesPicks(f);
       if (picks.length) { $('#go').textContent = '세션 자리 잡는 중…'; for (const sid of picks) { try { const s = await settle(sid); if (s.count < s.cap && (s.wh || 0) >= (s.wq || 0)) { try { await reserveSeat(tok, sid); } catch (e3) { if (e3.message === 'FULL') await joinWait(tok, sid); else throw e3; } } else await joinWait(tok, sid); } catch (e3) { console.error(e3); } } }
@@ -836,6 +842,7 @@ async function ticket(tok) {
     ${d.staff ? '<div class="tfbox" id="tfBox"><h3>' + CROWN + 'TF 운영 현황</h3><div class="ro">보기 전용 · 실시간 · 수정은 총괄 운영진만</div><div id="tfStat" class="note">불러오는 중…</div></div>' : ''}
     <div class="card" id="seatCard"><h3>세션 신청</h3><p>불러오는 중…</p></div>
     <div class="card" id="extraCard"><h3>점심 도시락 · 자녀 동반</h3><p>불러오는 중…</p></div>
+    <div class="card" id="gmCard"><h3>출장 공문</h3><p>불러오는 중…</p></div>
     <div id="hackCard"></div>
     ${promoHTML()}
     <div class="card" id="infoCard"><h3>신청 정보 · 취소</h3><div class="kv"><b>소속</b><span>${esc(d.school)}</span><b>휴대폰</b><span>${esc(d.phone.replace(/(\d{3})\d+(\d{4})/, '$1-****-$2'))}</span><b>신청</b><span>${esc(kst(ts(d.createdAt), { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</span></div>
@@ -851,11 +858,13 @@ async function ticket(tok) {
   hackCard(tok, d);
   seatCard(tok, d);
   extraCard(tok, d);
+  gmCard(tok, d);
   setupVideos();
   if (d.staff) tfStatus();
   acc($('#tfBox'), SUM.tf);
   acc($('#seatCard'), SUM.seat);
   acc($('#extraCard'), SUM.extra);
+  acc($('#gmCard'), SUM.gm);
   acc($('#hackCard'), SUM.hack);
   acc(document.querySelector('#view .promo'), () => '영상 3편');
   acc($('#infoCard'), () => S && canCancel ? '취소는 ' + md(ts(S.cancelDeadline)) + '까지' : '');
@@ -1035,6 +1044,23 @@ async function extraCard(tok, d) {
     $('#exSave').disabled = true;
     try { await setDoc(doc(db, 'extras', tok), { lunch: lk.lunch, kids: lk.kids, klunch: lk.klunch, at: serverTimestamp() }); toast('저장했어요'); extraCard(tok, d); }
     catch (e) { console.error(e); toast('저장이 안 됐어요. 다시 눌러 주세요'); $('#exSave').disabled = false; }
+  };
+}
+
+async function gmCard(tok, d) {
+  const box = $('#gmCard'); if (!box) return;
+  let g = {}; try { const x = await getDoc(doc(db, 'gm', tok)); if (x.exists()) g = x.data(); } catch (e) { }
+  const canEdit = S && new Date() < ts(S.cancelDeadline);
+  const sent = !!g.sent, need = !!g.need;
+  box.dataset.st = sent ? 'sent' : need ? 'need' : 'no';
+  const stat = sent ? '<p style="font-size:13.5px;margin-bottom:8px;color:var(--deep)"><b>✓ 소속 학교로 공문을 보냈어요</b>' + (g.sentAt ? ' (' + md(ts(g.sentAt)) + ')' : '') + '</p>'
+    : need ? '<p style="font-size:13.5px;margin-bottom:8px">공문 신청함 · <b>발송 준비 중</b>이에요.</p>' : '';
+  box.innerHTML = `<h3>출장 공문</h3>${stat}${!sent && canEdit ? gmField(need) + '<div class="gap"></div><button class="btn2" id="gmSave">저장하기</button>' : (!sent ? '<p style="font-size:12.5px;color:#6b8577">공문 신청 마감이 지났어요. 운영진에게 문의해 주세요.</p>' : '')}`;
+  const b = $('#gmSave'); if (!b) return;
+  b.onclick = async () => {
+    b.disabled = true;
+    try { await setDoc(doc(db, 'gm', tok), { need: !!$('#gmOn').checked, at: serverTimestamp() }, { merge: true }); toast('저장했어요'); gmCard(tok, d); }
+    catch (e) { console.error(e); toast('저장이 안 됐어요. 다시 눌러 주세요'); b.disabled = false; }
   };
 }
 
