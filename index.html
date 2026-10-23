@@ -971,7 +971,7 @@ async function seatCard(tok, d) {
     else if (!canEdit) act = '';
     else if (!isOpen) act = '<span class="tag2">' + md(ts(S.nanumStart)) + ' 열림</span>';
     else if (full) act = `<button class="swap" data-wait="${s.id}">${clash ? '대기로 바꾸기' : '대기 신청'}</button>`;
-    else act = `<button class="${clash ? 'swap' : 'pick'}" data-pick="${s.id}">${clash ? '이걸로 바꾸기' : '선택'}</button>`;
+    else act = `<button class="${clash ? 'swap' : 'pick'}" data-pick="${s.id}">${clash ? '변경' : '선택'}</button>`;
     const left = full ? `<b style="color:var(--red)">마감</b>${waitN(s) ? ' · 대기 ' + waitN(s) + '명' : ''}` : '남은 ' + sesLeft(s) + '/' + s.cap;
     return `<div class="ses ${held ? 'on' : ''}"><div><div class="nm2">${held ? '✓ ' : ''}${esc(s.name)}</div><small>${esc(s.room)} · ${s.start}–${s.end} · ${left}${stat}</small></div><div class="act">${act}</div></div>`;
   };
