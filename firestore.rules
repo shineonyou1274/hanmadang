@@ -52,7 +52,10 @@ service cloud.firestore {
         && !exists(P(tk))
         && existsAfter(P(tk))
         && n[t] == o[t] + 1
-        && n.diff(o).affectedKeys().hasOnly(['total', t, 'last']);
+        && n.diff(o).affectedKeys().hasOnly(['total', t, 'last', 'seq'])
+        // 접수번호: 정식 신청은 seq+1 = 그 사람 번호. 테스트(또는 번호 없이 들어온 예전 화면)는 seq 그대로
+        && ((n.get('seq', -1) == o.get('seq', -1) + 1 && getAfter(P(tk)).data.get('no', -2) == n.get('seq', -1))
+            || (n.get('seq', -1) == o.get('seq', -1) && !('no' in getAfter(P(tk)).data)));
     }
     function counterMinusOk(n, o) {
       let tk = tokOf(n.last);
@@ -68,7 +71,7 @@ service cloud.firestore {
       allow create, delete: if isAdmin();
       allow update: if isAdmin()
         || (id == 'main'
-            && request.resource.data.keys().hasOnly(['total', 'nanum', 'baeum', 'outside', 'last'])
+            && request.resource.data.keys().hasOnly(['total', 'nanum', 'baeum', 'outside', 'last', 'seq'])
             && (counterPlusOk(request.resource.data, resource.data)
                 || counterMinusOk(request.resource.data, resource.data)));
     }
@@ -95,7 +98,8 @@ service cloud.firestore {
       let d = request.resource.data;
       return tok.size() >= 20
         && d.keys().hasOnly(['pno', 'name', 'school', 'phone', 'email', 'type', 'status',
-                             'createdAt', 'consent', 'photoAck', 'code', 'phoneKey', 'lookupKey', 'test', 'testKey', 'staff', 'staffKey'])
+                             'createdAt', 'consent', 'photoAck', 'code', 'phoneKey', 'lookupKey', 'test', 'testKey', 'staff', 'staffKey', 'no'])
+        && (!('no' in d) || (d.no is int && d.get('test', false) != true))
         && d.status == 'active'
         && d.consent == true
         && d.createdAt == request.time
@@ -408,6 +412,12 @@ service cloud.firestore {
             && getAfter(P(tok)).data.status == 'active'
             && request.time < S().cancelDeadline);
       allow delete: if isAdmin();
+    }
+
+    // ---------- 참가자 알림 (공개 읽기, 운영진만 쓰기) ----------
+    match /notices/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // ---------- 출장 공문: 참가자는 need만, 발송 표시는 운영진만 ----------
