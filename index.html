@@ -184,6 +184,20 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 .kids input[type=checkbox]{width:18px;height:18px;accent-color:var(--g)}
 .kids select{font:inherit;border:1.5px solid #d3e2d8;border-radius:10px;padding:6px 10px}
 .need{border:2px solid var(--orange)!important}
+.bp .ft{grid-template-columns:repeat(4,1fr)!important}
+.ntc{background:#FFF4E5;border:1.5px solid #F2B46B;border-radius:14px;padding:12px 14px;margin-bottom:10px;font-size:13.5px;line-height:1.55}
+.ntc.ok{background:#EAF7EF;border-color:#7FCB9E}
+.ntc b{display:block;font-size:14.5px;margin-bottom:2px}
+.ntc .nt{font-size:11.5px;color:#8a7a5e;margin-top:4px;display:flex;justify-content:space-between;align-items:center}
+.ntc button{font-family:inherit;font-weight:800;font-size:12.5px;border:0;background:var(--deep);color:#fff;border-radius:99px;padding:5px 12px;cursor:pointer}
+.plan{list-style:none;padding:0;margin:0}
+.plan li{display:grid;grid-template-columns:86px 1fr;gap:10px;padding:9px 0;border-top:1px dashed #e3ece6;font-size:13.5px}
+.plan li:first-child{border-top:0}
+.plan .pt{font-family:var(--mono);font-weight:700;color:var(--deep);font-size:12.5px;padding-top:1px}
+.plan .pw{font-weight:800}
+.plan small{display:block;color:#6b8577;font-size:12px;font-weight:500}
+.plan .warn{color:#c4621a}
+.outbtn{background:none;border:0;color:#6b8577;font-size:12.5px;text-decoration:underline;cursor:pointer;font-family:inherit;display:block;margin:10px auto 0}
 /* tabs + accordion */
 .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:#fff;border-radius:14px;padding:4px;box-shadow:var(--paper);margin-bottom:12px;position:sticky;top:51px;z-index:5}
 .tabs button{font-family:inherit;font-weight:800;font-size:13.5px;border:0;background:none;color:#5b7566;border-radius:10px;padding:10px 2px;cursor:pointer}
@@ -369,6 +383,11 @@ const LUNCH_IMG = { galbi: 'lunch-galbi.jpg', chipotle: 'lunch-chipotle.jpg' };
 const SLOTKEYS = ['AM', 'PM1', 'PM2'];
 const dday = () => { const k = new Date(Date.now() + 9 * 3600e3); const today = Date.UTC(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate()); const n = Math.round((Date.UTC(2026, 11, 19) - today) / 864e5); return n > 0 ? 'D-' + n : n === 0 ? 'D-DAY' : '행사 종료'; };
 let SESS = null;
+const noTxt = n => n ? 'No.' + String(n).padStart(3, '0') : '';
+function dropPass(d) {
+  if (!confirm('이 기기에서 ' + (d && d.name ? d.name + ' 선생님 ' : '') + '여권을 내려놓을까요?\n\n신청은 그대로 남아요. 다시 열 때는 "내 여권 찾기"에서 이름과 휴대폰 번호를 넣으면 돼요.')) return;
+  localStorage.removeItem('hm_tok'); sessionStorage.removeItem('hm_new'); toast('여권을 내려놓았어요. 다른 선생님이 신청할 수 있어요'); location.hash = '#/'; route();
+}
 const rid = (n = 20) => { const a = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'; const x = new Uint32Array(n); crypto.getRandomValues(x); return [...x].map(v => a[v % a.length]).join(''); };
 const mark = (tx, tok) => { const m = rid(20); tx.set(doc(db, 'marks', m), { tok }); return m; };
 const waitN = s => Math.max(0, (s.wq || 0) - (s.wh || 0));
@@ -495,7 +514,7 @@ async function home() {
       <div class="to">${active ? (me.staff ? CROWN : '') + esc(me.name) + ' 선생님께' : '부울경과 전국의 선생님께'}</div>
       <h1>지딜 한마당에<br>초대합니다</h1>
       <div class="meta">2026. 12. 19. 토 · 09:00–17:00<br>${esc(S?.venueShort || '마산대학교')}</div>
-      ${active ? `<a class="btn" href="#/t/${me.tok}">내 탑승권 보기</a>` : `
+      ${active ? `<a class="btn" href="#/t/${me.tok}">내 탑승권 보기</a><button class="outbtn" id="dropHome">다른 선생님이 이 기기로 신청하려면 · 여권 내려놓기</button>` : `
       <div class="phase">
         <div class="${stepCls('nanum')}">나눔회원<small>${S ? dateLbl(ts(S.nanumStart)) + '~' : ''}</small></div>
         <div class="${stepCls('baeum')}">배움회원<small>${S ? dateLbl(ts(S.baeumStart)) + '~' : ''}</small></div>
@@ -543,6 +562,7 @@ async function home() {
   setupVideos();
   renderTimetable();
   homeTabs();
+  const dh = $('#dropHome'); if (dh) dh.onclick = () => dropPass(me);
   if (target && $('#cd')) {
     const cd = $('#cd');
     const tick = () => {
@@ -764,8 +784,10 @@ async function apply() {
         if (cd.total >= (S.capacity || 300)) throw new Error('FULL');
         const lRef = doc(db, 'lookups', lookupKey);
         await tx.get(lRef);
+        const cu = { total: cd.total + 1, [type]: (cd[type] || 0) + 1, last: mark(tx, tok) };
+        if (!data.test && typeof cd.seq === 'number') { data.no = cd.seq + 1; cu.seq = cd.seq + 1; } else delete data.no;
         tx.set(doc(db, 'participants', tok), data);
-        tx.update(cRef, { total: cd.total + 1, [type]: (cd[type] || 0) + 1, last: mark(tx, tok) });
+        tx.update(cRef, cu);
         tx.set(doc(db, 'phones', phoneKey), { tok });
         tx.set(lRef, { tok });
         tx.set(doc(db, 'extras', tok), { lunch: lk.lunch, kids: lk.kids, klunch: lk.klunch, at: serverTimestamp() });
@@ -827,11 +849,12 @@ async function ticket(tok) {
   view.innerHTML = `
   <div class="wrap">
     ${isNew ? `<h2>탑승권이 발권됐어요</h2><div class="sub">12월 19일, 마산대학교에서 만나요 · <b>${dday()}</b></div>` : `<h2>내 탑승권</h2><div class="sub">${cancelled ? '취소된 탑승권이에요' : '12월 19일, 마산대학교에서 만나요 · <b>' + dday() + '</b>'}</div>`}
+    <div id="noticeBox"></div>
     <div class="bp" id="bp">
       <div class="hd"><span>BOARDING PASS</span><span>G-DEAL AIR</span></div>
       <div class="nm">${d.staff ? CROWN : ''}${esc(d.name)} 선생님 <span class="pill ${TYPEPILL[d.type]}" style="font-family:var(--sans);font-size:11px">${TYPE[d.type]}</span>${d.test ? ' <span class="pill" style="background:#7A4FD0;font-family:var(--sans);font-size:11px">테스트</span>' : ''}${d.staff ? ' <span class="tfpill">운영진 TF</span>' : ''}</div>
       <div class="route"><div><div class="code">KOR</div><div class="sm">부울경·전국 어디서나</div></div><div style="color:var(--g);font-size:22px">✈</div><div><div class="code">MSU</div><div class="sm">마산대학교</div></div></div>
-      <div class="ft"><div>DATE<b>12.19 SAT</b></div><div>BOARDING<b>09:00</b></div><div>PASSPORT<b>${esc(d.pno)}</b></div></div>
+      <div class="ft"><div>DATE<b>12.19 SAT</b></div><div>BOARDING<b>09:00</b></div><div>PASSPORT<b>${esc(d.pno)}</b></div><div>접수번호<b>${d.no ? noTxt(d.no) : '-'}</b></div></div>
       ${cancelled ? '<div class="void">취소됨</div>' : ''}
     </div>
     ${cancelled ? `<a class="btn" href="#/apply">다시 신청하기</a>` : `
@@ -839,13 +862,15 @@ async function ticket(tok) {
       <div class="row3"><button class="btn2" id="cp">링크 복사</button><button class="btn2" id="sh">나에게 보내기</button><button class="btn2" id="img">이미지 저장</button></div></div>
     <button class="btn2" id="inv">동료 선생님 초대하기</button>
     <div class="acct">내 신청 관리 · 제목을 누르면 열려요</div>
+    <div class="card" id="planCard"><h3>내 하루 일정</h3><p>불러오는 중…</p></div>
     ${d.staff ? '<div class="tfbox" id="tfBox"><h3>' + CROWN + 'TF 운영 현황</h3><div class="ro">보기 전용 · 실시간 · 수정은 총괄 운영진만</div><div id="tfStat" class="note">불러오는 중…</div></div>' : ''}
     <div class="card" id="seatCard"><h3>세션 신청</h3><p>불러오는 중…</p></div>
     <div class="card" id="extraCard"><h3>점심 도시락 · 자녀 동반</h3><p>불러오는 중…</p></div>
     <div class="card" id="gmCard"><h3>출장 공문</h3><p>불러오는 중…</p></div>
     <div id="hackCard"></div>
     ${promoHTML()}
-    <div class="card" id="infoCard"><h3>신청 정보 · 취소</h3><div class="kv"><b>소속</b><span>${esc(d.school)}</span><b>휴대폰</b><span>${esc(d.phone.replace(/(\d{3})\d+(\d{4})/, '$1-****-$2'))}</span><b>신청</b><span>${esc(kst(ts(d.createdAt), { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</span></div>
+    <div class="card" id="infoCard"><h3>신청 정보 · 취소</h3><div class="kv">${d.no ? '<b>접수번호</b><span>' + noTxt(d.no) + ' · 행사 날 행운권 추첨 번호로 써요</span>' : ''}<b>소속</b><span>${esc(d.school)}</span><b>휴대폰</b><span>${esc(d.phone.replace(/(\d{3})\d+(\d{4})/, '$1-****-$2'))}</span><b>신청</b><span>${esc(kst(ts(d.createdAt), { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}</span></div>
+    <button class="outbtn" id="dropT">이 기기에서 여권 내려놓기 (다른 선생님 신청용)</button>
     ${canCancel ? `<div style="text-align:center;margin-top:10px"><button class="btn3" id="cx">참가 취소 (${md(ts(S.cancelDeadline))}까지 가능)</button></div>` : (S ? `<p style="text-align:center;font-size:12.5px;color:#6b8577;margin-top:8px">취소 마감(${md(ts(S.cancelDeadline))})이 지났어요. 취소는 운영진에게 문의해 주세요.</p>` : '')}</div>`}
   </div>`;
   if (cancelled) return;
@@ -867,6 +892,10 @@ async function ticket(tok) {
   acc($('#gmCard'), SUM.gm);
   acc($('#hackCard'), SUM.hack);
   acc(document.querySelector('#view .promo'), () => '영상 3편');
+  $('#dropT').onclick = () => dropPass(d);
+  acc($('#planCard'), () => '', true);
+  planCard(tok, d); noticeBox(tok, d);
+  { let pt = null; const re = () => { clearTimeout(pt); pt = setTimeout(() => planCard(tok, d), 400); }; ['#seatCard', '#extraCard', '#hackCard', '#gmCard'].forEach(q => { const el = $(q); if (el) new MutationObserver(re).observe(el, { childList: true }); }); }
   acc($('#infoCard'), () => S && canCancel ? '취소는 ' + md(ts(S.cancelDeadline)) + '까지' : '');
   document.querySelectorAll('#view .promo video').forEach(v => v.pause());
 }
@@ -1062,6 +1091,53 @@ async function gmCard(tok, d) {
     try { await setDoc(doc(db, 'gm', tok), { need: !!$('#gmOn').checked, at: serverTimestamp() }, { merge: true }); toast('저장했어요'); gmCard(tok, d); }
     catch (e) { console.error(e); toast('저장이 안 됐어요. 다시 눌러 주세요'); b.disabled = false; }
   };
+}
+
+/* ---------- 내 하루 일정 ---------- */
+async function planCard(tok, d) {
+  const box = $('#planCard'); if (!box) return;
+  const [ss, mine, hk, ex, gm] = await Promise.all([loadSessions(true), mySlots(tok), getDoc(doc(db, 'hackers', tok)).catch(() => null), getDoc(doc(db, 'extras', tok)).catch(() => null), getDoc(doc(db, 'gm', tok)).catch(() => null)]);
+  const hold = await myHold(tok, mine);
+  const hackOn = hk && hk.exists() && hk.data().status === 'active';
+  const e = ex && ex.exists() ? ex.data() : {}, g = gm && gm.exists() ? gm.data() : {};
+  const S2 = id => ss.find(x => x.id === id);
+  const room = s => esc(s.room.replace('창의관 ', ''));
+  const slotLine = k => { const sid = mine[k]; if (!sid) return null; const s = S2(sid); if (!s) return null; const h = hold[sid] || {}; const held = h.seat || h.n < (s.wh || 0); return { s, held, wait: held ? 0 : Math.max(1, h.n - (s.wh || 0) + 1) }; };
+  const li = (t, w, sub, cls = '') => `<li><div class="pt">${t}</div><div><div class="pw ${cls}">${w}</div>${sub ? '<small>' + sub + '</small>' : ''}</div></li>`;
+  const sesLi = (x, t) => x.held ? li(t, esc(x.s.name), room(x.s) + ' · ' + x.s.start + '–' + x.s.end) : li(t, esc(x.s.name) + ' <span class="warn">대기 ' + x.wait + '번</span>', '확정되면 여기 바로 표시돼요 · 그동안은 부스 자유 관람', '');
+  const L = [li('09:00', '오프닝 · 네트워킹', '창의관 도착 후 이 탑승권(여권)을 보여 주세요')];
+  const am = slotLine('AM');
+  if (hackOn) L.push(li('10:00–14:50', '해커톤 챌린지', '305호 (멀티미디어실) · 점심 포함'));
+  else L.push(am ? sesLi(am, '10:00–11:30') : li('10:00–11:30', '부스 자유 관람', '세션을 안 골랐어요 · 수업사례발표(송원홀)도 자유 입장'));
+  const lunch = !e.lunch ? '<span class="warn">도시락을 아직 안 골랐어요</span>' : e.lunch === 'none' ? '도시락 안 받아요' : LUNCH[e.lunch];
+  L.push(li('11:30–13:00', '점심 · ' + lunch, e.klunch ? '아이 도시락 ' + e.klunch + '개 함께' : ''));
+  const p1 = slotLine('PM1'), p2 = slotLine('PM2');
+  if (p1 && p2 && p1.s.id === p2.s.id) L.push(sesLi(p1, '13:00–16:20'));
+  else {
+    if (!hackOn) L.push(p1 ? sesLi(p1, '13:00–14:50') : li('13:00–14:50', '부스 자유 관람', '세션을 안 골랐어요'));
+    L.push(p2 ? sesLi(p2, '15:00–16:20') : li('15:00–16:20', '부스 자유 관람', '세션을 안 골랐어요'));
+  }
+  if (e.kids) L.push(li('하루 종일', '아이돌봄 · 자녀 ' + e.kids + '명', '408호 (초등) · 자세한 안내는 추후 업데이트'));
+  L.push(li('16:30–17:00', '총회 · 폐막식', d.no ? '행운권 추첨 · 내 번호 ' + noTxt(d.no) : '행운권 추첨'));
+  const gmTxt = g.need ? (g.sent ? '출장 공문 발송 완료' : '출장 공문 발송 준비 중') : '';
+  box.innerHTML = `<h3>내 하루 일정</h3><ul class="plan">${L.join('')}</ul>
+    <p style="font-size:12px;color:#6b8577;margin-top:8px">${S ? '세션·도시락 변경과 취소는 ' + md(ts(S.cancelDeadline)) + '까지' : ''}${gmTxt ? ' · ' + gmTxt : ''}</p>`;
+}
+
+/* ---------- 알림 ---------- */
+const seenGet = () => { try { return new Set(JSON.parse(localStorage.getItem('hm_seen') || '[]')); } catch (e) { return new Set(); } };
+const seenAdd = id => { const s = seenGet(); s.add(id); localStorage.setItem('hm_seen', JSON.stringify([...s].slice(-200))); };
+async function noticeBox(tok, d) {
+  const box = $('#noticeBox'); if (!box) return;
+  const [ss, mine, nq] = await Promise.all([loadSessions(true), mySlots(tok), getDocs(collection(db, 'notices')).catch(() => null)]);
+  const hold = await myHold(tok, mine);
+  const mySids = new Set(Object.values(mine));
+  const seen = seenGet(), items = [];
+  for (const sid of mySids) { const s = ss.find(x => x.id === sid), h = hold[sid]; if (s && h && !h.seat && h.n < (s.wh || 0)) { const id = 'promo_' + sid + '_' + h.n; if (!seen.has(id)) items.push({ id, ok: true, t: '대기하던 세션이 확정됐어요', b: esc(s.name) + ' · ' + esc(s.room.replace('창의관 ', '')) + ' · ' + s.start + '–' + s.end }); } }
+  const ns = nq ? nq.docs.map(x => ({ id: x.id, ...x.data() })).filter(n => !n.sid || mySids.has(n.sid)).sort((a, b) => (ts(b.at) || 0) - (ts(a.at) || 0)) : [];
+  ns.forEach(n => { if (!seen.has('n_' + n.id)) items.push({ id: 'n_' + n.id, t: (n.sid ? '[' + esc((ss.find(x => x.id === n.sid) || {}).name || '세션') + '] ' : '') + esc(n.title || '알림'), b: esc(n.body || '').replace(/\n/g, '<br>'), at: n.at }); });
+  box.innerHTML = items.map(it => `<div class="ntc ${it.ok ? 'ok' : ''}"><b>${it.t}</b>${it.b}<div class="nt"><span>${it.at ? md(ts(it.at)) : ''}</span><button data-seen="${it.id}">확인했어요</button></div></div>`).join('');
+  box.querySelectorAll('[data-seen]').forEach(b => b.onclick = () => { seenAdd(b.dataset.seen); b.closest('.ntc').remove(); });
 }
 
 /* ---------- hackathon ---------- */
@@ -1274,8 +1350,8 @@ function drawPass(d) {
   x.fillStyle = '#45AF76'; x.font = F(700, 64); x.fillText('✈', W / 2, 370);
   x.fillStyle = '#5b7566'; x.font = F(500, 24); x.textAlign = 'left'; x.fillText('부울경·전국 어디서나', 82, 418); x.textAlign = 'right'; x.fillText('마산대학교', W - 82, 418);
   x.setLineDash([14, 12]); x.strokeStyle = '#cfe0d5'; x.lineWidth = 4; x.beginPath(); x.moveTo(80, 460); x.lineTo(W - 80, 460); x.stroke(); x.setLineDash([]);
-  x.textAlign = 'left'; const cols = [['DATE', '12.19 SAT'], ['BOARDING', '09:00'], ['PASSPORT', d.pno]];
-  cols.forEach(([k, v], i) => { const X = 80 + i * 320; x.fillStyle = '#5b7566'; x.font = F(600, 22); x.fillText(k, X, 510); x.fillStyle = '#14402A'; x.font = F(800, 38, 'ui-monospace, Consolas, monospace'); x.fillText(v, X, 556); });
+  x.textAlign = 'left'; const cols = [['DATE', '12.19 SAT'], ['BOARDING', '09:00'], ['PASSPORT', d.pno], ['NO.', d.no ? String(d.no).padStart(3, '0') : '-']];
+  cols.forEach(([k, v], i) => { const X = 80 + i * 240; x.fillStyle = '#5b7566'; x.font = F(600, 22); x.fillText(k, X, 510); x.fillStyle = '#14402A'; x.font = F(800, 34, 'ui-monospace, Consolas, monospace'); x.fillText(v, X, 556); });
   c.toBlob(b => {
     const url = URL.createObjectURL(b);
     if (/iPhone|iPad|Android/i.test(ua)) { modal(`<h2>탑승권 이미지</h2><div class="sub">이미지를 길게 눌러 사진에 저장하세요</div><img src="${url}" style="width:100%;border-radius:12px"><div class="gap"></div><button class="btn2" onclick="document.getElementById('modal').classList.remove('on')">닫기</button>`); }
