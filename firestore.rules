@@ -439,6 +439,20 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ---------- 친구 초대: 신청할 때 초대한 사람의 접수번호만 (1회), 목록은 운영진만 ----------
+    match /refs/{tok} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        || (request.resource.data.keys().hasOnly(['by', 'at'])
+            && request.resource.data.by is int
+            && request.resource.data.by > 0 && request.resource.data.by < 10000
+            && request.resource.data.at == request.time
+            && getAfter(P(tok)).data.status == 'active'
+            && getAfter(P(tok)).data.get('no', -1) != request.resource.data.by);
+      allow update, delete: if isAdmin();
+    }
+
     // ---------- 이름+전화로 내 여권 찾기 ----------
     match /lookups/{key} {
       allow get: if true;
