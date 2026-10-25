@@ -152,6 +152,16 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 .ttp .tp1 .tm{font-family:var(--mono);font-weight:700;color:var(--deep);font-size:13px}
 .ttp .tp1 .nm{font-weight:800;font-size:17px;margin:2px 0 4px}
 .ttp .tp1 p{font-size:13px;color:#4a6355}
+.ttp .tc .sub{font-size:13px;font-weight:700;color:var(--deep);margin-top:3px;line-height:1.4}
+.ttp details.sd{margin-top:6px;font-size:12.5px;color:#4a6355}
+.ttp details.sd summary{cursor:pointer;font-weight:700;color:var(--deep);list-style:none}
+.ttp details.sd summary::-webkit-details-marker{display:none}
+.ttp details.sd summary::before{content:"\25B8 ";}
+.ttp details.sd[open] summary::before{content:"\25BE ";}
+.ttp details.sd p{margin:5px 0 0;line-height:1.55}
+.ttp details.sd .tg{display:inline-block;background:#E8F3EC;border-radius:6px;padding:1px 7px;margin:5px 4px 0 0;font-size:12px;font-weight:700;color:var(--deep)}
+.ttp details.sd .tg.w{background:#FFF1D6;color:#8a5a00}
+.ttp details.sd ul{margin:5px 0 0;padding-left:16px;line-height:1.55}
 .tt2 .blk{border-left:4px solid var(--g);background:#fff;border-radius:12px;padding:10px 12px;margin-bottom:8px}
 .tt2 .blk.all{border-left-color:var(--gold);background:#FFF7E1}
 .tt2 .tm{font-family:var(--mono);font-weight:700;color:var(--deep);font-size:13px}
@@ -619,6 +629,21 @@ function promoHTML() {
       </div>
     </div>`;
 }
+const SES_INFO = {
+  picl: { t: '바이브코딩으로 AI 피지컬컴퓨팅 뚝딱!', d: '교실의 데이터, 어떻게 시각화하시나요? 어려운 프로그래밍 대신 바이브 코딩으로, 피지컬 교구(마이크로비트 등)의 수치를 실시간 웹앱 대시보드로 만드는 방법을 실습해요.', c: '강의 1 · 실습 1', f: '실습' },
+  and: { t: '나만의 지식 베이스, LLM 위키 만들기', d: 'AI 에이전트 시대에 내 지식을 구조적으로 관리하고 AI와 잘 협업하도록 지식 베이스를 구성하는 개념·도구·사례를 나눠요.', c: '강의 2 · 실습 1', f: '강연 + 실습', w: '노트북 필요' },
+  dream: { t: '모두를 위한 교육, 배움을 잇는 레고&AI', d: '새로 나온 레고 컴퓨터 사이언스&AI 교구로 직접 만들고, AI 인식으로 움직여 보는 체험이에요. 코딩이나 AI 경험이 없어도 누구나 참여할 수 있어요.', c: '강의 1 · 체험 1', f: '체험', w: '따로 살 준비물 없음' },
+  digi: { t: '수업 원리로 설계하고 AI로 구현하는 수업', d: '학습과학과 개념기반탐구학습의 원리를 살펴보고, 이를 적용한 수업이나 활동을 간단히 설계한 뒤 바이브코딩으로 웹앱을 만들어 봐요.', c: '강의 1 · 실습 3', f: '실습', w: '노트북 지참' },
+  geg: { t: 'Gemini & Gemini Notebook으로 끝내는 교실 BUG 해결 워크숍', d: '구글 생태계와 구글 AI의 장점을 살려 교실 속 문제를 해결하는 아이디어와 활용 사례를 나눠요.', c: '강의 1 · 실습 3', f: '실습' },
+  apple: { t: 'APLS와 함께 만능 디지털 노트 아이패드 체험하기', d: '아이패드를 수업과 기록에 똑똑하게 쓰는 방법을 안내해요.', f: '강연 + 실습' },
+  lg: { t: '초개인화 맞춤 교육을 실현하는 교육 데이터 연결 AI 교육 플랫폼 실습', d: '수업 설계부터 학습·평가·기록까지, 교사의 업무는 줄이고 학생의 성장은 잇는 AI 교육 플랫폼 슈퍼스쿨을 직접 써 봐요.', f: '강연 + 실습' }
+};
+const FX_INFO = {
+  '수업사례발표': { h: '시간별 발표', l: [['10:40–11:30', '이충효 선생님', 'AI가 못하는 글쓰기 (아이패드 기반의 BRIC 수업 사례)'], ['13:00–13:50', '김동환 선생님', 'AI가 돕고 아이가 하는 데이터 기반 수업 실천 사례 · 초등 교과 사례로 보는 데이터 기반 피드백'], ['14:00–14:50', '정주연 선생님', '마음사계 놀이터에서 사회정서역량 키우기 · 초등 통합학급을 위해 직접 만든 사계절 신체 놀이 프로그램 적용 사례']], n: '10:00, 15:00, 15:40 발표는 곧 안내해요.' },
+  '부스': { h: '참여 부스', l: [['애플', '', '아이패드 수업·기록 활용'], ['LG 슈퍼스쿨', '', 'AI 교육 플랫폼'], ['MSECM', '', '초등 독서 기반 수업 플랫폼 「부기」 · 현직 초등 교사 3명과 공동 개발'], ['에듀니티', '', 'AI Edumate · 수업 맞춤형 AI 튜터, PBL 수업지도안 도우미'], ['브릭셀AI', '', ''], ['어도비', '', '']] }
+};
+const sesInfoHTML = s => { const i = SES_INFO[s.id]; if (!i) return ''; return `<div class="sub">${esc(i.t)}</div><details class="sd"><summary>자세히</summary><p>${esc(i.d)}</p>${i.f ? '<span class="tg">' + esc(i.f) + '</span>' : ''}${i.c ? '<span class="tg">' + esc(i.c) + '</span>' : ''}${i.w ? '<span class="tg w">' + esc(i.w) + '</span>' : ''}</details>`; };
+const fxInfoHTML = f => { const i = FX_INFO[f.name]; if (!i) return ''; return `<details class="sd"><summary>${i.h}</summary><ul>${i.l.map(x => '<li><b>' + esc(x[0]) + '</b>' + (x[1] ? ' ' + esc(x[1]) : '') + (x[2] ? ' · ' + esc(x[2]) : '') + '</li>').join('')}</ul>${i.n ? '<p>' + esc(i.n) + '</p>' : ''}</details>`; };
 async function renderTimetable() {
   const box = $('#ttCard'); if (!box) return;
   const ss = await loadSessions(true);
@@ -642,8 +667,8 @@ async function renderTimetable() {
   if (!window.__ttTab && today) { const hm = now.getUTCHours() * 100 + now.getUTCMinutes(); cur = [...TABS].reverse().find(t => hm >= +t.k)?.k || '0900'; }
   const inWin = (a, b, t) => T(a) < t.to && T(b) > t.from;
   const ses = (s, t) => { const [a, b] = rng(s); const full = s.count >= s.cap || waitN(s) > 0; const own = (T(a) !== t.from || T(b) !== t.to) ? a + '–' + b : '';
-    return `<div class="tc"><div class="nm">${esc(s.name)}</div><span class="rm">${esc(room(s.room))}</span><div class="mt"><span>${own}</span><b class="${full ? 'full' : ''}">${full ? '마감' + (waitN(s) ? ' · 대기 ' + waitN(s) : '') : '남은 자리 ' + sesLeft(s) + ' / ' + s.cap}</b></div></div>`; };
-  const fx = (f, t) => `<div class="tc fx"><div class="nm">${f.name}</div><span class="rm">${f.room}</span><div class="mt"><span>${f.note}${f.show ? ' · ' + f.start + '–' + f.end : ''}</span><b style="color:#8a9a90;font-family:var(--sans)">신청 없음</b></div></div>`;
+    return `<div class="tc"><div class="nm">${esc(s.name)}</div>${sesInfoHTML(s)}<span class="rm">${esc(room(s.room))}</span><div class="mt"><span>${own}</span><b class="${full ? 'full' : ''}">${full ? '마감' + (waitN(s) ? ' · 대기 ' + waitN(s) : '') : '남은 자리 ' + sesLeft(s) + ' / ' + s.cap}</b></div></div>`; };
+  const fx = (f, t) => `<div class="tc fx"><div class="nm">${f.name}</div><span class="rm">${f.room}</span><div class="mt"><span>${f.note}${f.show ? ' · ' + f.start + '–' + f.end : ''}</span><b style="color:#8a9a90;font-family:var(--sans)">신청 없음</b></div>${fxInfoHTML(f)}</div>`;
   const panel = t => {
     if (t.one) return `<div class="tp1"><div class="tm">${t.one[1]}</div><div class="nm">${t.one[0]}</div><p>${t.one[2]}</p></div>`;
     const list = ss.filter(s => { const [a, b] = rng(s); return inWin(a, b, t); });
@@ -815,7 +840,7 @@ async function formSessions(f) {
   if (!isOpen) { box.innerHTML = '<label>세션 신청 (선택)</label><div class="hint">세션은 ' + md(ts(S.nanumStart)) + ' 10:00부터 탑승권 화면에서 선착순으로 고를 수 있어요.</div>'; return; }
   const am = ss.filter(s => s.slots.includes('AM')), pm = ss.filter(s => s.slots.includes('PM1')), late = ss.filter(s => !s.slots.includes('AM') && !s.slots.includes('PM1'));
   const st = s => { const full = s.count >= s.cap || waitN(s) > 0; return full ? '<small class="full">마감 · 대기 신청</small>' : '<small>남은 ' + sesLeft(s) + '/' + s.cap + '</small>'; };
-  const opt = (name, s, type) => `<label class="sopt"><input type="${type}" name="${name}" value="${s.id}"><span><b>${esc(s.name)}</b><br><span style="font-size:12px;color:#6b8577">${esc(s.room.replace('창의관 ', ''))} · ${s.start}–${s.end}</span></span>${st(s)}</label>`;
+  const opt = (name, s, type) => `<label class="sopt"><input type="${type}" name="${name}" value="${s.id}"><span><b>${esc(s.name)}</b>${SES_INFO[s.id] ? '<br><span style="font-size:12.5px;color:#2d4a3a">' + esc(SES_INFO[s.id].t) + (SES_INFO[s.id].w ? ' · ' + esc(SES_INFO[s.id].w) : '') + '</span>' : ''}<br><span style="font-size:12px;color:#6b8577">${esc(s.room.replace('창의관 ', ''))} · ${s.start}–${s.end}</span></span>${st(s)}</label>`;
   const none = name => `<label class="sopt"><input type="radio" name="${name}" value="" checked><span>안 들을래요 (부스 둘러보기)</span></label>`;
   box.innerHTML = `<label>세션 신청 (선택)</label>
     <div class="hint" style="margin-bottom:8px">세션은 안 골라도 돼요. 애플·LG 등 부스가 여러 곳 있어서 자유롭게 둘러보면 돼요. 선착순이고, 마감된 세션은 대기로 신청돼요.</div>
