@@ -175,6 +175,9 @@ details.sd ul{margin:5px 0 0;padding-left:16px;line-height:1.55}
 .ses.on{border-color:var(--blue);background:#EEF3FD}
 .ses .nm2{font-weight:800;font-size:14px}
 .ses small{display:block;font-size:11.5px;color:#6b8577}
+.refbox{background:#FFF7E1;border:1.5px solid #F2D27A;border-radius:12px;padding:10px 12px;margin:8px 0 4px;font-size:13px;color:#4a3d10}
+.refbox p{margin:4px 0 0;line-height:1.5}
+.refbox .refno{font-size:12.5px;color:#6b5a1a}
 .ses details.sd{font-size:12px}
 .ses details.sd+small{margin-top:4px}
 .ses .act{white-space:nowrap}
@@ -396,6 +399,8 @@ const SLOTKEYS = ['AM', 'PM1', 'PM2'];
 const dday = () => { const k = new Date(Date.now() + 9 * 3600e3); const today = Date.UTC(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate()); const n = Math.round((Date.UTC(2026, 11, 19) - today) / 864e5); return n > 0 ? 'D-' + n : n === 0 ? 'D-DAY' : '행사 종료'; };
 let SESS = null;
 const noTxt = n => n ? 'No.' + String(n).padStart(3, '0') : '';
+try { const rq = new URLSearchParams(location.search).get('ref'); if (rq && /^\d{1,4}$/.test(rq) && +rq > 0) localStorage.setItem('hm_ref', String(+rq)); } catch (e) { }
+const REF_NOTE = '친구 초대 이벤트 · 내 초대 링크로 선생님이 신청하면, 행사 날 상품으로 바꿔 드리거나 행운권을 한 장 더 드려요. (당일 사정에 따라 달라질 수 있어요)';
 function dropPass(d) {
   if (!confirm('이 기기에서 ' + (d && d.name ? d.name + ' 선생님 ' : '') + '여권을 내려놓을까요?\n\n신청은 그대로 남아요. 다시 열 때는 "내 여권 찾기"에서 이름과 휴대폰 번호를 넣으면 돼요.')) return;
   localStorage.removeItem('hm_tok'); sessionStorage.removeItem('hm_new'); toast('여권을 내려놓았어요. 다른 선생님이 신청할 수 있어요'); location.hash = '#/'; route();
@@ -750,6 +755,7 @@ async function apply() {
       <div class="field"><label>점심 도시락</label>${lunchFields()}</div>
       <div class="field"><label>자녀 동반</label>${kidsFields()}</div>
       <div class="field"><label>출장 공문</label>${gmField(false)}</div>
+      <div class="field"><label>초대한 선생님 (선택)</label><input type="text" id="refNo" inputmode="numeric" maxlength="4" placeholder="초대한 선생님의 접수번호 (예: 12)" value="${esc(localStorage.getItem('hm_ref') || '')}"><div class="hint">초대 링크로 들어왔다면 자동으로 채워져요. 초대한 선생님께 행사 날 작은 선물이 가요.</div></div>
       <div class="consent">
         <b>개인정보 수집·이용 동의 (필수)</b><br>
         · 목적: 한마당 참가 신청 확인, 행사 안내, 당일 등록과 디지털 여권 운영<br>
@@ -785,6 +791,7 @@ async function apply() {
     if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail('이메일 주소를 확인해 주세요.');
     const lk = readLunchKids(f);
     const gmNeed = !!f.querySelector('#gmOn')?.checked;
+    const refNo = parseInt(digits(f.querySelector('#refNo')?.value || ''), 10) || 0;
     if (!lk.lunch) return fail('점심 도시락을 골라 주세요. 필요 없으면 "도시락 필요 없어요"를 눌러 주세요.');
     if (!$('#consent').checked) return fail('개인정보 수집·이용에 동의해야 신청할 수 있어요.');
     if (!$('#photo').checked) return fail('사진 촬영 안내를 확인해 주세요.');
@@ -819,6 +826,7 @@ async function apply() {
         tx.set(lRef, { tok });
         tx.set(doc(db, 'extras', tok), { lunch: lk.lunch, kids: lk.kids, klunch: lk.klunch, at: serverTimestamp() });
         if (gmNeed) tx.set(doc(db, 'gm', tok), { need: true, at: serverTimestamp() });
+        if (refNo > 0 && refNo < 10000 && !data.test && typeof data.no === 'number' && refNo !== data.no) tx.set(doc(db, 'refs', tok), { by: refNo, at: serverTimestamp() });
       });
       const picks = readSesPicks(f);
       if (picks.length) { $('#go').textContent = '세션 자리 잡는 중…'; for (const sid of picks) { try { const s = await settle(sid); if (s.count < s.cap && (s.wh || 0) >= (s.wq || 0)) { try { await reserveSeat(tok, sid); } catch (e3) { if (e3.message === 'FULL') await joinWait(tok, sid); else throw e3; } } else await joinWait(tok, sid); } catch (e3) { console.error(e3); } } }
@@ -888,6 +896,7 @@ async function ticket(tok) {
     <div class="save"><b>이 링크를 꼭 저장해 주세요</b>당일 여권과 도장이 이 링크로 열려요. 카톡 "나와의 채팅"에 보내 두면 안전해요.
       <div class="row3"><button class="btn2" id="cp">링크 복사</button><button class="btn2" id="sh">나에게 보내기</button><button class="btn2" id="img">이미지 저장</button></div></div>
     <button class="btn2" id="inv">동료 선생님 초대하기</button>
+    ${d.no ? '<div class="refbox"><b>친구 초대 이벤트</b><p>' + esc(REF_NOTE.replace(/^친구 초대 이벤트 · /, '')) + '</p><p class="refno">내 접수번호 <b>' + d.no + '</b> · 친구가 신청서 "초대한 선생님" 칸에 이 번호를 넣어도 돼요</p></div>' : ''}
     <div class="acct">내 신청 관리 · 제목을 누르면 열려요</div>
     <div class="card" id="planCard"><h3>내 하루 일정</h3><p>불러오는 중…</p></div>
     ${d.staff ? '<div class="tfbox" id="tfBox"><h3>' + CROWN + 'TF 운영 현황</h3><div class="ro">보기 전용 · 실시간 · 수정은 총괄 운영진만</div><div id="tfStat" class="note">불러오는 중…</div></div>' : ''}
@@ -904,7 +913,7 @@ async function ticket(tok) {
   if (isNew) celebrate({ name: d.name, label: d.staff ? ' ' + CROWN : '' });
   $('#cp').onclick = () => copyText(link);
   $('#sh').onclick = () => share('지딜 한마당 내 탑승권', `${d.name} 선생님의 지딜 한마당 탑승권 (여권번호 ${d.pno})`, link);
-  $('#inv').onclick = () => share('지딜 한마당 2026 초대장', '12월 19일 토요일 마산대학교, 지딜 한마당에 같이 가요', location.origin + location.pathname + '#/');
+  $('#inv').onclick = () => share('지딜 한마당 2026 초대장', '12월 19일 토요일 마산대학교, 지딜 한마당에 같이 가요', location.origin + location.pathname + (d.no ? '?ref=' + d.no : '') + '#/');
   $('#img').onclick = () => drawPass(d);
   if (canCancel) $('#cx').onclick = () => cancelFlow(tok, d);
   hackCard(tok, d);
