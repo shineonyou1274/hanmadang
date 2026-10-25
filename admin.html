@@ -170,6 +170,10 @@ tr.dup td{background:#FFF7E1}
       <p class="note">참가자가 신청서·탑승권에서 "공문 필요"에 체크한 사람. 보냈으면 발송 칸을 체크하세요. 참가자 탑승권에 "발송 완료"로 바로 표시돼요.</p>
       <div style="overflow:auto;margin-top:8px"><table><thead><tr><th>발송</th><th>소속</th><th>이름</th><th>휴대폰</th><th>이메일</th><th>공문 신청</th><th>발송일</th></tr></thead><tbody id="gmRows"></tbody></table></div>
     </div>
+    <div class="panel"><h3>친구 초대 <span id="refKpi" style="font-size:13px;font-weight:600;color:#5b7566;margin-left:6px"></span><span class="tools"><button class="b2" id="refcsv">친구 초대 엑셀(CSV)</button></span></h3>
+      <p class="note">신청서 "초대한 선생님" 칸(초대 링크로 들어오면 자동 입력)에 적힌 접수번호 기준. 신청을 취소한 친구는 빼고 셌어요. 행사 날 상품 교환이나 행운권 추가에 쓰세요.</p>
+      <div style="overflow:auto;margin-top:8px"><table><thead><tr><th>초대한 사람</th><th>소속</th><th>초대 성공</th><th>신청한 친구</th></tr></thead><tbody id="refRows"></tbody></table></div>
+    </div>
   </section>
 
   <section id="tab-ntc" class="hidden">
@@ -263,7 +267,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const TYPE = { nanum: '나눔회원', baeum: '배움회원', outside: '지딜 외' }, PILL = { nanum: 'pg', baeum: 'pb', outside: 'po' };
 const LEVEL = { new: '처음', some: '조금', often: '자주' };
-let HK = [], TM = [], HCn = null, SE = [], SEATS = [], WT = [], EX = {}, GM = {}, NT = [];
+let HK = [], TM = [], HCn = null, SE = [], SEATS = [], WT = [], EX = {}, GM = {}, NT = [], RF = {};
 const LUNCH = { galbi: '왕갈비맛', chipotle: '치폴레', none: '필요 없음' };
 const ts = v => v?.toDate ? v.toDate() : null;
 const kst = (d, o) => d ? d.toLocaleString('ko-KR', Object.assign({ timeZone: 'Asia/Seoul' }, o)) : '';
@@ -309,7 +313,7 @@ onAuthStateChanged(auth, async user => {
 function start() {
   unsub.push(onSnapshot(doc(db, 'settings', 'main'), s => { S = s.exists() ? s.data() : null; $('#initWarn').classList.toggle('hidden', !!S || !OWNER); fillSettings(); renderDash(); }));
   unsub.push(onSnapshot(doc(db, 'counters', 'main'), c => { C = c.exists() ? c.data() : null; renderDash(); }));
-  unsub.push(onSnapshot(query(collection(db, 'participants'), orderBy('createdAt', 'desc')), q => { P = q.docs.map(d => ({ id: d.id, ...d.data() })); renderDash(); renderList(); }));
+  unsub.push(onSnapshot(query(collection(db, 'participants'), orderBy('createdAt', 'desc')), q => { P = q.docs.map(d => ({ id: d.id, ...d.data() })); renderDash(); renderList(); renderRef(); }));
   unsub.push(onSnapshot(query(collection(db, 'hackers'), orderBy('createdAt', 'desc')), q => { HK = q.docs.map(d => ({ id: d.id, ...d.data() })); renderHack(); }));
   unsub.push(onSnapshot(collection(db, 'teams'), q => { TM = q.docs.map(d => ({ id: d.id, ...d.data() })); renderHack(); }));
   unsub.push(onSnapshot(doc(db, 'hcounters', 'main'), s => { HCn = s.exists() ? s.data() : null; renderHack(); }));
@@ -318,6 +322,7 @@ function start() {
   unsub.push(onSnapshot(collection(db, 'waits'), q => { WT = q.docs.map(d => d.data()); renderSes(); renderList(); }));
   unsub.push(onSnapshot(collection(db, 'notices'), q => { NT = q.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (ts(b.at) || 0) - (ts(a.at) || 0)); renderNt(); }));
   unsub.push(onSnapshot(collection(db, 'gm'), q => { GM = {}; q.docs.forEach(d => GM[d.id] = d.data()); renderGm(); renderList(); }));
+  unsub.push(onSnapshot(collection(db, 'refs'), q => { RF = {}; q.docs.forEach(d => RF[d.id] = d.data()); renderRef(); }, e => { if ($('#refRows')) $('#refRows').innerHTML = '<tr><td colspan="4">불러오지 못했어요 (' + esc(e.code || '') + ')</td></tr>'; }));
   unsub.push(onSnapshot(collection(db, 'extras'), q => { EX = {}; q.docs.forEach(d => EX[d.id] = d.data()); renderSes(); renderList(); }));
   if (!OWNER) return;
   unsub.push(onSnapshot(doc(db, 'secrets', 'staff'), s => { const c = s.exists() ? s.data().code : ''; const u = location.origin + '/#/tf/' + c; $('#staffLink').innerHTML = c ? `<span>${esc(u)}</span> <button class="b2" id="cpStaff" style="padding:3px 9px;font-size:12px">복사</button>` : '<span class="note">아직 TF 링크 없음</span>'; const b = $('#cpStaff'); if (b) b.onclick = () => navigator.clipboard.writeText(u).then(() => alert('복사했어요')); }));
@@ -462,6 +467,24 @@ async function releaseAll(id) {
 
 const gmNeeders = () => { const act = actIds(); return Object.entries(GM).filter(([id, g]) => g.need && act.has(id)).map(([id, g]) => ({ id, g, p: P.find(q => q.id === id) || {} })).sort((a, b) => String(a.p.school).localeCompare(String(b.p.school), 'ko')); };
 const gmLabel = id => { const g = GM[id]; return !g || !g.need ? '' : g.sent ? '발송 완료' : '필요'; };
+function refGroups() {
+  const byNo = {}; P.forEach(p => { if (p.no) byNo[p.no] = p; });
+  const g = {};
+  Object.entries(RF).forEach(([tok, r]) => { const f = P.find(x => x.id === tok); if (!f || f.status !== 'active' || f.test) return; (g[r.by] = g[r.by] || []).push(f); });
+  return Object.entries(g).map(([no, fr]) => ({ no: +no, inv: byNo[no], fr })).sort((a, b) => b.fr.length - a.fr.length || a.no - b.no);
+}
+function renderRef() {
+  if (!$('#refRows')) return;
+  const gs = refGroups(), n = gs.reduce((s, x) => s + x.fr.length, 0);
+  $('#refKpi').textContent = `초대한 사람 ${gs.length}명 · 초대로 신청 ${n}명`;
+  $('#refRows').innerHTML = gs.length ? gs.map(x => `<tr><td><b>${x.inv ? esc(x.inv.name) : '?'}</b> <span style="font-size:12px;color:#5b7566">No.${String(x.no).padStart(3, '0')}${x.inv && x.inv.status !== 'active' ? ' · 취소함' : ''}${x.inv ? '' : ' · 없는 번호'}</span></td><td>${x.inv ? esc(x.inv.school || '') : ''}</td><td><b>${x.fr.length}</b>명</td><td style="font-size:12.5px">${x.fr.map(f => esc(f.name) + ' (' + esc(f.school || '') + ')').join(', ')}</td></tr>`).join('') : '<tr><td colspan="4">아직 없음</td></tr>';
+}
+$('#refcsv').onclick = () => {
+  const rows = [['초대한 사람 접수번호', '초대한 사람', '소속', '초대 성공 수', '신청한 친구']];
+  refGroups().forEach(x => rows.push([x.no, x.inv ? x.inv.name : '', x.inv ? x.inv.school || '' : '', x.fr.length, x.fr.map(f => f.name + '(' + (f.school || '') + ')').join(' / ')]));
+  const csv = '\ufeff' + rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = '친구초대.csv'; a.click();
+};
 function renderGm() {
   if (!$('#gmRows')) return;
   const all = gmNeeders(), sent = all.filter(x => x.g.sent).length;
