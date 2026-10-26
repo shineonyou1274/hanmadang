@@ -121,7 +121,7 @@ tr.dup td{background:#FFF7E1}
              id="w4_path46"
              style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
              d="m 0,0 h -259.19 c -7.99,0 -14.47,-6.48 -14.47,-14.47 v -51.14 h 8.51 v 51.14 c 0,3.29 2.67,5.97 5.96,5.97 H 0 c 3.29,0 5.97,-2.68 5.97,-5.97 v -47.75 c 3.88,0.87 6.65,1.61 8.5,2.17 v 45.58 C 14.47,-6.48 7.99,0 0,0 m -96.5,-237.99 h -66.18 v 20.76 h 66.18 z m 102.47,35.23 c 0,-3.29 -2.68,-5.97 -5.97,-5.97 h -259.19 c -3.29,0 -5.96,2.68 -5.96,5.97 v 38.14 c -3.68,1.54 -6.59,2.82 -8.51,3.69 v -41.83 c 0,-7.99 6.48,-14.47 14.47,-14.47 h 88.01 v -20.76 h -32.61 c -2.34,0 -4.25,-1.91 -4.25,-4.25 0,-1.18 0.48,-2.24 1.25,-3.01 0.77,-0.77 1.83,-1.25 3,-1.25 h 148.25 c 2.35,0 4.26,1.91 4.26,4.26 0,1.17 -0.48,2.23 -1.25,3 -0.77,0.77 -1.83,1.25 -3.01,1.25 H -88 v 20.76 H 0 c 7.99,0 14.47,6.48 14.47,14.47 v 53.83 c -4.86,0.52 -8.5,0.76 -8.5,0.76 z" /></g></g></g></g></svg> 운영실</div>
-  <nav><button data-tab="dash" class="on">현황</button><button data-tab="list">명단</button><button data-tab="ses">세션·도시락·공문</button><button data-tab="ntc">알림</button><button data-tab="hack">해커톤</button><button data-tab="set">설정</button></nav>
+  <nav><button data-tab="dash" class="on">현황</button><button data-tab="list">명단</button><button data-tab="ses">세션·도시락·공문</button><button data-tab="ntc">알림</button><button data-tab="stp">스탬프</button><button data-tab="hack">해커톤</button><button data-tab="set">설정</button></nav>
   <div class="me"><span id="meEmail"></span><button id="logout">로그아웃</button></div>
 </header>
 <main>
@@ -188,6 +188,27 @@ tr.dup td{background:#FFF7E1}
     </div>
     <div class="panel"><h3>보낸 알림</h3><div id="nList" class="note">없음</div></div>
     <div class="panel"><h3>자동 알림</h3><p class="note">세션 대기자가 확정되면 그 사람 탑승권에 "대기하던 세션이 확정됐어요"가 자동으로 떠요. 운영진이 따로 보낼 필요 없어요.</p></div>
+  </section>
+
+  <section id="tab-stp" class="hidden">
+    <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+      <div class="kpi"><div class="l">도장 자리</div><div class="v" id="stSpots">-</div></div>
+      <div class="kpi" style="border-left-color:var(--blue)"><div class="l">찍힌 도장</div><div class="v" id="stTotal">-</div></div>
+      <div class="kpi" style="border-left-color:var(--orange)"><div class="l">도장 받은 참가자</div><div class="v" id="stPeople">-</div></div>
+      <div class="kpi" style="border-left-color:var(--purple)"><div class="l">입장 체크 (등록·오프닝)</div><div class="v" id="stIn">-</div></div>
+    </div>
+    <div class="panel"><h3>도장 자리 <span class="tools"><button class="b2" id="stSeed">시간표 기준으로 자리 만들기</button></span></h3>
+      <p class="note">찍는 방식: 각 자리 담당 선생님이 <b>담당자 링크</b>를 폰으로 열고, 참가자 탑승권의 도장 QR을 비추면 찍혀요. 링크는 자리마다 다르고, 담당자에게만 보내 주세요. 링크가 새어 나가면 "새 링크"를 눌러 바꾸면 예전 링크는 바로 막혀요. 꺼 둔 자리는 참가자 여권에도 안 보이고 찍히지도 않아요.</p>
+      <div style="overflow:auto;margin-top:8px"><table><thead><tr><th>켜기</th><th>구분</th><th>이름</th><th>장소</th><th>찍힌 수</th><th>담당자 링크</th></tr></thead><tbody id="stRows"></tbody></table></div>
+      <div class="tools" style="margin-top:10px"><select id="stKind"><option value="booth">부스</option><option value="session">세션</option><option value="program">프로그램</option></select><input id="stName" placeholder="새 자리 이름 (예: 마산대 홍보 부스)" style="width:260px"><input id="stRoom" placeholder="장소 (선택)" style="width:160px"><button class="b2" id="stAdd">자리 추가</button></div>
+    </div>
+    <div class="panel"><h3>운영진이 직접 찍기 <span class="note" style="font-weight:500">(담당자 폰이 안 될 때)</span></h3>
+      <div class="tools"><input id="stNo" inputmode="numeric" placeholder="접수번호 (예: 12)" style="width:150px"><select id="stSpotSel"></select><button class="b" id="stManual">도장 찍기</button><span id="stMsg" class="note"></span></div>
+    </div>
+    <div class="panel"><h3>참가자별 도장 <span class="tools"><button class="b2" id="stCsv">엑셀(CSV)</button></span></h3>
+      <p class="note">보상 규칙은 정해지면 여기서 바로 확인할 수 있게 붙일게요.</p>
+      <div style="overflow:auto;margin-top:8px"><table><thead><tr><th>접수번호</th><th>이름</th><th>소속</th><th>도장 수</th><th>찍은 곳</th></tr></thead><tbody id="stPeopleRows"></tbody></table></div>
+    </div>
   </section>
 
   <section id="tab-hack" class="hidden">
@@ -267,7 +288,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const TYPE = { nanum: '나눔회원', baeum: '배움회원', outside: '지딜 외' }, PILL = { nanum: 'pg', baeum: 'pb', outside: 'po' };
 const LEVEL = { new: '처음', some: '조금', often: '자주' };
-let HK = [], TM = [], HCn = null, SE = [], SEATS = [], WT = [], EX = {}, GM = {}, NT = [], RF = {};
+let SPOT = [], SPK = {}, STAMP = [], QR2T = {}, HK = [], TM = [], HCn = null, SE = [], SEATS = [], WT = [], EX = {}, GM = {}, NT = [], RF = {};
 const LUNCH = { galbi: '왕갈비맛', chipotle: '치폴레', none: '필요 없음' };
 const ts = v => v?.toDate ? v.toDate() : null;
 const kst = (d, o) => d ? d.toLocaleString('ko-KR', Object.assign({ timeZone: 'Asia/Seoul' }, o)) : '';
@@ -292,7 +313,7 @@ $('#loginBtn').onclick = async () => {
 $('#logout').onclick = () => signOut(auth);
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
   document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
-  ['dash', 'list', 'ses', 'ntc', 'hack', 'set'].forEach(t => $('#tab-' + t).classList.toggle('hidden', t !== b.dataset.tab));
+  ['dash', 'list', 'ses', 'ntc', 'stp', 'hack', 'set'].forEach(t => $('#tab-' + t).classList.toggle('hidden', t !== b.dataset.tab));
 });
 
 onAuthStateChanged(auth, async user => {
@@ -320,6 +341,10 @@ function start() {
   unsub.push(onSnapshot(collection(db, 'sessions'), q => { SE = q.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0)); renderSes(); }));
   unsub.push(onSnapshot(collection(db, 'seats'), q => { SEATS = q.docs.map(d => d.data()); renderSes(); renderList(); }));
   unsub.push(onSnapshot(collection(db, 'waits'), q => { WT = q.docs.map(d => d.data()); renderSes(); renderList(); }));
+  unsub.push(onSnapshot(collection(db, 'spots'), q => { SPOT = q.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0)); renderSt(); }));
+  unsub.push(onSnapshot(collection(db, 'spotkeys'), q => { SPK = {}; q.docs.forEach(d => SPK[d.id] = d.data().key); renderSt(); }, () => { }));
+  unsub.push(onSnapshot(collection(db, 'stamps'), q => { STAMP = q.docs.map(d => d.data()); renderSt(); }));
+  unsub.push(onSnapshot(collection(db, 'qr'), q => { QR2T = {}; q.docs.forEach(d => QR2T[d.id] = d.data().tok); renderSt(); }));
   unsub.push(onSnapshot(collection(db, 'notices'), q => { NT = q.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (ts(b.at) || 0) - (ts(a.at) || 0)); renderNt(); }));
   unsub.push(onSnapshot(collection(db, 'gm'), q => { GM = {}; q.docs.forEach(d => GM[d.id] = d.data()); renderGm(); renderList(); }));
   unsub.push(onSnapshot(collection(db, 'refs'), q => { RF = {}; q.docs.forEach(d => RF[d.id] = d.data()); renderRef(); }, e => { if ($('#refRows')) $('#refRows').innerHTML = '<tr><td colspan="4">불러오지 못했어요 (' + esc(e.code || '') + ')</td></tr>'; }));
@@ -531,6 +556,63 @@ async function assignNumbers() {
     return need.length;
   });
 }
+
+/* ---------- 스탬프 ---------- */
+const STK = { session: '세션', booth: '부스', program: '프로그램' };
+const rkey = (n = 14) => { const a = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'; const x = new Uint32Array(n); crypto.getRandomValues(x); return [...x].map(v => a[v % a.length]).join(''); };
+const scanUrl = id => location.origin + '/#/scan/' + id + '/' + (SPK[id] || '');
+function renderSt() {
+  if (!$('#stRows')) return;
+  const cnt = id => STAMP.filter(x => x.b === id).length;
+  $('#stSpots').textContent = SPOT.filter(x => x.on !== false).length; $('#stTotal').textContent = STAMP.length;
+  const byQ = {}; STAMP.forEach(x => { (byQ[x.q] = byQ[x.q] || []).push(x.b); });
+  $('#stPeople').textContent = Object.keys(byQ).length; $('#stIn').textContent = cnt('prog_open');
+  $('#stRows').innerHTML = SPOT.map(x => `<tr style="${x.on === false ? 'opacity:.45' : ''}"><td><input type="checkbox" data-ston="${x.id}" ${x.on !== false ? 'checked' : ''} ${OWNER ? '' : 'disabled'}></td><td>${STK[x.kind] || x.kind}</td><td><b>${esc(x.name)}</b></td><td style="font-size:12.5px">${esc(x.room || '')}</td><td>${cnt(x.id)}</td><td style="white-space:nowrap">${SPK[x.id] ? `<button class="b2" data-stcp="${x.id}" style="padding:3px 8px;font-size:12px">링크 복사</button> <button class="b2" data-stqr="${x.id}" style="padding:3px 8px;font-size:12px">QR</button>${OWNER ? ` <button class="bx" data-strk="${x.id}" style="padding:3px 8px;font-size:12px">새 링크</button>` : ''}` : '<span class="note">총괄만 보여요</span>'}</td></tr>`).join('') || '<tr><td colspan="6" class="note">아직 자리가 없어요. 위의 "시간표 기준으로 자리 만들기"를 눌러 주세요.</td></tr>';
+  document.querySelectorAll('[data-ston]').forEach(c => c.onchange = () => setDoc(doc(db, 'spots', c.dataset.ston), { on: c.checked }, { merge: true }));
+  document.querySelectorAll('[data-stcp]').forEach(b => b.onclick = () => { const u = scanUrl(b.dataset.stcp); navigator.clipboard.writeText(u).then(() => alert('복사했어요. 이 자리 담당 선생님에게만 보내 주세요.\n' + u)).catch(() => prompt('복사하세요', u)); });
+  document.querySelectorAll('[data-stqr]').forEach(b => b.onclick = async () => { const x = SPOT.find(y => y.id === b.dataset.stqr); const u = scanUrl(x.id); const w = window.open('', '_blank'); if (!window.qrcode) await new Promise((ok, no) => { const e = document.createElement('script'); e.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js'; e.onload = ok; e.onerror = no; document.head.appendChild(e); }); const qr = window.qrcode(0, 'M'); qr.addData(u); qr.make(); w.document.write('<title>' + esc(x.name) + ' 담당자 링크</title><body style="font-family:sans-serif;text-align:center;padding:40px"><h2>' + esc(x.name) + ' · 도장 찍기 담당자용</h2><p>담당 선생님 폰 카메라로 이 QR을 찍으면 도장 찍기 화면이 열려요. 참가자에게는 보여 주지 마세요.</p>' + qr.createImgTag(8, 16) + '<p style="font-size:12px;word-break:break-all">' + esc(u) + '</p></body>'); w.document.close(); });
+  document.querySelectorAll('[data-strk]').forEach(b => b.onclick = async () => { if (!confirm('이 자리의 담당자 링크를 새로 만들까요? 예전 링크는 바로 막혀요.')) return; await setDoc(doc(db, 'spotkeys', b.dataset.strk), { key: rkey() }); });
+  const sel = $('#stSpotSel'), cur = sel.value; sel.innerHTML = SPOT.filter(x => x.on !== false).map(x => `<option value="${x.id}">${STK[x.kind]} · ${esc(x.name)}</option>`).join(''); if (cur) sel.value = cur;
+  const rows = Object.entries(byQ).map(([q, bs]) => ({ q, bs, p: P.find(p => p.id === QR2T[q]) || {} })).sort((a, b) => b.bs.length - a.bs.length || (a.p.no || 999) - (b.p.no || 999));
+  $('#stPeopleRows').innerHTML = rows.map(r => `<tr><td style="font-family:var(--mono)">${r.p.no ? noTxt(r.p.no) : '-'}</td><td><b>${esc(r.p.name || '?')}</b></td><td>${esc(r.p.school || '')}</td><td><b>${r.bs.length}</b></td><td style="font-size:12px">${r.bs.map(b => esc((SPOT.find(x => x.id === b) || {}).name || b)).join(', ')}</td></tr>`).join('') || '<tr><td colspan="5" class="note">아직 찍힌 도장이 없어요.</td></tr>';
+  window.__stRows = rows;
+}
+$('#stSeed').onclick = async () => {
+  if (!OWNER) return alert('총괄만 만들 수 있어요.');
+  const list = [['prog_open', 'program', '등록·오프닝 (입장 체크)', '창의관', 1]];
+  SE.forEach((x, i) => list.push(['ses_' + x.id, 'session', x.name, x.room, 10 + i]));
+  [['booth_apple', '애플'], ['booth_lg', 'LG 슈퍼스쿨'], ['booth_msecm', 'MSECM'], ['booth_edunity', '에듀니티'], ['booth_brixel', '브릭셀AI'], ['booth_adobe', '어도비']].forEach(([id, n], i) => list.push([id, 'booth', n + ' 부스', '', 40 + i]));
+  list.push(['prog_case', 'program', '수업사례발표', '세미나실(송원홀)', 60], ['prog_hack', 'program', '해커톤', '305호', 61], ['prog_close', 'program', '총회·폐막식', '', 62]);
+  const have = new Set(SPOT.map(x => x.id)); const add = list.filter(x => !have.has(x[0]));
+  if (!add.length) return alert('이미 다 만들어져 있어요.');
+  if (!confirm(add.length + '개 자리를 만들까요?\n' + add.map(x => STK[x[1]] + ' · ' + x[2]).join('\n'))) return;
+  const b = writeBatch(db);
+  add.forEach(([id, kind, name, room, order]) => { b.set(doc(db, 'spots', id), { kind, name, room: room || '', order, on: true }); b.set(doc(db, 'spotkeys', id), { key: rkey() }); });
+  await b.commit();
+};
+$('#stAdd').onclick = async () => {
+  if (!OWNER) return alert('총괄만 추가할 수 있어요.');
+  const name = $('#stName').value.trim(); if (!name) return alert('이름을 넣어 주세요.');
+  const id = 'x_' + rkey(8); const b = writeBatch(db);
+  b.set(doc(db, 'spots', id), { kind: $('#stKind').value, name, room: $('#stRoom').value.trim(), order: 70 + SPOT.length, on: true }); b.set(doc(db, 'spotkeys', id), { key: rkey() });
+  await b.commit(); $('#stName').value = ''; $('#stRoom').value = '';
+};
+// 접수번호로 사람을 찾아 운영진 권한으로 도장을 찍음 (그 사람이 아직 QR을 안 만들었으면 만들어 줌)
+$('#stManual').onclick = async () => {
+  const no = Number($('#stNo').value.replace(/\D/g, '')), bid = $('#stSpotSel').value;
+  const p = P.find(x => x.no === no && x.status === 'active'); if (!p) return alert('신청 중인 접수번호 ' + no + '번이 없어요.');
+  let q = Object.keys(QR2T).find(k => QR2T[k] === p.id);
+  if (!q) { const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; const x = new Uint32Array(8); crypto.getRandomValues(x); q = [...x].map(v => a[v % a.length]).join(''); const b = writeBatch(db); b.set(doc(db, 'qrby', p.id), { q }); b.set(doc(db, 'qr', q), { tok: p.id }); b.set(doc(db, 'qn', q), { name: p.name, no: p.no || 0 }); await b.commit(); }
+  if (STAMP.some(x => x.q === q && x.b === bid)) return $('#stMsg').textContent = p.name + ' 선생님은 이미 찍었어요.';
+  await setDoc(doc(db, 'stamps', q + '__' + bid), { q, b: bid, at: serverTimestamp(), by: auth.currentUser.email });
+  $('#stMsg').textContent = '✓ ' + p.name + ' 선생님 (' + noTxt(p.no) + ') · ' + ((SPOT.find(x => x.id === bid) || {}).name || '') + ' 찍었어요';
+};
+$('#stCsv').onclick = () => {
+  const head = ['접수번호', '이름', '소속', '도장 수', ...SPOT.map(x => x.name)];
+  const body = (window.__stRows || []).map(r => [r.p.no || '', r.p.name, r.p.school, r.bs.length, ...SPOT.map(x => r.bs.includes(x.id) ? 'O' : '')]);
+  const csv = '\uFEFF' + [head, ...body].map(r => r.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = '지딜한마당_스탬프_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
+};
 
 function filtered() {
   const q = $('#q').value.trim(), t = $('#fType').value, st = $('#fStatus').value;
