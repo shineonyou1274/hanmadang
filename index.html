@@ -203,8 +203,8 @@ details.sd ul{margin:5px 0 0;padding-left:16px;line-height:1.55}
 .need{border:2px solid var(--orange)!important}
 /* stamp passport */
 .stg{font-size:12.5px;font-weight:800;color:var(--blue);margin:12px 0 6px}
-.stgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.stc{aspect-ratio:1;border-radius:14px;border:2px dashed #d3e2d8;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;font-size:12px;font-weight:700;color:#8aa596;background:#fbfdfb;line-height:1.3}
+.stgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.stc{min-height:76px;border-radius:14px;border:2px dashed #d3e2d8;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;font-size:12px;font-weight:700;color:#8aa596;background:#fbfdfb;line-height:1.3}
 .stc.on{border:2.5px solid var(--g);background:radial-gradient(circle at 50% 40%,#E3F4EA,#fff);color:var(--deep)}
 .stc .ic{font-size:22px;line-height:1;margin-bottom:4px;filter:grayscale(1);opacity:.35}
 .stc.on .ic{filter:none;opacity:1}
@@ -214,7 +214,7 @@ details.sd ul{margin:5px 0 0;padding-left:16px;line-height:1.55}
 .qcode{font-family:var(--mono);font-size:26px;font-weight:800;letter-spacing:.12em;color:var(--deep);margin-top:6px}
 .scan{background:#0f2a1c;min-height:100vh;color:#fff;padding:16px}
 .scan h2{color:#fff}
-.scan video{width:100%;border-radius:16px;background:#000;aspect-ratio:3/4;object-fit:cover}
+.scan video{display:none;width:100%;border-radius:16px;background:#000;aspect-ratio:3/4;object-fit:cover}
 .scan .res{border-radius:16px;padding:16px;margin-top:12px;font-size:16px;font-weight:800;text-align:center}
 .scan .res.ok{background:#2E9E5E}.scan .res.dup{background:#C9A24A;color:#1c2b22}.scan .res.err{background:#C0392B}
 .scan input{font:inherit;font-family:var(--mono);font-size:20px;letter-spacing:.1em;text-transform:uppercase;border:0;border-radius:12px;padding:12px;width:100%}
@@ -473,6 +473,7 @@ async function scanPage(arg) {
   document.body.classList.add('scanmode');
   let spot = null; try { const x = await getDoc(doc(db, 'spots', bid)); if (x.exists()) spot = x.data(); } catch (e) { }
   if (!spot || !key) { view.innerHTML = '<div class="scan"><h2>도장 링크가 잘못됐어요</h2><p>운영진에게 링크를 다시 받아 주세요.</p></div>'; return; }
+  if (spot.on === false) { view.innerHTML = '<div class="scan"><h2>' + esc(spot.name) + '</h2><p>지금은 꺼져 있는 도장 자리예요. 운영진에게 켜 달라고 해 주세요.</p></div>'; return; }
   const logK = 'hm_scanlog_' + bid; const log = JSON.parse(localStorage.getItem(logK) || '[]');
   view.innerHTML = `<div class="scan"><div style="font-size:12px;color:#9fd3b3;font-weight:700">지딜 한마당 · 도장 찍기</div><h2>${esc(spot.name)}</h2>
     <p style="font-size:13px;color:#cfe8da;margin-bottom:10px">참가자 탑승권의 QR을 비추면 바로 도장이 찍혀요. 이 링크는 담당 선생님만 쓰세요.</p>
@@ -480,7 +481,7 @@ async function scanPage(arg) {
     <button class="btn" id="camOn" style="margin-top:10px">카메라 켜기</button>
     <div id="res"></div>
     <div style="margin-top:14px;font-size:13px;color:#cfe8da">QR이 안 되면 탑승권 아래 8자리 코드를 넣어요</div>
-    <div style="display:flex;gap:8px;margin-top:6px"><input id="mq" maxlength="9" placeholder="ABCD-EFGH" autocomplete="off"><button class="btn" id="mgo" style="width:auto;padding:0 18px">찍기</button></div>
+    <div style="display:flex;gap:8px;margin-top:6px"><input id="mq" maxlength="9" placeholder="ABCD-EFGH" autocomplete="off"><button class="btn" id="mgo" style="width:auto;padding:0 18px;white-space:nowrap;flex:none">찍기</button></div>
     <div class="log" id="log"></div></div>`;
   const drawLog = () => { $('#log').innerHTML = '오늘 이 기기에서 찍은 도장 <b>' + log.length + '개</b><br>' + log.slice(-8).reverse().map(x => esc(x.t) + ' · ' + esc(x.n)).join('<br>'); };
   drawLog();
@@ -512,7 +513,7 @@ async function scanPage(arg) {
     try {
       if (!window.jsQR) await loadScript('https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js');
       const st = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-      const v = $('#cam'); v.srcObject = st; await v.play(); $('#camOn').style.display = 'none';
+      const v = $('#cam'); v.style.display = 'block'; v.srcObject = st; await v.play(); $('#camOn').style.display = 'none';
       const cv = document.createElement('canvas'), cx = cv.getContext('2d', { willReadFrequently: true });
       let on = true; SCAN_STOP = () => { on = false; st.getTracks().forEach(t => t.stop()); };
       const tick = () => { if (!on) return; if (v.readyState >= 2) { const w = 480, h = Math.round(v.videoHeight / v.videoWidth * w) || 640; cv.width = w; cv.height = h; cx.drawImage(v, 0, 0, w, h); const r = window.jsQR(cx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' }); if (r && r.data) stamp(r.data); } setTimeout(tick, 220); };
