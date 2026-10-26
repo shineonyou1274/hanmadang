@@ -201,6 +201,24 @@ details.sd ul{margin:5px 0 0;padding-left:16px;line-height:1.55}
 .kids input[type=checkbox]{width:18px;height:18px;accent-color:var(--g)}
 .kids select{font:inherit;border:1.5px solid #d3e2d8;border-radius:10px;padding:6px 10px}
 .need{border:2px solid var(--orange)!important}
+/* stamp passport */
+.stg{font-size:12.5px;font-weight:800;color:var(--blue);margin:12px 0 6px}
+.stgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stc{aspect-ratio:1;border-radius:14px;border:2px dashed #d3e2d8;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px;font-size:12px;font-weight:700;color:#8aa596;background:#fbfdfb;line-height:1.3}
+.stc.on{border:2.5px solid var(--g);background:radial-gradient(circle at 50% 40%,#E3F4EA,#fff);color:var(--deep)}
+.stc .ic{font-size:22px;line-height:1;margin-bottom:4px;filter:grayscale(1);opacity:.35}
+.stc.on .ic{filter:none;opacity:1}
+.stc small{font-weight:600;font-size:10.5px;color:#6b8577;margin-top:2px}
+.qrbox{background:#fff;border-radius:16px;padding:14px;text-align:center}
+.qrbox canvas,.qrbox img{width:min(78vw,300px);height:auto;image-rendering:pixelated}
+.qcode{font-family:var(--mono);font-size:26px;font-weight:800;letter-spacing:.12em;color:var(--deep);margin-top:6px}
+.scan{background:#0f2a1c;min-height:100vh;color:#fff;padding:16px}
+.scan h2{color:#fff}
+.scan video{width:100%;border-radius:16px;background:#000;aspect-ratio:3/4;object-fit:cover}
+.scan .res{border-radius:16px;padding:16px;margin-top:12px;font-size:16px;font-weight:800;text-align:center}
+.scan .res.ok{background:#2E9E5E}.scan .res.dup{background:#C9A24A;color:#1c2b22}.scan .res.err{background:#C0392B}
+.scan input{font:inherit;font-family:var(--mono);font-size:20px;letter-spacing:.1em;text-transform:uppercase;border:0;border-radius:12px;padding:12px;width:100%}
+.scan .log{font-size:13px;color:#cfe8da;margin-top:12px;line-height:1.7}
 .bp .ft{grid-template-columns:repeat(4,1fr)!important}
 .ntc{background:#FFF4E5;border:1.5px solid #F2B46B;border-radius:14px;padding:12px 14px;margin-bottom:10px;font-size:13.5px;line-height:1.55}
 .ntc.ok{background:#EAF7EF;border-color:#7FCB9E}
@@ -375,7 +393,7 @@ details.sd ul{margin:5px 0 0;padding-left:16px;line-height:1.55}
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
-import { getFirestore, doc, getDoc, setDoc, collection, getDocs, runTransaction, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, runTransaction, serverTimestamp, onSnapshot, writeBatch } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 
 const app = initializeApp({
   apiKey: "AIzaSyAm-uo720r9Lq4ZzbTgwVnCmrej6Yohf2w",
@@ -400,6 +418,108 @@ const LUNCH_IMG = { galbi: 'lunch-galbi.jpg', chipotle: 'lunch-chipotle.jpg' };
 const SLOTKEYS = ['AM', 'PM1', 'PM2'];
 const dday = () => { const k = new Date(Date.now() + 9 * 3600e3); const today = Date.UTC(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate()); const n = Math.round((Date.UTC(2026, 11, 19) - today) / 864e5); return n > 0 ? 'D-' + n : n === 0 ? 'D-DAY' : '행사 종료'; };
 let SESS = null;
+const QAL = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const qFmt = q => q ? q.slice(0, 4) + '-' + q.slice(4) : '';
+const ST_ICON = { session: '🎓', booth: '🏷️', program: '⭐' };
+let SPOTS = null;
+async function loadSpots() { if (SPOTS) return SPOTS; try { const q = await getDocs(collection(db, 'spots')); SPOTS = q.docs.map(d => ({ id: d.id, ...d.data() })).filter(x => x.on !== false).sort((a, b) => (a.order || 0) - (b.order || 0)); } catch (e) { SPOTS = []; } return SPOTS; }
+// 탑승권마다 도장용 코드(q)를 하나 만든다. 토큰 대신 이 코드만 QR에 넣는다.
+async function myQ(tok, d) {
+  const k = 'hm_q_' + tok; const c = localStorage.getItem(k); if (c) return c;
+  const ex = await getDoc(doc(db, 'qrby', tok)); if (ex.exists()) { localStorage.setItem(k, ex.data().q); return ex.data().q; }
+  const x = new Uint32Array(8); crypto.getRandomValues(x); const q = [...x].map(v => QAL[v % QAL.length]).join('');
+  const b = writeBatch(db);
+  b.set(doc(db, 'qrby', tok), { q }); b.set(doc(db, 'qr', q), { tok }); b.set(doc(db, 'qn', q), { name: d.name, no: d.no || 0 });
+  await b.commit(); localStorage.setItem(k, q); return q;
+}
+let QRLIB = null;
+const loadScript = src => new Promise((ok, no) => { const e = document.createElement('script'); e.src = src; e.onload = ok; e.onerror = no; document.head.appendChild(e); });
+async function qrCanvas(text) {
+  if (!QRLIB) { await loadScript('https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js'); QRLIB = window.qrcode; }
+  const qr = QRLIB(0, 'M'); qr.addData(text); qr.make();
+  const n = qr.getModuleCount(), sc = 8, m = 4, cv = document.createElement('canvas'); cv.width = cv.height = (n + m * 2) * sc;
+  const x = cv.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, cv.width, cv.height); x.fillStyle = '#14402A';
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) x.fillRect((c + m) * sc, (r + m) * sc, sc, sc);
+  return cv;
+}
+async function showStampQR(tok, d) {
+  modal('<h2>도장 찍기 QR</h2><div class="sub">세션·부스 담당 선생님께 이 화면을 보여 주세요</div><div class="qrbox" id="qrHere">만드는 중…</div><div class="gap"></div><button class="btn2" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">닫기</button>');
+  try {
+    const q = await myQ(tok, d); const box = $('#qrHere'); box.innerHTML = '';
+    try { box.appendChild(await qrCanvas('HMQ:' + q)); } catch (e) { box.insertAdjacentHTML('beforeend', '<p style="font-size:13px">QR을 못 불러왔어요. 아래 코드를 불러 주세요.</p>'); }
+    box.insertAdjacentHTML('beforeend', '<div class="qcode">' + qFmt(q) + '</div><div style="font-size:12.5px;color:#6b8577;margin-top:2px">' + esc(d.name) + ' 선생님' + (d.no ? ' · ' + noTxt(d.no) : '') + '</div>');
+  } catch (e) { console.error(e); $('#qrHere').textContent = '잠시 문제가 생겼어요. 다시 열어 주세요.'; }
+}
+async function stampCard(tok, d) {
+  const box = $('#stampCard'); if (!box) return;
+  const sp = await loadSpots();
+  if (!sp.length) { box.innerHTML = '<h3>스탬프 여권</h3><p style="font-size:13px">행사 날 세션·부스에서 도장을 찍어요. 도장 자리를 준비하고 있어요.</p>'; return; }
+  let q = null; try { q = await myQ(tok, d); } catch (e) { }
+  const got = {};
+  if (q) await Promise.all(sp.map(async x => { try { const st = await getDoc(doc(db, 'stamps', q + '__' + x.id)); if (st.exists()) got[x.id] = st.data(); } catch (e) { } }));
+  const n = Object.keys(got).length;
+  box.dataset.n = n; box.dataset.t = sp.length;
+  const grp = (k, t) => { const l = sp.filter(x => x.kind === k); return l.length ? `<div class="stg">${t}</div><div class="stgrid">${l.map(x => `<div class="stc ${got[x.id] ? 'on' : ''}"><div class="ic">${ST_ICON[k]}</div>${esc(x.name)}${got[x.id] ? '<small>' + (got[x.id].at ? kst(ts(got[x.id].at), { hour: '2-digit', minute: '2-digit' }) : '찍음') + '</small>' : ''}</div>`).join('')}</div>` : ''; };
+  box.innerHTML = `<h3>스탬프 여권</h3><p style="font-size:13px">행사 날 세션·부스에서 담당 선생님이 내 QR을 찍으면 도장이 찍혀요. 지금 <b>${n}개</b> 모았어요.</p>
+    <button class="btn" id="stQr" style="margin-top:8px">도장 찍을 QR 보여 주기</button>
+    ${grp('session', '세션')}${grp('booth', '부스')}${grp('program', '프로그램')}
+    <p style="font-size:12px;color:#6b8577;margin-top:8px">도장 보상은 곧 안내할게요.</p>`;
+  $('#stQr').onclick = () => showStampQR(tok, d);
+}
+/* ---------- 담당자 도장 찍기 화면 (#/scan/자리/열쇠) ---------- */
+let SCAN_STOP = null;
+async function scanPage(arg) {
+  const [bid, key] = arg.split('/');
+  document.body.classList.add('scanmode');
+  let spot = null; try { const x = await getDoc(doc(db, 'spots', bid)); if (x.exists()) spot = x.data(); } catch (e) { }
+  if (!spot || !key) { view.innerHTML = '<div class="scan"><h2>도장 링크가 잘못됐어요</h2><p>운영진에게 링크를 다시 받아 주세요.</p></div>'; return; }
+  const logK = 'hm_scanlog_' + bid; const log = JSON.parse(localStorage.getItem(logK) || '[]');
+  view.innerHTML = `<div class="scan"><div style="font-size:12px;color:#9fd3b3;font-weight:700">지딜 한마당 · 도장 찍기</div><h2>${esc(spot.name)}</h2>
+    <p style="font-size:13px;color:#cfe8da;margin-bottom:10px">참가자 탑승권의 QR을 비추면 바로 도장이 찍혀요. 이 링크는 담당 선생님만 쓰세요.</p>
+    <video id="cam" playsinline muted></video>
+    <button class="btn" id="camOn" style="margin-top:10px">카메라 켜기</button>
+    <div id="res"></div>
+    <div style="margin-top:14px;font-size:13px;color:#cfe8da">QR이 안 되면 탑승권 아래 8자리 코드를 넣어요</div>
+    <div style="display:flex;gap:8px;margin-top:6px"><input id="mq" maxlength="9" placeholder="ABCD-EFGH" autocomplete="off"><button class="btn" id="mgo" style="width:auto;padding:0 18px">찍기</button></div>
+    <div class="log" id="log"></div></div>`;
+  const drawLog = () => { $('#log').innerHTML = '오늘 이 기기에서 찍은 도장 <b>' + log.length + '개</b><br>' + log.slice(-8).reverse().map(x => esc(x.t) + ' · ' + esc(x.n)).join('<br>'); };
+  drawLog();
+  const show = (cls, html) => { $('#res').innerHTML = '<div class="res ' + cls + '">' + html + '</div>'; if (navigator.vibrate) navigator.vibrate(cls === 'ok' ? 120 : [60, 60, 60]); };
+  let busy = false, lastQ = '', lastAt = 0;
+  const stamp = async raw => {
+    const q = String(raw || '').toUpperCase().replace(/^HMQ:/, '').replace(/[^A-Z0-9]/g, '');
+    if (q.length !== 8) { show('err', 'QR이 아니에요. 탑승권의 도장 QR을 비춰 주세요'); return; }
+    if (busy || (q === lastQ && Date.now() - lastAt < 4000)) return;
+    busy = true; lastQ = q; lastAt = Date.now();
+    try {
+      let who = null; try { const w = await getDoc(doc(db, 'qn', q)); if (w.exists()) who = w.data(); } catch (e) { }
+      if (!who) { show('err', '등록되지 않은 코드예요 (' + qFmt(q) + ')'); return; }
+      const nm = esc(who.name) + ' 선생님' + (who.no ? ' · ' + noTxt(who.no) : '');
+      const sRef = doc(db, 'stamps', q + '__' + bid);
+      if ((await getDoc(sRef)).exists()) { show('dup', '이미 찍었어요<br>' + nm); return; }
+      const p = rid(20); const b = writeBatch(db);
+      b.set(doc(db, 'sproof', p), { k: key, b: bid }); b.set(sRef, { q, b: bid, p, at: serverTimestamp() });
+      await b.commit();
+      show('ok', '✓ 도장 찍었어요<br>' + nm);
+      log.push({ t: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }), n: who.name }); localStorage.setItem(logK, JSON.stringify(log.slice(-400))); drawLog();
+    } catch (e) { console.error(e); show('err', e.code === 'permission-denied' ? '도장을 못 찍었어요. 링크가 바뀌었거나 이 자리가 꺼져 있어요. 운영진에게 알려 주세요' : '연결이 불안정해요. 다시 비춰 주세요'); lastQ = ''; }
+    finally { busy = false; }
+  };
+  $('#mgo').onclick = () => stamp($('#mq').value);
+  $('#mq').addEventListener('keydown', e => { if (e.key === 'Enter') stamp($('#mq').value); });
+  $('#camOn').onclick = async () => {
+    $('#camOn').disabled = true; $('#camOn').textContent = '카메라 여는 중…';
+    try {
+      if (!window.jsQR) await loadScript('https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js');
+      const st = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      const v = $('#cam'); v.srcObject = st; await v.play(); $('#camOn').style.display = 'none';
+      const cv = document.createElement('canvas'), cx = cv.getContext('2d', { willReadFrequently: true });
+      let on = true; SCAN_STOP = () => { on = false; st.getTracks().forEach(t => t.stop()); };
+      const tick = () => { if (!on) return; if (v.readyState >= 2) { const w = 480, h = Math.round(v.videoHeight / v.videoWidth * w) || 640; cv.width = w; cv.height = h; cx.drawImage(v, 0, 0, w, h); const r = window.jsQR(cx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' }); if (r && r.data) stamp(r.data); } setTimeout(tick, 220); };
+      tick();
+    } catch (e) { console.error(e); $('#camOn').disabled = false; $('#camOn').textContent = '카메라 다시 켜기'; show('err', '카메라를 못 열었어요. 브라우저에서 카메라 권한을 허용하거나 아래에 코드를 넣어 주세요'); }
+  };
+}
 const noTxt = n => n ? 'No.' + String(n).padStart(3, '0') : '';
 try { const rq = new URLSearchParams(location.search).get('ref'); if (rq && /^\d{1,4}$/.test(rq) && +rq > 0) localStorage.setItem('hm_ref', String(+rq)); } catch (e) { }
 const REF_NOTE = '친구 초대 이벤트 · 내 초대 링크로 선생님이 신청하면, 행사 날 상품으로 바꿔 드리거나 행운권을 한 장 더 드려요. (당일 사정에 따라 달라질 수 있어요)';
@@ -900,10 +1020,11 @@ async function ticket(tok) {
     ${cancelled ? `<a class="btn" href="#/apply">다시 신청하기</a>` : `
     <div class="save"><b>이 링크를 꼭 저장해 주세요</b>당일 여권과 도장이 이 링크로 열려요. 카톡 "나와의 채팅"에 보내 두면 안전해요.
       <div class="row3"><button class="btn2" id="cp">링크 복사</button><button class="btn2" id="sh">나에게 보내기</button><button class="btn2" id="img">이미지 저장</button></div></div>
-    <button class="btn2" id="inv">동료 선생님 초대하기</button>
+    ${(() => { const k = new Date(Date.now() + 9 * 3600e3); return (k.getUTCFullYear() === 2026 && k.getUTCMonth() === 11 && k.getUTCDate() === 19) || d.test; })() ? '<button class="btn" id="qrTop" style="margin-bottom:10px">도장 찍을 QR 보여 주기</button>' : ''}<button class="btn2" id="inv">동료 선생님 초대하기</button>
     ${d.no ? '<div class="refbox"><b>친구 초대 이벤트</b><p>' + esc(REF_NOTE.replace(/^친구 초대 이벤트 · /, '')) + '</p><p class="refno">내 접수번호 <b>' + d.no + '</b> · 친구가 신청서 "초대한 선생님" 칸에 이 번호를 넣어도 돼요</p></div>' : ''}
     <div class="acct">내 신청 관리 · 제목을 누르면 열려요</div>
     <div class="card" id="planCard"><h3>내 하루 일정</h3><p>불러오는 중…</p></div>
+    <div class="card" id="stampCard"><h3>스탬프 여권</h3><p>불러오는 중…</p></div>
     ${d.staff ? '<div class="tfbox" id="tfBox"><h3>' + CROWN + 'TF 운영 현황</h3><div class="ro">보기 전용 · 실시간 · 수정은 총괄 운영진만</div><div id="tfStat" class="note">불러오는 중…</div></div>' : ''}
     <div class="card" id="seatCard"><h3>세션 신청</h3><p>불러오는 중…</p></div>
     <div class="card" id="extraCard"><h3>점심 도시락 · 자녀 동반</h3><p>불러오는 중…</p></div>
@@ -937,6 +1058,9 @@ async function ticket(tok) {
   acc($('#planCard'), () => '', true);
   planCard(tok, d); noticeBox(tok, d);
   { let pt = null; const re = () => { clearTimeout(pt); pt = setTimeout(() => planCard(tok, d), 400); }; ['#seatCard', '#extraCard', '#hackCard', '#gmCard'].forEach(q => { const el = $(q); if (el) new MutationObserver(re).observe(el, { childList: true }); }); }
+  acc($('#stampCard'), el => el.dataset.t ? '<span class="okk">도장 ' + el.dataset.n + '개</span>' : '');
+  stampCard(tok, d);
+  if ($('#qrTop')) $('#qrTop').onclick = () => showStampQR(tok, d);
   acc($('#infoCard'), () => S && canCancel ? '취소는 ' + md(ts(S.cancelDeadline)) + '까지' : '');
   document.querySelectorAll('#view .promo video').forEach(v => v.pause());
 }
@@ -1413,6 +1537,8 @@ async function route() {
     sessionStorage.setItem('hm_staff', h.slice(4)); sessionStorage.removeItem('hm_test'); location.hash = '#/'; return;
   }
   try {
+    if (h.startsWith('/scan/')) return scanPage(h.slice(6));
+    if (SCAN_STOP) { SCAN_STOP(); SCAN_STOP = null; }
     if (h.startsWith('/t/')) return ticket(h.slice(3));
     if (h === '/apply') return apply();
     if (h === '/find') return find();
@@ -1421,7 +1547,7 @@ async function route() {
   } catch (e) { console.error(e); view.innerHTML = `<div class="wrap"><div class="err" style="display:block">화면을 불러오지 못했어요. 새로고침해 주세요.</div></div>`; }
 }
 window.addEventListener('hashchange', route);
-runIntro();
+if (!location.hash.startsWith('#/scan/')) runIntro();
 loadMeta().catch(e => { console.error(e); }).then(() => route()).catch(e => { console.error(e); view.innerHTML = `<div class="wrap"><div class="err" style="display:block">연결이 원활하지 않아요. 잠시 뒤 새로고침해 주세요.</div></div>`; });
 </script>
 </body>
