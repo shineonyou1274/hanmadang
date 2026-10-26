@@ -152,6 +152,8 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 .ttp .tp1 .tm{font-family:var(--mono);font-weight:700;color:var(--deep);font-size:13px}
 .ttp .tp1 .nm{font-weight:800;font-size:17px;margin:2px 0 4px}
 .ttp .tp1 p{font-size:13px;color:#4a6355}
+.ttp .tgo{display:block;width:100%;margin-top:8px;font-family:inherit;font-weight:800;font-size:14px;border:0;border-radius:10px;padding:9px 12px;background:var(--g);color:#fff;cursor:pointer}
+.ttp .tgo.w{background:#fff;color:var(--deep);border:1.5px solid var(--g)}
 .ttp .tc .sub,.ses .sub{font-size:13px;font-weight:700;color:var(--deep);margin-top:3px;line-height:1.4}
 details.sd{margin-top:6px;font-size:12.5px;color:#4a6355}
 details.sd summary{cursor:pointer;font-weight:700;color:var(--deep);list-style:none}
@@ -674,7 +676,7 @@ async function renderTimetable() {
   if (!window.__ttTab && today) { const hm = now.getUTCHours() * 100 + now.getUTCMinutes(); cur = [...TABS].reverse().find(t => hm >= +t.k)?.k || '0900'; }
   const inWin = (a, b, t) => T(a) < t.to && T(b) > t.from;
   const ses = (s, t) => { const [a, b] = rng(s); const full = s.count >= s.cap || waitN(s) > 0; const own = (T(a) !== t.from || T(b) !== t.to) ? a + '–' + b : '';
-    return `<div class="tc"><div class="nm">${esc(s.name)}</div>${sesInfoHTML(s)}<span class="rm">${esc(room(s.room))}</span><div class="mt"><span>${own}</span><b class="${full ? 'full' : ''}">${full ? '마감' + (waitN(s) ? ' · 대기 ' + waitN(s) : '') : '남은 자리 ' + sesLeft(s) + ' / ' + s.cap}</b></div></div>`; };
+    return `<div class="tc"><div class="nm">${esc(s.name)}</div>${sesInfoHTML(s)}<span class="rm">${esc(room(s.room))}</span><div class="mt"><span>${own}</span><b class="${full ? 'full' : ''}">${full ? '마감' + (waitN(s) ? ' · 대기 ' + waitN(s) : '') : '남은 자리 ' + sesLeft(s) + ' / ' + s.cap}</b></div>${S && new Date() < ts(S.cancelDeadline) ? '<button type="button" class="tgo' + (full ? ' w' : '') + '" data-go="' + s.id + '">' + (full ? '대기 신청하기' : '이 세션 신청하기') + '</button>' : ''}</div>`; };
   const fx = (f, t) => `<div class="tc fx"><div class="nm">${f.name}</div><span class="rm">${f.room}</span><div class="mt"><span>${f.note}${f.show ? ' · ' + f.start + '–' + f.end : ''}</span><b style="color:#8a9a90;font-family:var(--sans)">신청 없음</b></div>${fxInfoHTML(f)}</div>`;
   const panel = t => {
     if (t.one) return `<div class="tp1"><div class="tm">${t.one[1]}</div><div class="nm">${t.one[0]}</div><p>${t.one[2]}</p></div>`;
@@ -683,7 +685,8 @@ async function renderTimetable() {
   const draw = () => { box.innerHTML = `<h3>전체 시간표</h3><p style="font-size:12.5px;margin-bottom:10px">장소는 모두 마산대학교 창의관이에요. 왼쪽 시간을 누르면 그 시간 프로그램과 교실만 보여요.</p>
     <div class="ttw"><div class="ttr">${TABS.map(t => `<button type="button" data-tt="${t.k}" class="${t.k === cur ? 'on' : ''}"><b>${t.tm}</b><span>${t.lb}</span></button>`).join('')}</div>
     <div class="ttp">${panel(TABS.find(t => t.k === cur))}</div></div>`;
-    box.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { cur = window.__ttTab = b.dataset.tt; draw(); }); };
+    box.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { cur = window.__ttTab = b.dataset.tt; draw(); });
+    box.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { sessionStorage.setItem('hm_want', b.dataset.go); const t = localStorage.getItem('hm_tok'); location.hash = t ? '#/t/' + t : '#/apply'; }); };
   draw();
 }
 
@@ -868,6 +871,8 @@ async function formSessions(f) {
   };
   const sumUp = () => { const n = [...box.querySelectorAll('#sesBody input:checked')].map(i => i.value).filter(Boolean).map(v => ss.find(x => x.id === v)?.name); box.querySelector('#sesSum').textContent = n.length ? n.join(' · ') : '안 골랐어요 · 부스 자유 관람'; box.querySelector('#sesTog').classList.toggle('on', !!n.length); };
   box.querySelectorAll('input').forEach(i => i.addEventListener('change', () => { sync(); sumUp(); })); sync(); sumUp();
+  const want = sessionStorage.getItem('hm_want');
+  if (want) { sessionStorage.removeItem('hm_want'); const inp = box.querySelector('#sesBody input[value="' + want + '"]'); if (inp && !inp.disabled) { box.querySelector('#sesBody').hidden = false; inp.checked = true; inp.dispatchEvent(new Event('change')); setTimeout(() => { inp.closest('.sopt').scrollIntoView({ block: 'center', behavior: 'smooth' }); toast('고른 세션을 담았어요. 아래 칸을 채우고 신청하면 같이 신청돼요'); }, 400); } }
 }
 const readSesPicks = f => [...f.querySelectorAll('#sesF input:checked')].map(i => i.value).filter(Boolean);
 
@@ -1058,6 +1063,7 @@ async function seatCard(tok, d) {
     <div class="grp">오후 13:00–16:20</div>${pm.map(item).join('')}
     <div style="background:#FFF4E5;border-radius:10px;padding:9px 11px;margin-top:8px;font-size:12.5px;line-height:1.55">못 오시게 되면 <b>${md(ts(S.cancelDeadline))}까지</b> 꼭 취소해 주세요. 대기하시는 분께 자리가 넘어가요.<br>말없이 오지 않으면 이후 지딜 행사 신청에 불이익이 있어요.</div>`;
   const lock = () => box.querySelectorAll('button').forEach(x => x.disabled = true);
+  setTimeout(() => { const want = sessionStorage.getItem('hm_want'); if (!want) return; sessionStorage.removeItem('hm_want'); box.classList.add('open'); const b = box.querySelector('[data-pick="' + want + '"],[data-wait="' + want + '"]'); const card = (b || box.querySelector('[data-drop="' + want + '"]'))?.closest('.ses'); if (card) { card.scrollIntoView({ block: 'center', behavior: 'smooth' }); card.style.outline = '3px solid var(--gold)'; } if (b && b.dataset.pick) setTimeout(() => b.click(), 600); else if (b) toast('자리가 다 찼어요. 대기 신청 버튼을 눌러 주세요'); else if (card) toast('이미 신청한 세션이에요'); else toast('지금은 이 세션을 고를 수 없어요'); }, 0);
   const releaseClash = async s => { for (const c of [...new Set(s.slots.filter(k => mine[k] && mine[k] !== s.id).map(k => mine[k]))]) await releaseSeat(tok, c); };
   const clashNames = s => [...new Set(s.slots.filter(k => mine[k] && mine[k] !== s.id).map(k => mine[k]))].map(c => ss.find(x => x.id === c)?.name || c).join(', ');
   box.querySelectorAll('[data-pick]').forEach(b => b.onclick = async () => {
