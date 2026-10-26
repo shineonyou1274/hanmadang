@@ -414,6 +414,72 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ---------- 스탬프 ----------
+    // 참가자마다 도장 코드 q (QR에는 토큰 대신 q만 넣음). qr/{q} → 토큰은 운영진만 읽음, qn/{q} → 이름·번호만 공개
+    function QB(t) { return /databases/$(db)/documents/qrby/$(t); }
+    function QR(q) { return /databases/$(db)/documents/qr/$(q); }
+    match /qrby/{tok} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        || (request.resource.data.keys().hasOnly(['q'])
+            && request.resource.data.q is string && request.resource.data.q.size() == 8
+            && get(P(tok)).data.status == 'active'
+            && !exists(QR(request.resource.data.q))
+            && getAfter(QR(request.resource.data.q)).data.tok == tok);
+      allow update, delete: if isAdmin();
+    }
+    match /qr/{q} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        || (request.resource.data.keys().hasOnly(['tok'])
+            && !exists(QB(request.resource.data.tok))
+            && getAfter(QB(request.resource.data.tok)).data.q == q);
+      allow update, delete: if isAdmin();
+    }
+    match /qn/{q} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        || (request.resource.data.keys().hasOnly(['name', 'no'])
+            && !exists(QR(q)) && existsAfter(QR(q))
+            && request.resource.data.name == get(P(getAfter(QR(q)).data.tok)).data.name
+            && request.resource.data.no == get(P(getAfter(QR(q)).data.tok)).data.get('no', 0));
+      allow update, delete: if isAdmin();
+    }
+    match /spots/{b} {
+      allow read: if true;
+      allow write: if isOwner();
+    }
+    match /spotkeys/{b} {
+      allow read: if isAdmin();
+      allow write: if isOwner();
+    }
+    // 담당자 링크의 열쇠는 도장 문서에 남기지 않고, 같은 묶음에서 새로 만든 증명 문서로만 확인
+    match /sproof/{p} {
+      allow read: if isAdmin();
+      allow create: if p.size() >= 16
+        && request.resource.data.keys().hasOnly(['k', 'b'])
+        && request.resource.data.k is string;
+      allow update, delete: if isAdmin();
+    }
+    match /stamps/{id} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        || (request.resource.data.keys().hasOnly(['q', 'b', 'p', 'at'])
+            && id == request.resource.data.q + '__' + request.resource.data.b
+            && request.resource.data.at == request.time
+            && exists(QR(request.resource.data.q))
+            && get(P(get(QR(request.resource.data.q)).data.tok)).data.status == 'active'
+            && get(/databases/$(db)/documents/spots/$(request.resource.data.b)).data.get('on', true) == true
+            && !exists(/databases/$(db)/documents/sproof/$(request.resource.data.p))
+            && getAfter(/databases/$(db)/documents/sproof/$(request.resource.data.p)).data.b == request.resource.data.b
+            && getAfter(/databases/$(db)/documents/sproof/$(request.resource.data.p)).data.k == get(/databases/$(db)/documents/spotkeys/$(request.resource.data.b)).data.key);
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
     // ---------- 참가자 알림 (공개 읽기, 운영진만 쓰기) ----------
     match /notices/{id} {
       allow read: if true;
