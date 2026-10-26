@@ -786,12 +786,12 @@ async function renderTimetable() {
     { name: '해커톤', room: '305호', note: '해커톤 신청자', start: '10:00', end: '14:50', show: 1 },
     { name: '아이돌봄 (초등)', room: '408호', note: '자녀 동반 신청자', start: '10:00', end: '16:20' }];
   const TABS = [
-    { k: '0900', tm: '09:00', lb: '오프닝', one: ['오프닝 및 네트워킹', '09:00–09:50', '창의관에 도착하면 탑승권을 보여 주세요.'] },
+    { k: '0900', tm: '09:00', lb: '오프닝', one: ['오프닝 및 네트워킹', '09:00–09:50 · 송원홀', '창의관 송원홀(세미나실)에서 시작해요. 도착하면 탑승권을 보여 주세요.'] },
     { k: '1000', tm: '10:00', lb: '오전', from: 1000, to: 1130, hd: '10:00–11:30 오전' },
     { k: '1130', tm: '11:30', lb: '점심', one: ['점심시간', '11:30–13:00', '신청한 도시락을 나눠 드려요.'] },
     { k: '1300', tm: '13:00', lb: '오후', from: 1300, to: 1500, hd: '13:00부터' },
     { k: '1500', tm: '15:00', lb: '오후 후반', from: 1500, to: 1620, hd: '15:00부터' },
-    { k: '1630', tm: '16:30', lb: '폐막', one: ['총회 및 폐막식', '16:30–17:00', '마지막까지 함께해요.'] }];
+    { k: '1630', tm: '16:30', lb: '폐막', one: ['총회 및 폐막식', '16:30–17:00 · 송원홀', '창의관 송원홀(세미나실)에서 마무리해요. 행운권 경품 추첨도 여기서 해요.'] }];
   const now = new Date(Date.now() + 9 * 3600e3), today = now.toISOString().slice(0, 10) === '2026-12-19';
   let cur = window.__ttTab || '1000';
   if (!window.__ttTab && today) { const hm = now.getUTCHours() * 100 + now.getUTCMinutes(); cur = [...TABS].reverse().find(t => hm >= +t.k)?.k || '0900'; }
@@ -1272,7 +1272,7 @@ async function planCard(tok, d) {
   const slotLine = k => { const sid = mine[k]; if (!sid) return null; const s = S2(sid); if (!s) return null; const h = hold[sid] || {}; const held = h.seat || h.n < (s.wh || 0); return { s, held, wait: held ? 0 : Math.max(1, h.n - (s.wh || 0) + 1) }; };
   const li = (t, w, sub, cls = '') => `<li><div class="pt">${t}</div><div><div class="pw ${cls}">${w}</div>${sub ? '<small>' + sub + '</small>' : ''}</div></li>`;
   const sesLi = (x, t) => x.held ? li(t, esc(x.s.name), room(x.s) + ' · ' + x.s.start + '–' + x.s.end) : li(t, esc(x.s.name) + ' <span class="warn">대기 ' + x.wait + '번</span>', '확정되면 여기 바로 표시돼요 · 그동안은 부스 자유 관람', '');
-  const L = [li('09:00', '오프닝 · 네트워킹', '창의관 도착 후 이 탑승권(여권)을 보여 주세요')];
+  const L = [li('09:00', '오프닝 · 네트워킹', '송원홀 (창의관 세미나실) · 도착하면 이 탑승권(여권)을 보여 주세요')];
   const am = slotLine('AM');
   if (hackOn) L.push(li('10:00–14:50', '해커톤 챌린지', '305호 (멀티미디어실) · 점심 포함'));
   else L.push(am ? sesLi(am, '10:00–11:30') : li('10:00–11:30', '부스 자유 관람', '세션을 안 골랐어요 · 수업사례발표(송원홀)도 자유 입장'));
@@ -1285,7 +1285,7 @@ async function planCard(tok, d) {
     L.push(p2 ? sesLi(p2, '15:00–16:20') : li('15:00–16:20', '부스 자유 관람', '세션을 안 골랐어요'));
   }
   if (e.kids) L.push(li('하루 종일', '아이돌봄 · 자녀 ' + e.kids + '명', '408호 (초등) · 자세한 안내는 추후 업데이트'));
-  L.push(li('16:30–17:00', '총회 · 폐막식', d.no ? '행운권 추첨 · 내 번호 ' + noTxt(d.no) : '행운권 추첨'));
+  L.push(li('16:30–17:00', '총회 · 폐막식', '송원홀 · ' + (d.no ? '행운권 추첨 · 내 번호 ' + noTxt(d.no) : '행운권 추첨')));
   const gmTxt = g.need ? (g.sent ? '출장 공문 발송 완료' : '출장 공문 발송 준비 중') : '';
   box.innerHTML = `<h3>내 하루 일정</h3><ul class="plan">${L.join('')}</ul>
     <p style="font-size:12px;color:#6b8577;margin-top:8px">${S ? '세션·도시락 변경과 취소는 ' + md(ts(S.cancelDeadline)) + '까지' : ''}${gmTxt ? ' · ' + gmTxt : ''}</p>`;
