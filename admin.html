@@ -174,6 +174,13 @@ tr.dup td{background:#FFF7E1}
       <p class="note">신청서 "초대한 선생님" 칸(초대 링크로 들어오면 자동 입력)에 적힌 접수번호 기준. 신청을 취소한 친구는 빼고 셌어요. 행사 날 상품 교환이나 행운권 추가에 쓰세요.</p>
       <div style="overflow:auto;margin-top:8px"><table><thead><tr><th>초대한 사람</th><th>소속</th><th>초대 성공</th><th>신청한 친구</th></tr></thead><tbody id="refRows"></tbody></table></div>
     </div>
+    <div class="panel"><h3>초대장 링크 만들기 <span class="tools"><button class="b2" id="invcsv">링크 엑셀(CSV)</button></span></h3>
+      <p class="note">받는 분 이름을 한 줄에 한 명씩 붙여 넣으면, 봉투 앞면에 그 이름이 적힌 초대장 링크를 사람마다 만들어요. 카톡으로 한 명씩 보내면 봉투가 열리고 비행기가 날아간 뒤 초대장이 나와요. 이름 말고 학교·연락처는 넣지 마세요. (저장되지 않고 이 화면에서만 만들어요)</p>
+      <div class="tools" style="margin:8px 0"><label style="font-size:13px;font-weight:700">보내는 사람 <input id="invFr" value="G-DEAL 운영진" maxlength="20"></label><label style="font-size:13px;font-weight:700">초대한 사람 접수번호(선택) <input id="invRef" maxlength="4" inputmode="numeric" style="width:80px"></label></div>
+      <textarea id="invNames" placeholder="김지딜&#10;이한마당"></textarea>
+      <div style="margin-top:8px"><button class="b" id="invGen">링크 만들기</button> <span class="note" id="invCnt"></span></div>
+      <div style="overflow:auto;margin-top:8px"><table><thead><tr><th>받는 분</th><th>초대장 링크</th><th></th></tr></thead><tbody id="invRows"></tbody></table></div>
+    </div>
   </section>
 
   <section id="tab-ntc" class="hidden">
@@ -509,6 +516,23 @@ $('#refcsv').onclick = () => {
   refGroups().forEach(x => rows.push([x.no, x.inv ? x.inv.name : '', x.inv ? x.inv.school || '' : '', x.fr.length, x.fr.map(f => f.name + '(' + (f.school || '') + ')').join(' / ')]));
   const csv = '\ufeff' + rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = '친구초대.csv'; a.click();
+};
+/* ---------- 초대장 링크 만들기 ---------- */
+const ib64 = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const icln = s => String(s || '').replace(/[<>"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 20);
+let INVL = [];
+$('#invGen').onclick = () => {
+  const fr = icln($('#invFr').value), ref = String($('#invRef').value || '').replace(/\D/g, '').slice(0, 4);
+  const names = [...new Set($('#invNames').value.split(/\r?\n/).map(icln).filter(Boolean))];
+  INVL = names.map(nm => ({ nm, url: location.origin + '/?' + (ref && +ref > 0 ? 'ref=' + (+ref) + '&' : '') + 'to=' + ib64(nm) + (fr ? '&fr=' + ib64(fr) : '') + '#/' }));
+  $('#invCnt').textContent = INVL.length ? INVL.length + '명' : '';
+  $('#invRows').innerHTML = INVL.length ? INVL.map((x, i) => `<tr><td><b>${esc(x.nm)}</b></td><td style="font-size:12px;word-break:break-all">${esc(x.url)}</td><td><button class="b2" data-invcp="${i}" style="padding:3px 9px;font-size:12px">복사</button></td></tr>`).join('') : '<tr><td colspan="3">이름을 한 줄에 한 명씩 넣어 주세요</td></tr>';
+  document.querySelectorAll('[data-invcp]').forEach(b => b.onclick = () => { const u = INVL[+b.dataset.invcp].url; navigator.clipboard.writeText(u).then(() => { b.textContent = '복사됨'; }).catch(() => prompt('복사하세요', u)); });
+};
+$('#invcsv').onclick = () => {
+  if (!INVL.length) return alert('먼저 "링크 만들기"를 눌러 주세요');
+  const csv = '\ufeff' + [['받는 분', '초대장 링크'], ...INVL.map(x => [x.nm, x.url])].map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  const el = document.createElement('a'); el.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); el.download = '지딜한마당_초대장링크_' + new Date().toISOString().slice(0, 10) + '.csv'; el.click();
 };
 function renderGm() {
   if (!$('#gmRows')) return;

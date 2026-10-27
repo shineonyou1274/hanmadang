@@ -121,6 +121,44 @@ h2{font-size:21px;font-weight:800;margin:6px 0 4px}
 .intro .arrive b{display:block;font-family:var(--serif);font-size:25px;color:var(--ink)}
 .intro .skip{position:absolute;right:16px;top:16px;font-size:13px;font-weight:700;color:var(--deep);background:rgba(255,255,255,.8);border-radius:99px;padding:6px 13px;border:0;z-index:3;font-family:inherit}
 @media (prefers-reduced-motion:reduce){.intro{display:none}}
+/* invitation envelope */
+.env{position:fixed;inset:0;z-index:110;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:radial-gradient(circle at 50% 28%,#fffaf0 0%,#f3e9d2 70%,#eadcbc 100%);transition:opacity .5s}
+.env.hide{opacity:0;pointer-events:none}
+.env .eskip{position:absolute;right:16px;top:16px;font-size:13px;font-weight:700;color:#6b5a3a;background:rgba(255,255,255,.75);border-radius:99px;padding:6px 13px;border:0;font-family:inherit}
+.env .etop{font-family:var(--mono);font-size:11.5px;letter-spacing:.18em;color:#9a8158;margin-bottom:26px}
+.envbox{position:relative;width:min(330px,86vw);aspect-ratio:4/3;cursor:pointer;perspective:900px;transition:transform .6s,opacity .6s;-webkit-tap-highlight-color:transparent}
+.envbox:focus-visible{outline:3px solid var(--g);outline-offset:6px;border-radius:12px}
+.envbox .eb{position:absolute;inset:0;background:#d8c291;border-radius:10px;box-shadow:0 20px 44px rgba(90,64,20,.28)}
+.envbox .lt{position:absolute;left:7%;right:7%;top:7%;height:86%;background:#fffdf7;border-radius:7px;z-index:2;box-shadow:0 1px 6px rgba(0,0,0,.08);transition:transform 1s cubic-bezier(.2,.8,.2,1) .55s;display:flex;flex-direction:column;align-items:center;padding-top:14px;gap:4px}
+.envbox .lt .k{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--g)}
+.envbox .lt b{font-family:var(--serif);font-size:15px;color:var(--deep)}
+.envbox .fr{position:absolute;inset:0;z-index:3;background:#f4e7cb;border-radius:10px;clip-path:polygon(0 0,50% 58%,100% 0,100% 100%,0 100%)}
+.envbox .fl{position:absolute;left:0;right:0;top:0;height:60%;z-index:4;background:#ecdbb3;border-radius:10px 10px 0 0;clip-path:polygon(0 0,100% 0,50% 100%);transform-origin:50% 0;transition:transform .7s ease-in-out .15s;backface-visibility:hidden}
+.envbox .seal{position:absolute;left:50%;top:60%;width:50px;height:50px;margin:-25px 0 0 -25px;z-index:6;border-radius:50%;background:radial-gradient(circle at 38% 34%,#6fcf9a,#45AF76 55%,#2f8a5a);box-shadow:0 2px 0 #1E5B3C,0 4px 10px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--serif);font-weight:700;font-size:22px;transition:transform .35s,opacity .35s}
+.envbox .seal::after{content:'';position:absolute;inset:5px;border-radius:50%;border:1.5px dashed rgba(255,255,255,.55)}
+.envbox .to{position:absolute;left:0;right:0;bottom:9%;z-index:5;text-align:center;font-family:var(--serif);color:#3b2f1a;transition:opacity .4s}
+.envbox .to small{font-size:14px;color:#8a7350;margin-right:4px}
+.envbox .to b{font-size:clamp(19px,5.6vw,24px)}
+.envbox .stamp{position:absolute;right:6%;top:42%;z-index:5;width:46px;height:56px;background:#fff;padding:3px;transform:rotate(4deg);box-shadow:0 1px 3px rgba(0,0,0,.15);transition:opacity .4s}
+.envbox .stamp i{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;border:1.5px dashed var(--g);font-style:normal;font-family:var(--mono);font-size:8.5px;font-weight:700;color:var(--deep);line-height:1.25;background:#eef8f2}
+.envbox .stamp i::before{content:'✈';font-size:15px;color:var(--g)}
+.envbox .pm{position:absolute;right:17%;top:37%;z-index:5;width:58px;height:58px;border-radius:50%;border:1.5px solid rgba(30,91,60,.45);color:rgba(30,91,60,.6);font-family:var(--mono);font-size:7.5px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(-14deg);transition:opacity .4s;line-height:1.3}
+.envbox.open .seal{transform:scale(1.5);opacity:0}
+.envbox.open .fl{transform:rotateX(180deg);z-index:1}
+.envbox.open .lt{transform:translateY(-58%)}
+.envbox.open .to,.envbox.open .stamp,.envbox.open .pm{opacity:0}
+.env .ehint{margin-top:30px;font-size:14px;font-weight:700;color:#6b5a3a;animation:epulse 1.6s ease-in-out infinite}
+@keyframes epulse{50%{opacity:.4}}
+.env.read .envbox{transform:translateY(40px) scale(.85);opacity:0}
+.env.read .ehint,.env.read .etop{opacity:0}
+.invc{position:absolute;left:50%;top:50%;width:min(360px,88vw);transform:translate(-50%,-44%);opacity:0;pointer-events:none;background:#fffdf7;border-radius:16px;padding:26px 22px 22px;text-align:center;box-shadow:0 22px 50px rgba(90,64,20,.25);border-top:6px solid var(--g);transition:opacity .6s,transform .6s cubic-bezier(.2,.8,.2,1)}
+.env.read .invc{opacity:1;transform:translate(-50%,-50%);pointer-events:auto}
+.invc .k{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--g)}
+.invc .nm{font-family:var(--serif);font-size:26px;font-weight:700;color:var(--deep);margin:12px 0 6px}
+.invc p{font-size:15.5px;color:var(--ink);line-height:1.6}
+.invc .meta{margin:14px 0;padding:12px;border-radius:12px;background:#f3faf6;font-size:14px;font-weight:700;color:var(--deep);line-height:1.7}
+.invc .from{font-size:13px;color:#6b8577;margin-bottom:16px}
+@media (prefers-reduced-motion:reduce){.env *,.env{transition:none!important;animation:none!important}}
 /* modal */
 .modal{position:fixed;inset:0;background:rgba(20,40,30,.5);z-index:60;display:none;align-items:flex-end;justify-content:center}
 .modal.on{display:flex}
@@ -388,6 +426,30 @@ details.sd ul{margin:5px 0 0;padding-left:16px;line-height:1.55}
   </div>
 </div>
 
+<div id="env" class="env" style="display:none" aria-live="polite">
+  <button class="eskip" id="envSkip">건너뛰기</button>
+  <div class="etop">G-DEAL AIR MAIL · 초대장</div>
+  <div class="envbox" id="envBox" role="button" tabindex="0" aria-label="봉투 열기">
+    <div class="eb"></div>
+    <div class="lt"><span class="k">INVITATION</span><b>제3회 지딜 한마당</b></div>
+    <div class="fr"></div>
+    <div class="fl"></div>
+    <div class="seal">G</div>
+    <div class="pm">G-DEAL<span>12.19</span>MASAN</div>
+    <div class="stamp"><i>12.19<br>MASAN</i></div>
+    <div class="to"><small>To.</small> <b id="envTo"></b></div>
+  </div>
+  <div class="ehint" id="envHint">봉투를 눌러 열어 보세요</div>
+  <div class="invc" id="invc">
+    <div class="k">INVITATION · G-DEAL AIR</div>
+    <div class="nm" id="invNm"></div>
+    <p>제3회 지딜 한마당에 초대합니다.</p>
+    <div class="meta">2026. 12. 19. (토) 09:00–17:00<br>마산대학교 창의관</div>
+    <div class="from" id="invFr"></div>
+    <button class="btn" id="envGo">탑승하기 ✈</button>
+  </div>
+</div>
+
 <div id="modal" class="modal"><div class="box" id="modalBox"></div></div>
 <div id="toast" class="toast"></div>
 
@@ -523,6 +585,47 @@ async function scanPage(arg) {
 }
 const noTxt = n => n ? 'No.' + String(n).padStart(3, '0') : '';
 try { const rq = new URLSearchParams(location.search).get('ref'); if (rq && /^\d{1,4}$/.test(rq) && +rq > 0) localStorage.setItem('hm_ref', String(+rq)); } catch (e) { }
+/* ---------- invitation envelope (?to=&fr=) ---------- */
+const b64e = s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const b64d = s => { try { s = String(s || '').replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return decodeURIComponent(escape(atob(s))); } catch (e) { return ''; } };
+const cleanNm = s => String(s || '').replace(/[<>"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 20);
+const honor = s => /(선생님|쌤|샘|님)$/.test(s) ? s : s + ' 선생님';
+const inviteLink = (to, fr, ref) => location.origin + '/?' + (ref ? 'ref=' + ref + '&' : '') + 'to=' + b64e(cleanNm(to)) + (cleanNm(fr) ? '&fr=' + b64e(cleanNm(fr)) : '') + '#/';
+let INV = null;
+try {
+  const q = new URLSearchParams(location.search);
+  const to = cleanNm(b64d(q.get('to'))), fr = cleanNm(b64d(q.get('fr')));
+  if (to) { INV = { to, fr }; sessionStorage.setItem('hm_to', to); }
+  if (q.has('to') || q.has('fr') || q.has('ref')) history.replaceState(null, '', location.pathname + location.hash);
+} catch (e) { }
+function runEnvelope() {
+  const el = $('#env'), box = $('#envBox');
+  $('#envTo').textContent = honor(INV.to);
+  $('#invNm').textContent = honor(INV.to) + '께';
+  const who = INV.fr ? (/운영진|팀|G-DEAL|지딜/i.test(INV.fr) ? INV.fr : honor(INV.fr)) : '';
+  const jo = s => { const c = s.charCodeAt(s.length - 1); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 ? '이' : '가'; };
+  $('#invFr').textContent = who ? who + jo(who) + ' 초대했어요' : 'G-DEAL 운영진 드림';
+  el.style.display = 'flex';
+  let opened = false;
+  const open = () => { if (opened) return; opened = true; box.classList.add('open'); $('#envHint').textContent = ''; setTimeout(() => el.classList.add('read'), matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1700); setTimeout(() => $('#envGo').focus(), 1800); };
+  const go = () => { el.classList.add('hide'); setTimeout(() => el.remove(), 550); runIntro(); };
+  box.onclick = open; box.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } };
+  $('#envGo').onclick = go; $('#envSkip').onclick = go;
+}
+function inviteModal(d) {
+  const ref = d.no || '';
+  modal(`<h2>초대장 보내기</h2><div class="sub">받는 분 이름을 적으면, 봉투 앞면에 그 이름이 적힌 초대장 링크가 만들어져요.</div>
+    <div class="field"><label>받는 분 이름</label><input type="text" id="invTo" maxlength="20" placeholder="예: 김지딜"><div class="hint">이름만 적어 주세요. 학교나 연락처는 넣지 않아요.</div></div>
+    <div class="lnk" id="invLink">이름을 적으면 링크가 보여요</div>
+    <div class="row2"><button class="btn2" id="invCp">링크 복사</button><button class="btn" id="invSh">보내기</button></div>
+    <p style="font-size:12px;color:#6b8577;margin-top:10px;line-height:1.6">카톡 미리보기에는 지딜 초대장 그림이 보이고, 받는 분 이름은 링크를 열면 봉투에 나와요.${ref ? ' 이 링크로 신청하면 친구 초대 이벤트에 선생님 번호(' + ref + ')가 자동으로 들어가요.' : ''}</p>
+    <div class="gap"></div><button class="btn3" onclick="document.getElementById('modal').classList.remove('on')">닫기</button>`);
+  const url = () => { const t = cleanNm($('#invTo').value); return t ? inviteLink(t, d.name, ref) : ''; };
+  $('#invTo').oninput = () => { const u = url(); $('#invLink').textContent = u || '이름을 적으면 링크가 보여요'; };
+  $('#invCp').onclick = () => { const u = url(); if (!u) return toast('받는 분 이름을 먼저 적어 주세요'); copyText(u); };
+  $('#invSh').onclick = () => { const u = url(); if (!u) return toast('받는 분 이름을 먼저 적어 주세요'); share('지딜 한마당 초대장', honor(cleanNm($('#invTo').value)) + '께, 제3회 지딜 한마당 초대장이 도착했어요 ✉', u); };
+  setTimeout(() => $('#invTo').focus(), 100);
+}
 const REF_NOTE = '친구 초대 이벤트 · 내 초대 링크로 선생님이 신청하면, 행사 날 상품으로 바꿔 드리거나 행운권을 한 장 더 드려요. (당일 사정에 따라 달라질 수 있어요)';
 function dropPass(d) {
   if (!confirm('이 기기에서 ' + (d && d.name ? d.name + ' 선생님 ' : '') + '여권을 내려놓을까요?\n\n신청은 그대로 남아요. 다시 열 때는 "내 여권 찾기"에서 이름과 휴대폰 번호를 넣으면 돼요.')) return;
@@ -897,6 +1000,7 @@ async function apply() {
     </form>
   </div>`;
   const f = $('#f');
+  { const tn = sessionStorage.getItem('hm_to'); if (tn && !$('#name').value) $('#name').value = tn.replace(/\s*(선생님|쌤|샘)$/, ''); }
   const syncCode = () => { const t = f.querySelector('input[name=type]:checked')?.value; $('#codeF').style.display = t === 'nanum' && !staffKey() ? 'block' : 'none'; };
   f.querySelectorAll('input[name=type]').forEach(r => r.addEventListener('change', syncCode)); syncCode();
   wireLunchKids(f);
@@ -1021,7 +1125,7 @@ async function ticket(tok) {
     ${cancelled ? `<a class="btn" href="#/apply">다시 신청하기</a>` : `
     <div class="save"><b>이 링크를 꼭 저장해 주세요</b>당일 여권과 도장이 이 링크로 열려요. 카톡 "나와의 채팅"에 보내 두면 안전해요.
       <div class="row3"><button class="btn2" id="cp">링크 복사</button><button class="btn2" id="sh">나에게 보내기</button><button class="btn2" id="img">이미지 저장</button></div></div>
-    ${(() => { const k = new Date(Date.now() + 9 * 3600e3); return (k.getUTCFullYear() === 2026 && k.getUTCMonth() === 11 && k.getUTCDate() === 19) || d.test; })() ? '<button class="btn" id="qrTop" style="margin-bottom:10px">도장 찍을 QR 보여 주기</button>' : ''}<button class="btn2" id="inv">동료 선생님 초대하기</button>
+    ${(() => { const k = new Date(Date.now() + 9 * 3600e3); return (k.getUTCFullYear() === 2026 && k.getUTCMonth() === 11 && k.getUTCDate() === 19) || d.test; })() ? '<button class="btn" id="qrTop" style="margin-bottom:10px">도장 찍을 QR 보여 주기</button>' : ''}<button class="btn2" id="inv">✉ 동료 선생님께 초대장 보내기</button>
     ${d.no ? '<div class="refbox"><b>친구 초대 이벤트</b><p>' + esc(REF_NOTE.replace(/^친구 초대 이벤트 · /, '')) + '</p><p class="refno">내 접수번호 <b>' + d.no + '</b> · 친구가 신청서 "초대한 선생님" 칸에 이 번호를 넣어도 돼요</p></div>' : ''}
     <div class="acct">내 신청 관리 · 제목을 누르면 열려요</div>
     <div class="card" id="planCard"><h3>내 하루 일정</h3><p>불러오는 중…</p></div>
@@ -1040,7 +1144,7 @@ async function ticket(tok) {
   if (isNew) celebrate({ name: d.name, label: d.staff ? ' ' + CROWN : '' });
   $('#cp').onclick = () => copyText(link);
   $('#sh').onclick = () => share('지딜 한마당 내 탑승권', `${d.name} 선생님의 지딜 한마당 탑승권 (여권번호 ${d.pno})`, link);
-  $('#inv').onclick = () => share('지딜 한마당 2026 초대장', '12월 19일 토요일 마산대학교, 지딜 한마당에 같이 가요', location.origin + location.pathname + (d.no ? '?ref=' + d.no : '') + '#/');
+  $('#inv').onclick = () => inviteModal(d);
   $('#img').onclick = () => drawPass(d);
   if (canCancel) $('#cx').onclick = () => cancelFlow(tok, d);
   hackCard(tok, d);
@@ -1548,7 +1652,7 @@ async function route() {
   } catch (e) { console.error(e); view.innerHTML = `<div class="wrap"><div class="err" style="display:block">화면을 불러오지 못했어요. 새로고침해 주세요.</div></div>`; }
 }
 window.addEventListener('hashchange', route);
-if (!location.hash.startsWith('#/scan/')) runIntro();
+if (!location.hash.startsWith('#/scan/')) { if (INV) runEnvelope(); else runIntro(); }
 loadMeta().catch(e => { console.error(e); }).then(() => route()).catch(e => { console.error(e); view.innerHTML = `<div class="wrap"><div class="err" style="display:block">연결이 원활하지 않아요. 잠시 뒤 새로고침해 주세요.</div></div>`; });
 </script>
 </body>
