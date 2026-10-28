@@ -888,7 +888,7 @@ async function renderTimetable() {
   const FX = [
     { name: '부스', room: '위치 곧 안내', note: '애플·LG 외 여러 곳 · 자유 관람', start: '10:00', end: '16:20' },
     { name: '수업사례발표', room: '세미나실 · 송원홀', note: '자유 입장', start: '10:00', end: '16:20' },
-    { name: '해커톤', room: '305호', note: '해커톤 신청자', start: '10:00', end: '14:50', show: 1 },
+    { name: '해커톤 챌린지', room: '305호', note: '3~4인 1팀 · 참가비 없음', start: '10:00', end: '14:50', show: 1, hack: 1 },
     { name: '아이돌봄 (초등)', room: '408호', note: '자녀 동반 신청자', start: '10:00', end: '16:20' }];
   const TABS = [
     { k: '0900', tm: '09:00', lb: '오프닝', one: ['오프닝 및 네트워킹', '09:00–09:50 · 송원홀', '창의관 송원홀(세미나실)에서 시작해요. 도착하면 탑승권을 보여 주세요.'] },
@@ -903,16 +903,21 @@ async function renderTimetable() {
   const inWin = (a, b, t) => T(a) < t.to && T(b) > t.from;
   const ses = (s, t) => { const [a, b] = rng(s); const full = s.count >= s.cap || waitN(s) > 0; const own = (T(a) !== t.from || T(b) !== t.to) ? a + '–' + b : '';
     return `<div class="tc"><div class="nm">${esc(s.name)}</div>${sesInfoHTML(s)}<span class="rm">${esc(room(s.room))}</span><div class="mt"><span>${own}</span><b class="${full ? 'full' : ''}">${full ? '마감' + (waitN(s) ? ' · 대기 ' + waitN(s) : '') : '남은 자리 ' + sesLeft(s) + ' / ' + s.cap}</b></div>${S && new Date() < ts(S.cancelDeadline) ? '<button type="button" class="tgo' + (full ? ' w' : '') + '" data-go="' + s.id + '">' + (full ? '대기 신청하기' : '이 세션 신청하기') + '</button>' : ''}</div>`; };
+  let HC = { total: 0 }; try { const hq = await getDoc(doc(db, 'hcounters', 'main')); if (hq.exists()) HC = hq.data(); } catch (e) { }
+  const hx = f => { const hs = hackState(), cap = S?.hackCap || 40, left = Math.max(0, cap - (HC.total || 0));
+    const lab = hs === 'open' ? (left > 0 ? '남은 자리 ' + left + ' / ' + cap : '마감') : hs === 'before' ? md(ts(S.hackOpen)) + ' 신청 열림' : '신청 마감';
+    return `<div class="tc"><div class="nm">${f.name}</div><span class="rm">${f.room}</span><div class="mt"><span>${f.note} · ${f.start}–${f.end}</span><b class="${hs === 'open' && left > 0 ? '' : 'full'}">${lab}</b></div>${hs === 'open' && left > 0 ? '<button type="button" class="tgo" data-hack="1">해커톤 신청하기</button>' : ''}</div>`; };
   const fx = (f, t) => `<div class="tc fx"><div class="nm">${f.name}</div><span class="rm">${f.room}</span><div class="mt"><span>${f.note}${f.show ? ' · ' + f.start + '–' + f.end : ''}</span><b style="color:#8a9a90;font-family:var(--sans)">신청 없음</b></div>${fxInfoHTML(f)}</div>`;
   const panel = t => {
     if (t.one) return `<div class="tp1"><div class="tm">${t.one[1]}</div><div class="nm">${t.one[0]}</div><p>${t.one[2]}</p></div>`;
     const list = ss.filter(s => { const [a, b] = rng(s); return inWin(a, b, t); });
-    return `<div class="tph">${t.hd}</div>${list.map(s => ses(s, t)).join('')}<div class="tph2">신청 없이 갈 수 있어요</div>${FX.filter(f => inWin(f.start, f.end, t)).map(f => fx(f, t)).join('')}`; };
+    return `<div class="tph">${t.hd}</div>${list.map(s => ses(s, t)).join('')}${FX.filter(f => f.hack && inWin(f.start, f.end, t)).map(hx).join('')}<div class="tph2">신청 없이 갈 수 있어요</div>${FX.filter(f => !f.hack && inWin(f.start, f.end, t)).map(f => fx(f, t)).join('')}`; };
   const draw = () => { box.innerHTML = `<h3>전체 시간표</h3><p style="font-size:12.5px;margin-bottom:10px">장소는 모두 마산대학교 창의관이에요. 왼쪽 시간을 누르면 그 시간 프로그램과 교실만 보여요.</p>
     <div class="ttw"><div class="ttr">${TABS.map(t => `<button type="button" data-tt="${t.k}" class="${t.k === cur ? 'on' : ''}"><b>${t.tm}</b><span>${t.lb}</span></button>`).join('')}</div>
     <div class="ttp">${panel(TABS.find(t => t.k === cur))}</div></div>`;
     box.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { cur = window.__ttTab = b.dataset.tt; draw(); });
-    box.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { sessionStorage.setItem('hm_want', b.dataset.go); const t = localStorage.getItem('hm_tok'); location.hash = t ? '#/t/' + t : '#/apply'; }); };
+    box.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { sessionStorage.setItem('hm_want', b.dataset.go); const t = localStorage.getItem('hm_tok'); location.hash = t ? '#/t/' + t : '#/apply'; });
+    box.querySelectorAll('[data-hack]').forEach(b => b.onclick = () => { const t = localStorage.getItem('hm_tok'); if (t) { location.hash = '#/hack'; return; } sessionStorage.setItem('hm_hackwant', '1'); toast('한마당 참가 신청을 먼저 하면, 탑승권에서 바로 해커톤을 신청할 수 있어요'); location.hash = '#/apply'; }); };
   draw();
 }
 
@@ -1427,6 +1432,7 @@ async function hackCard(tok, d) {
   let st; try { st = await loadHack(tok); } catch (e) { return; }
   const { hacker, team, hc } = st;
   const cap = S?.hackCap || 40, left = Math.max(0, cap - (hc.total || 0)), hs = (d.test || d.staff) ? 'open' : hackState();
+  if (sessionStorage.getItem('hm_hackwant')) { sessionStorage.removeItem('hm_hackwant'); if (!(hacker && hacker.status === 'active')) setTimeout(() => { box.scrollIntoView({ behavior: 'smooth', block: 'center' }); box.style.outline = '3px solid var(--orange)'; box.style.borderRadius = '16px'; setTimeout(() => { box.style.outline = ''; }, 3000); }, 1800); }
   if (hacker && hacker.status === 'active') {
     const hn = sessionStorage.getItem('hm_hacknew'); sessionStorage.removeItem('hm_hacknew');
     if (hn) celebrate({ name: d.name, head: 'HACKATHON PASS', title: '해커톤 탑승 확정!', sub: hn === 'match' ? '운영진이 딱 맞는 팀을 찾아 드릴게요' : hn === 'lead' ? '팀 코드를 팀원에게 보내 주세요' : '팀에 합류했어요', stamp: ['해커톤', '확정'], color: 'var(--orange)' });
