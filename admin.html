@@ -605,7 +605,7 @@ $('#stSeed').onclick = async () => {
   if (!OWNER) return alert('총괄만 만들 수 있어요.');
   const list = [['prog_open', 'program', '등록·오프닝 (입장 체크)', '창의관', 1]];
   SE.forEach((x, i) => list.push(['ses_' + x.id, 'session', x.name, x.room, 10 + i]));
-  [['booth_apple', '애플'], ['booth_lg', 'LG 슈퍼스쿨'], ['booth_msecm', 'MSECM'], ['booth_edunity', '에듀니티'], ['booth_brixel', '브릭셀AI'], ['booth_adobe', '어도비']].forEach(([id, n], i) => list.push([id, 'booth', n + ' 부스', '', 40 + i]));
+  [['booth_apple', '애플'], ['booth_lg', 'LG 슈퍼스쿨'], ['booth_msecm', 'MSECM'], ['booth_edunity', '에듀리티랩'], ['booth_brixel', '브릭셀AI'], ['booth_adobe', '어도비']].forEach(([id, n], i) => list.push([id, 'booth', n + ' 부스', '', 40 + i]));
   list.push(['prog_case', 'program', '수업사례발표', '세미나실(송원홀)', 60], ['prog_hack', 'program', '해커톤', '305호', 61], ['prog_close', 'program', '총회·폐막식', '', 62]);
   const have = new Set(SPOT.map(x => x.id)); const add = list.filter(x => !have.has(x[0]));
   if (!add.length) return alert('이미 다 만들어져 있어요.');
