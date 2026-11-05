@@ -910,7 +910,7 @@ async function renderTimetable() {
   const rng = s => s.group === 'AM' ? [s.start || '10:00', s.end || '11:30'] : [s.start || '13:00', s.end || '16:20'];
   const room = r => String(r || '').replace('창의관 ', '').replace(/\s*\(/, ' · ').replace(/\)\s*$/, '');
   const FX = [
-    { name: '부스', room: '위치 곧 안내', note: '블루포트·LG 외 여러 곳 · 자유 관람', start: '10:00', end: '16:20' },
+    { name: '부스', room: '송원홀', note: '블루포트·LG 외 6곳 · 자유 관람', start: '10:00', end: '16:20' },
     { name: '수업사례발표', room: '송원홀', note: '자유 입장', start: '10:00', end: '16:20' },
     { name: '해커톤 챌린지', room: '305호', note: '3~4인 1팀 · 참가비 없음', start: '10:00', end: '14:50', show: 1, hack: 1 },
     { name: '아이돌봄 (초등)', room: '408호', note: '탑승권에서 신청', start: '10:00', end: '16:20' }];
