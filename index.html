@@ -920,7 +920,7 @@ async function renderTimetable() {
     const lab = hs === 'open' ? (left > 0 ? '남은 자리 ' + left + ' / ' + cap : '마감') : hs === 'before' ? md(ts(S.hackOpen)) + ' 신청 열림' : '신청 마감';
     return `<div class="tc"><div class="nm">${f.name}</div><span class="rm">${f.room}</span><div class="mt"><span>${f.note} · ${f.start}–${f.end}</span><b class="${hs === 'open' && left > 0 ? '' : 'full'}">${lab}</b></div>${hs === 'open' && left > 0 ? '<button type="button" class="tgo" data-hack="1">해커톤 신청하기</button>' : ''}</div>`; };
   await loadCare();
-  const careLab = () => { const cap = careCapN(), u = (CCN && CCN.used) || 0, w = (CCN && CCN.wait) || 0; return u >= cap ? '마감' + (w ? ' · 대기 ' + w : '') : '남은 자리 ' + (cap - u) + ' / ' + cap; };
+  const careLab = () => { const cap = careCapN(), u = (CCN && CCN.used) || 0, w = (CCN && CCN.wait) || 0; return u >= cap ? '정원 마감 · 대기로 받아요' + (w ? ' (대기 ' + w + ')' : '') : '남은 자리 ' + (cap - u) + ' / ' + cap; };
   const fx = (f, t) => { const care = /^아이돌봄/.test(f.name); return `<div class="tc fx"><div class="nm">${f.name}</div><span class="rm">${f.room}</span><div class="mt"><span>${f.note}${f.show ? ' · ' + f.start + '–' + f.end : ''}</span>${care ? `<b class="${(CCN && CCN.used || 0) >= careCapN() ? 'full' : ''}">${careLab()}</b>` : '<b style="color:#8a9a90;font-family:var(--sans)">신청 없음</b>'}</div>${fxInfoHTML(f)}</div>`; };
   const panel = t => {
     if (t.one) return `<div class="tp1"><div class="tm">${t.one[1]}</div><div class="nm">${t.one[0]}</div><p>${t.one[2]}</p></div>`;

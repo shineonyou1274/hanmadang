@@ -161,7 +161,7 @@ tr.dup td{background:#FFF7E1}
       <div class="kpi" style="border-left-color:#9aa9a0"><div class="l">돌봄 안 맡기는 자녀</div><div class="v" id="cNo">-</div><div class="s">동반만 해요</div></div>
       <div class="kpi" style="border-left-color:#9aa9a0"><div class="l">돌봄 카운터</div><div class="v" id="cCnt" style="font-size:18px">-</div><div class="s">숫자가 다르면 설정 → 다시 세기</div></div>
     </div>
-    <div class="panel" id="carePanel"><h3>아이돌봄 신청 (408호 · 초등)</h3><p class="note">확정은 신청 순서대로 정원까지. 대기는 신청 시각 순서예요. 자리가 나면 대기에서 '확정'을 누르세요.</p>
+    <div class="panel" id="carePanel"><h3>아이돌봄 신청 (408호 · 초등) <span class="tools"><button class="b2" id="carecsv">돌봄 명단 엑셀(CSV)</button></span></h3><p class="note">확정은 신청 순서대로 정원까지. 대기는 신청 시각 순서예요. 자리가 나면 대기에서 '확정'을 누르세요.</p>
       <div style="overflow:auto;margin-top:8px"><table><thead><tr><th>순서</th><th>상태</th><th>이름</th><th>소속</th><th>맡길 아이</th><th>동반 자녀</th><th>신청 시각</th><th></th></tr></thead><tbody id="careRows"></tbody></table></div></div>
     <div class="kpis" style="grid-template-columns:repeat(6,1fr)">
       <div class="kpi" style="border-left-color:#8B5A2B"><div class="l">왕갈비맛 함박</div><div class="v" id="lGalbi">-</div></div>
@@ -491,6 +491,15 @@ function renderSes() {
     return `<tr><td style="font-family:var(--mono);font-size:12.5px;white-space:nowrap">${s.start}–${s.end}</td><td><b>${esc(s.name)}</b></td><td>${esc(s.room)}</td><td style="white-space:nowrap">${ppl.length}/${OWNER ? `<input type="number" value="${s.cap}" min="1" max="300" style="width:62px;padding:3px 6px" data-cap="${s.id}">` : s.cap}${warn}</td><td style="font-size:12.5px">${ppl.map(x => esc(nameOf(x.tok)) + (x.w ? '<sup style="color:var(--orange)">대기→확정</sup>' : '')).join(', ') || '<span class="note">아직 없음</span>'}${wl.length ? `<div style="margin-top:4px;color:#c4621a"><b>대기 ${wl.length}명</b>: ${wl.map((x, i) => (i + 1) + '. ' + esc(nameOf(x.tok))).join(', ')}</div>` : ''}</td></tr>`; }).join('');
   document.querySelectorAll('[data-cap]').forEach(i => i.onchange = async () => { const v = Number(i.value); const s = SE.find(x => x.id === i.dataset.cap); if (!v || v < s.count) { alert('지금 신청 인원(' + s.count + ')보다 작게 할 수 없어요.'); i.value = s.cap; return; } await setDoc(doc(db, 'sessions', s.id), { cap: v }, { merge: true }); await fillFromWait(s.id, v); });
 }
+$('#carecsv').onclick = () => {
+  const act = actIds(); const tsv = e => e.at && e.at.toMillis ? e.at.toMillis() : 0;
+  const fam = [...act].map(id => ({ id, e: EX[id] || {} })).filter(x => (x.e.cc || 0) + (x.e.cwn || 0) > 0);
+  const rows = [...fam.filter(x => x.e.cc).sort((p, q) => tsv(p.e) - tsv(q.e)), ...fam.filter(x => x.e.cwn).sort((p, q) => tsv(p.e) - tsv(q.e))];
+  const head = ['순서', '상태', '이름', '소속', '휴대폰', '맡길 아이', '동반 자녀', '아이 도시락', '신청 시각', '접수번호'];
+  const body = rows.map((x, i) => { const p = P.find(q => q.id === x.id) || {}; return [i + 1, x.e.cwn ? '대기' : '확정', p.name, p.school, OWNER ? p.phone : maskPh(p.phone), x.e.cc || x.e.cwn, x.e.kids || 0, x.e.klunch || 0, x.e.at ? kst(ts(x.e.at)) : '', p.no || '']; });
+  const csv = '\uFEFF' + [head, ...body].map(r => r.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = '지딜한마당_아이돌봄명단_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
+};
 $('#sescsv').onclick = () => {
   const act = actIds(); const head = ['시간', '세션', '장소', '상태', '이름', '소속', '휴대폰', '여권번호'];
   const body = []; SE.forEach(s => { holdersOf(s.id).filter(x => act.has(x.tok)).forEach(x => { const p = P.find(q => q.id === x.tok) || {}; body.push([s.start + '–' + s.end, s.name, s.room, '확정', p.name, p.school, OWNER ? p.phone : maskPh(p.phone), p.pno]); }); waitersOf(s.id).filter(x => act.has(x.tok)).forEach((x, i) => { const p = P.find(q => q.id === x.tok) || {}; body.push([s.start + '–' + s.end, s.name, s.room, '대기 ' + (i + 1), p.name, p.school, OWNER ? p.phone : maskPh(p.phone), p.pno]); }); });
