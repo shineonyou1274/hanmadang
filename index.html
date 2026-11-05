@@ -1698,11 +1698,12 @@ async function route() {
     if (h === '/apply') return apply();
     if (h === '/find') return find();
     if (h === '/hack') return hack();
+    if (h === '/tt' || h === '/timetable') { await home(); const b = document.querySelector('#homeTabs [data-t="tt"]'); if (b) { b.click(); setTimeout(() => document.querySelector('#homeTabs')?.scrollIntoView({ behavior: 'smooth' }), 300); } return; }
     return home();
   } catch (e) { console.error(e); view.innerHTML = `<div class="wrap"><div class="err" style="display:block">화면을 불러오지 못했어요. 새로고침해 주세요.</div></div>`; }
 }
 window.addEventListener('hashchange', route);
-if (!location.hash.startsWith('#/scan/')) { if (INV) runEnvelope(); else runIntro(); }
+if (!location.hash.startsWith('#/scan/') && !/^#\/(tt|timetable)$/.test(location.hash)) { if (INV) runEnvelope(); else runIntro(); }
 loadMeta().catch(e => { console.error(e); }).then(() => route()).catch(e => { console.error(e); view.innerHTML = `<div class="wrap"><div class="err" style="display:block">연결이 원활하지 않아요. 잠시 뒤 새로고침해 주세요.</div></div>`; });
 </script>
 </body>
