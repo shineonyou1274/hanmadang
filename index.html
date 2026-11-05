@@ -643,23 +643,35 @@ function lunchFields(cur = {}) {
     <div class="hint" style="font-size:12px;color:#6b8577;margin-top:4px">한솥도시락 사각 도시락 · 점심시간(11:30–13:00)에 나눠 드려요 · 신청·변경은 12/12까지</div>`;
 }
 const klOpts = (k, v) => Array.from({ length: k + 1 }, (_, i) => `<option value="${i}" ${v === i ? 'selected' : ''}>${i ? i + '개' : '필요 없어요'}</option>`).join('');
+const careCapN = () => (S && S.careCap) || 20;
+let CCN = null;
+async function loadCare() { try { const x = await getDoc(doc(db, 'ccounters', 'main')); CCN = x.exists() ? x.data() : { used: 0, wait: 0 }; } catch (e) { CCN = CCN || { used: 0, wait: 0 }; } return CCN; }
+const crOpts = (k, v) => Array.from({ length: k + 1 }, (_, i) => `<option value="${i}" ${v === i ? 'selected' : ''}>${i ? i + '명' : '맡기지 않아요'}</option>`).join('');
+function careHintText(cur = {}) {
+  const cap = careCapN(), u = (CCN && CCN.used) || 0, w = (CCN && CCN.wait) || 0, left = Math.max(0, cap - u);
+  const mine = cur.cc ? `<b style="color:#2e7d4f">돌봄 확정 ${cur.cc}명</b> · ` : cur.cwn ? `<b style="color:#c4621a">돌봄 대기 ${cur.cwn}명</b> (자리가 나면 운영진이 확정해 드려요) · ` : '';
+  return mine + `아이돌봄은 초등학생만, 하루 종일 408호에서 해요. 정원 ${cap}명 · 남은 자리 ${left}명${w ? ' · 대기 ' + w + '명' : ''}. 자리가 없으면 대기로 받아요.`;
+}
+async function fillCareHint(root, cur = {}) { await loadCare(); const h = root.querySelector('[data-carehint]'); if (h) h.innerHTML = careHintText(cur); }
 function kidsFields(cur = {}) {
-  const k = cur.kids || 0, kl = cur.klunch || 0;
+  const k = cur.kids || 0, kl = cur.klunch || 0, cr = (cur.cc || 0) + (cur.cwn || 0);
   return `<div class="kids"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="kidsOn" ${k ? 'checked' : ''}> 자녀와 함께 와요</label>
     <select id="kidsN" ${k ? '' : 'disabled'}>${Array.from({ length: 10 }, (_, i) => i + 1).map(n => `<option value="${n}" ${k === n ? 'selected' : ''}>${n}명</option>`).join('')}</select></div>
     <div class="kids" id="klRow" style="margin-top:8px;${k ? '' : 'display:none'}"><span>아이 도시락</span><select id="klN">${klOpts(k || 1, kl)}</select></div>
-    <div class="hint" style="font-size:12px;color:#6b8577;margin-top:4px">아이돌봄(초등)을 준비하고 있어요. 자세한 내용은 추후 업데이트할게요.</div>`;
+    <div class="kids" id="crRow" style="margin-top:8px;${k ? '' : 'display:none'}"><span>아이돌봄(초등)에 맡길 아이</span><select id="crN">${crOpts(k || 1, cr)}</select></div>
+    <div class="hint" data-carehint style="font-size:12px;color:#6b8577;margin-top:4px">${careHintText(cur)}</div>`;
 }
 function wireLunchKids(root) {
   root.querySelectorAll('input[name=lunch]').forEach(r => r.addEventListener('change', () => root.querySelectorAll('.lunch label').forEach(lb => lb.classList.toggle('on', lb.querySelector('input').checked))));
-  const on = root.querySelector('#kidsOn'), n = root.querySelector('#kidsN'), row = root.querySelector('#klRow'), kl = root.querySelector('#klN');
+  const on = root.querySelector('#kidsOn'), n = root.querySelector('#kidsN'), row = root.querySelector('#klRow'), kl = root.querySelector('#klN'), crow = root.querySelector('#crRow'), cr = root.querySelector('#crN');
   if (!on) return;
-  const sync = () => { n.disabled = !on.checked; row.style.display = on.checked ? '' : 'none'; const v = Math.min(Number(kl.value) || 0, Number(n.value)); kl.innerHTML = klOpts(Number(n.value), v); };
+  const sync = () => { n.disabled = !on.checked; row.style.display = on.checked ? '' : 'none'; const v = Math.min(Number(kl.value) || 0, Number(n.value)); kl.innerHTML = klOpts(Number(n.value), v); if (crow) { crow.style.display = on.checked ? '' : 'none'; const cv = Math.min(Number(cr.value) || 0, Number(n.value)); cr.innerHTML = crOpts(Number(n.value), cv); } };
+  fillCareHint(root);
   on.addEventListener('change', sync); n.addEventListener('change', sync);
 }
 const gmField = (need, sent) => `<label class="lnone" style="margin-top:0"><input type="checkbox" id="gmOn" ${need ? 'checked' : ''} ${sent ? 'disabled' : ''} style="accent-color:var(--g)"> 소속 학교로 출장(참가 협조) 공문이 필요해요</label>
     <div class="hint" style="font-size:12px;color:#6b8577;margin-top:4px">G-DEAL에서 소속 학교로 공문을 보내 드려요. 보내고 나면 탑승권에 "발송 완료"로 표시돼요.</div>`;
-const readLunchKids = root => { const k = root.querySelector('#kidsOn')?.checked ? Number(root.querySelector('#kidsN').value) : 0; return { lunch: root.querySelector('input[name=lunch]:checked')?.value || '', kids: k, klunch: k ? Number(root.querySelector('#klN').value) || 0 : 0 }; };
+const readLunchKids = root => { const k = root.querySelector('#kidsOn')?.checked ? Number(root.querySelector('#kidsN').value) : 0; return { lunch: root.querySelector('input[name=lunch]:checked')?.value || '', kids: k, klunch: k ? Number(root.querySelector('#klN').value) || 0 : 0, care: k ? Number(root.querySelector('#crN')?.value) || 0 : 0 }; };
 const testKey = () => sessionStorage.getItem('hm_test');
 const staffOpen = () => !S || new Date() < ts(S.nanumStart);
 const staffKey = () => { const k = sessionStorage.getItem('hm_staff'); if (k && !staffOpen()) { sessionStorage.removeItem('hm_staff'); return null; } return k; };
@@ -847,7 +859,7 @@ document.addEventListener('click', e => { const h = e.target.closest('h3.acch');
 document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('h3.acch')) { e.preventDefault(); e.target.click(); } });
 const SUM = {
   seat: el => { if (/불러오는 중/.test(el.textContent)) return ''; const nm = x => x.querySelector('.nm2')?.textContent.replace('✓', '').trim(); const on = [...el.querySelectorAll('.ses.on')].map(nm); const wt = [...el.querySelectorAll('.ses')].filter(x => !x.classList.contains('on') && /대기 \d+번/.test(x.textContent)).map(x => nm(x) + ' 대기'); const all = [...on, ...wt]; return all.length ? '<span class="okk">' + all.map(esc).join(' · ') + '</span>' : '안 골랐어요 (선택)'; },
-  extra: el => { if (/불러오는 중/.test(el.textContent)) return ''; if (el.classList.contains('need')) return '<span class="warn">도시락을 골라 주세요</span>'; const b = el.querySelector('p b'); if (!b) return ''; const t = el.querySelector('p').textContent; const k = (t.match(/자녀 (\d+)명/) || [])[1]; return '<span class="okk">' + esc(b.textContent.replace(' 함박스테이크', '')) + (k ? ' · 자녀 ' + k : '') + '</span>'; },
+  extra: el => { if (/불러오는 중/.test(el.textContent)) return ''; if (el.classList.contains('need')) return '<span class="warn">도시락을 골라 주세요</span>'; const b = el.querySelector('p b'); if (!b) return ''; const t = el.querySelector('p').textContent; const k = (t.match(/자녀 (\d+)명/) || [])[1]; const cs = t.match(/돌봄 (확정|대기) (\d+)명/); return '<span class="okk">' + esc(b.textContent.replace(' 함박스테이크', '')) + (k ? ' · 자녀 ' + k : '') + (cs ? ' · 돌봄 ' + cs[1] + ' ' + cs[2] : '') + '</span>'; },
   hack: el => { const t = el.textContent; if (/신청 완료/.test(t)) return '<span class="okk">신청 완료</span>'; if (/모두 찼어요/.test(t)) return '마감'; if (el.querySelector('a[href="#/hack"]')) return '신청 가능'; if (/열려요/.test(t)) return '곧 열려요'; return ''; },
   gm: el => { const v = el.dataset.st; return v === 'sent' ? '<span class="okk">발송 완료</span>' : v === 'need' ? '<span class="okk">신청함 · 발송 준비 중</span>' : v === 'no' ? '필요 없음' : ''; },
   tf: el => { const b = el.querySelector('#tfStat b'); return b ? '신청 ' + esc(b.textContent) : ''; },
@@ -887,16 +899,16 @@ async function renderTimetable() {
   const room = r => String(r || '').replace('창의관 ', '').replace(/\s*\(/, ' · ').replace(/\)\s*$/, '');
   const FX = [
     { name: '부스', room: '위치 곧 안내', note: '블루포트·LG 외 여러 곳 · 자유 관람', start: '10:00', end: '16:20' },
-    { name: '수업사례발표', room: '세미나실 · 송원홀', note: '자유 입장', start: '10:00', end: '16:20' },
+    { name: '수업사례발표', room: '송원홀', note: '자유 입장', start: '10:00', end: '16:20' },
     { name: '해커톤 챌린지', room: '305호', note: '3~4인 1팀 · 참가비 없음', start: '10:00', end: '14:50', show: 1, hack: 1 },
-    { name: '아이돌봄 (초등)', room: '408호', note: '자녀 동반 신청자', start: '10:00', end: '16:20' }];
+    { name: '아이돌봄 (초등)', room: '408호', note: '탑승권에서 신청', start: '10:00', end: '16:20' }];
   const TABS = [
-    { k: '0900', tm: '09:00', lb: '오프닝', one: ['오프닝 및 네트워킹', '09:00–09:50 · 송원홀', '창의관 송원홀(세미나실)에서 시작해요. 도착하면 탑승권을 보여 주세요.'] },
+    { k: '0900', tm: '09:00', lb: '오프닝', one: ['오프닝 및 네트워킹', '09:00–09:50 · 송원홀', '창의관 송원홀에서 시작해요. 도착하면 탑승권을 보여 주세요.'] },
     { k: '1000', tm: '10:00', lb: '오전', from: 1000, to: 1130, hd: '10:00–11:30 오전' },
     { k: '1130', tm: '11:30', lb: '점심', one: ['점심시간', '11:30–13:00', '신청한 도시락을 나눠 드려요.'] },
     { k: '1300', tm: '13:00', lb: '오후', from: 1300, to: 1500, hd: '13:00부터' },
     { k: '1500', tm: '15:00', lb: '오후 후반', from: 1500, to: 1620, hd: '15:00부터' },
-    { k: '1630', tm: '16:30', lb: '폐막', one: ['총회 및 폐막식', '16:30–17:00 · 송원홀', '창의관 송원홀(세미나실)에서 마무리해요. 행운권 경품 추첨도 여기서 해요.'] }];
+    { k: '1630', tm: '16:30', lb: '폐막', one: ['총회 및 폐막식', '16:30–17:00 · 송원홀', '창의관 송원홀에서 마무리해요. 행운권 경품 추첨도 여기서 해요.'] }];
   const now = new Date(Date.now() + 9 * 3600e3), today = now.toISOString().slice(0, 10) === '2026-12-19';
   let cur = window.__ttTab || '1000';
   if (!window.__ttTab && today) { const hm = now.getUTCHours() * 100 + now.getUTCMinutes(); cur = [...TABS].reverse().find(t => hm >= +t.k)?.k || '0900'; }
@@ -907,7 +919,9 @@ async function renderTimetable() {
   const hx = f => { const hs = hackState(), cap = S?.hackCap || 40, left = Math.max(0, cap - (HC.total || 0));
     const lab = hs === 'open' ? (left > 0 ? '남은 자리 ' + left + ' / ' + cap : '마감') : hs === 'before' ? md(ts(S.hackOpen)) + ' 신청 열림' : '신청 마감';
     return `<div class="tc"><div class="nm">${f.name}</div><span class="rm">${f.room}</span><div class="mt"><span>${f.note} · ${f.start}–${f.end}</span><b class="${hs === 'open' && left > 0 ? '' : 'full'}">${lab}</b></div>${hs === 'open' && left > 0 ? '<button type="button" class="tgo" data-hack="1">해커톤 신청하기</button>' : ''}</div>`; };
-  const fx = (f, t) => `<div class="tc fx"><div class="nm">${f.name}</div><span class="rm">${f.room}</span><div class="mt"><span>${f.note}${f.show ? ' · ' + f.start + '–' + f.end : ''}</span><b style="color:#8a9a90;font-family:var(--sans)">신청 없음</b></div>${fxInfoHTML(f)}</div>`;
+  await loadCare();
+  const careLab = () => { const cap = careCapN(), u = (CCN && CCN.used) || 0, w = (CCN && CCN.wait) || 0; return u >= cap ? '마감' + (w ? ' · 대기 ' + w : '') : '남은 자리 ' + (cap - u) + ' / ' + cap; };
+  const fx = (f, t) => { const care = /^아이돌봄/.test(f.name); return `<div class="tc fx"><div class="nm">${f.name}</div><span class="rm">${f.room}</span><div class="mt"><span>${f.note}${f.show ? ' · ' + f.start + '–' + f.end : ''}</span>${care ? `<b class="${(CCN && CCN.used || 0) >= careCapN() ? 'full' : ''}">${careLab()}</b>` : '<b style="color:#8a9a90;font-family:var(--sans)">신청 없음</b>'}</div>${fxInfoHTML(f)}</div>`; };
   const panel = t => {
     if (t.one) return `<div class="tp1"><div class="tm">${t.one[1]}</div><div class="nm">${t.one[0]}</div><p>${t.one[2]}</p></div>`;
     const list = ss.filter(s => { const [a, b] = rng(s); return inWin(a, b, t); });
@@ -1053,13 +1067,17 @@ async function apply() {
         if (cd.total >= (S.capacity || 300)) throw new Error('FULL');
         const lRef = doc(db, 'lookups', lookupKey);
         await tx.get(lRef);
+        const ccRef = doc(db, 'ccounters', 'main');
+        const ccd = lk.care ? ((await tx.get(ccRef)).data() || { used: 0, wait: 0 }) : null;
+        let ccN = 0, cwN = 0; if (lk.care) { if ((ccd.used || 0) + lk.care <= careCapN()) ccN = lk.care; else cwN = lk.care; }
         const cu = { total: cd.total + 1, [type]: (cd[type] || 0) + 1, last: mark(tx, tok) };
         if (!data.test && typeof cd.seq === 'number') { data.no = cd.seq + 1; cu.seq = cd.seq + 1; } else delete data.no;
         tx.set(doc(db, 'participants', tok), data);
         tx.update(cRef, cu);
         tx.set(doc(db, 'phones', phoneKey), { tok });
         tx.set(lRef, { tok });
-        tx.set(doc(db, 'extras', tok), { lunch: lk.lunch, kids: lk.kids, klunch: lk.klunch, at: serverTimestamp() });
+        tx.set(doc(db, 'extras', tok), { lunch: lk.lunch, kids: lk.kids, klunch: lk.klunch, cc: ccN, cwn: cwN, at: serverTimestamp() });
+        if (lk.care) tx.update(ccRef, { used: (ccd.used || 0) + ccN, wait: (ccd.wait || 0) + cwN, last: mark(tx, tok) });
         if (gmNeed) tx.set(doc(db, 'gm', tok), { need: true, at: serverTimestamp() });
         if (refNo > 0 && refNo < 10000 && !data.test && typeof data.no === 'number' && refNo !== data.no) tx.set(doc(db, 'refs', tok), { by: refNo, at: serverTimestamp() });
       });
@@ -1340,17 +1358,35 @@ async function extraCard(tok, d) {
   const box = $('#extraCard'); if (!box) return;
   let cur = {}; try { const x = await getDoc(doc(db, 'extras', tok)); if (x.exists()) cur = x.data(); } catch (e) { }
   const canEdit = S && new Date() < ts(S.cancelDeadline);
-  const saved = cur.lunch ? `<b>${LUNCH[cur.lunch]}</b>${cur.kids ? ' · 자녀 ' + cur.kids + '명 동반' + (cur.klunch ? ' · 아이 도시락 ' + cur.klunch + '개' : '') : ''}` : '';
+  const saved = cur.lunch ? `<b>${LUNCH[cur.lunch]}</b>${cur.kids ? ' · 자녀 ' + cur.kids + '명 동반' + (cur.klunch ? ' · 아이 도시락 ' + cur.klunch + '개' : '') + (cur.cc ? ' · 돌봄 확정 ' + cur.cc + '명' : cur.cwn ? ' · 돌봄 대기 ' + cur.cwn + '명' : '') : ''}` : '';
   box.classList.toggle('need', !cur.lunch);
   box.innerHTML = `<h3>점심 도시락 · 자녀 동반</h3>${cur.lunch ? '<p style="font-size:13px;margin-bottom:8px">지금 선택: ' + saved + '</p>' : '<p style="font-size:13px;margin-bottom:8px;color:#c4621a"><b>도시락을 아직 고르지 않았어요.</b></p>'}
     ${canEdit ? lunchFields(cur) + '<div class="gap"></div>' + kidsFields(cur) + '<div class="gap"></div><button class="btn" id="exSave">저장하기</button>' : '<p style="font-size:12.5px;color:#6b8577">도시락 신청·변경 마감(12/12)이 지났어요.</p>'}`;
   if (!canEdit) return;
-  wireLunchKids(box);
+  wireLunchKids(box); fillCareHint(box, cur);
   $('#exSave').onclick = async () => {
     const lk = readLunchKids(box); if (!lk.lunch) { toast('도시락을 골라 주세요'); return; }
     $('#exSave').disabled = true;
-    try { await setDoc(doc(db, 'extras', tok), { lunch: lk.lunch, kids: lk.kids, klunch: lk.klunch, at: serverTimestamp() }); toast('저장했어요'); extraCard(tok, d); }
-    catch (e) { console.error(e); toast('저장이 안 됐어요. 다시 눌러 주세요'); $('#exSave').disabled = false; }
+    try {
+      let note = '';
+      await runTransaction(db, async tx => {
+        const exRef = doc(db, 'extras', tok), ccRef = doc(db, 'ccounters', 'main');
+        const o = (await tx.get(exRef)).data() || {}; const ccd = (await tx.get(ccRef)).data() || { used: 0, wait: 0 };
+        const occ = o.cc || 0, ocw = o.cwn || 0, want = lk.care, cap = careCapN();
+        let cc = 0, cw = 0;
+        if (want > 0) {
+          if (occ === want) cc = want;
+          else if ((ccd.used || 0) - occ + want <= cap) cc = want;
+          else if (occ > 0 && want > occ) throw new Error('CARE_FULL');
+          else cw = want;
+        }
+        tx.set(exRef, { lunch: lk.lunch, kids: lk.kids, klunch: lk.klunch, cc, cwn: cw, at: serverTimestamp() });
+        if (cc !== occ || cw !== ocw) tx.update(ccRef, { used: (ccd.used || 0) + cc - occ, wait: (ccd.wait || 0) + cw - ocw, last: mark(tx, tok) });
+        note = cw && cw !== ocw ? ' · 돌봄 정원이 차서 대기로 받았어요' : cc && cc !== occ ? ' · 돌봄 ' + cc + '명 확정' : '';
+      });
+      toast('저장했어요' + note); extraCard(tok, d);
+    }
+    catch (e) { console.error(e); toast(e.message === 'CARE_FULL' ? '돌봄 남은 자리가 모자라요. 지금 인원으로 두거나 줄여 주세요' : '저장이 안 됐어요. 다시 눌러 주세요'); $('#exSave').disabled = false; }
   };
 }
 
@@ -1383,7 +1419,7 @@ async function planCard(tok, d) {
   const slotLine = k => { const sid = mine[k]; if (!sid) return null; const s = S2(sid); if (!s) return null; const h = hold[sid] || {}; const held = h.seat || h.n < (s.wh || 0); return { s, held, wait: held ? 0 : Math.max(1, h.n - (s.wh || 0) + 1) }; };
   const li = (t, w, sub, cls = '') => `<li><div class="pt">${t}</div><div><div class="pw ${cls}">${w}</div>${sub ? '<small>' + sub + '</small>' : ''}</div></li>`;
   const sesLi = (x, t) => x.held ? li(t, esc(x.s.name), room(x.s) + ' · ' + x.s.start + '–' + x.s.end) : li(t, esc(x.s.name) + ' <span class="warn">대기 ' + x.wait + '번</span>', '확정되면 여기 바로 표시돼요 · 그동안은 부스 자유 관람', '');
-  const L = [li('09:00', '오프닝 · 네트워킹', '송원홀 (창의관 세미나실) · 도착하면 이 탑승권(여권)을 보여 주세요')];
+  const L = [li('09:00', '오프닝 · 네트워킹', '송원홀 (창의관) · 도착하면 이 탑승권(여권)을 보여 주세요')];
   const am = slotLine('AM');
   if (hackOn) L.push(li('10:00–14:50', '해커톤 챌린지', '305호 (멀티미디어실) · 점심 포함'));
   else L.push(am ? sesLi(am, '10:00–11:30') : li('10:00–11:30', '부스 자유 관람', '세션을 안 골랐어요 · 수업사례발표(송원홀)도 자유 입장'));
@@ -1395,7 +1431,9 @@ async function planCard(tok, d) {
     if (!hackOn) L.push(p1 ? sesLi(p1, '13:00–14:50') : li('13:00–14:50', '부스 자유 관람', '세션을 안 골랐어요'));
     L.push(p2 ? sesLi(p2, '15:00–16:20') : li('15:00–16:20', '부스 자유 관람', '세션을 안 골랐어요'));
   }
-  if (e.kids) L.push(li('하루 종일', '아이돌봄 · 자녀 ' + e.kids + '명', '408호 (초등) · 자세한 안내는 추후 업데이트'));
+  if (e.cc) L.push(li('하루 종일', '아이돌봄 확정 · ' + e.cc + '명', '408호 (초등)'));
+  else if (e.cwn) L.push(li('하루 종일', '아이돌봄 대기 · ' + e.cwn + '명', '408호 (초등) · 자리가 나면 운영진이 확정해 드려요'));
+  else if (e.kids) L.push(li('하루 종일', '자녀 ' + e.kids + '명 동반', '아이돌봄(408호, 초등)은 탑승권의 도시락·자녀 칸에서 신청해요'));
   L.push(li('16:30–17:00', '총회 · 폐막식', '송원홀 · ' + (d.no ? '행운권 추첨 · 내 번호 ' + noTxt(d.no) : '행운권 추첨')));
   const gmTxt = g.need ? (g.sent ? '출장 공문 발송 완료' : '출장 공문 발송 준비 중') : '';
   box.innerHTML = `<h3>내 하루 일정</h3><ul class="plan">${L.join('')}</ul>
@@ -1585,9 +1623,13 @@ function cancelFlow(tok, d) {
         const cRef = doc(db, 'counters', 'main'); const pRef = doc(db, 'participants', tok);
         const c = await tx.get(cRef); const p = await tx.get(pRef);
         const hr = await hackReads(tx, tok);
+        const exRef = doc(db, 'extras', tok), ccRef = doc(db, 'ccounters', 'main');
+        const ex = (await tx.get(exRef)).data() || {}; const hasCare = (ex.cc || 0) + (ex.cwn || 0) > 0;
+        const ccd = hasCare ? ((await tx.get(ccRef)).data() || { used: 0, wait: 0 }) : null;
         if (p.data().status !== 'active') throw new Error('ALREADY');
         const cd = c.data(), t = p.data().type;
         if (hr) hackWrites(tx, tok, hr, ph);
+        if (hasCare) { tx.update(exRef, { cc: 0, cwn: 0, at: serverTimestamp() }); tx.update(ccRef, { used: Math.max(0, (ccd.used || 0) - (ex.cc || 0)), wait: Math.max(0, (ccd.wait || 0) - (ex.cwn || 0)), last: mark(tx, tok) }); }
         tx.update(pRef, { status: 'cancelled', cancelledAt: serverTimestamp(), cancelPhone: ph });
         tx.update(cRef, { total: cd.total - 1, [t]: (cd[t] || 1) - 1, last: mark(tx, tok) });
         tx.delete(doc(db, 'phones', p.data().phoneKey));

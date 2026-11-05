@@ -20,7 +20,7 @@ header nav button.on{background:rgba(255,255,255,.16);color:#fff}
 header .me{margin-left:auto;font-size:12.5px;color:#cfe8da;display:flex;gap:10px;align-items:center}
 header .me button{background:#fff2;border:0;color:#fff;border-radius:8px;padding:4px 10px;cursor:pointer;font:inherit}
 main{max-width:1200px;margin:0 auto;padding:20px}
-.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
 .kpi{background:#fff;border-radius:14px;padding:14px 16px;border-left:5px solid var(--g)}
 .kpi .l{font-size:12.5px;color:#5b7566}.kpi .v{font-size:30px;font-weight:800;font-family:var(--mono)}.kpi .s{font-size:12px;color:#6b8577}
 .panel{background:#fff;border-radius:14px;padding:16px 18px;margin-bottom:14px}
@@ -135,6 +135,7 @@ tr.dup td{background:#FFF7E1}
       <div class="kpi" style="border-left-color:var(--blue)"><div class="l">배움회원</div><div class="v" id="kB">-</div></div>
       <div class="kpi" style="border-left-color:var(--orange)"><div class="l">지딜 외</div><div class="v" id="kO">-</div></div>
       <div class="kpi" style="border-left-color:var(--red)"><div class="l">취소</div><div class="v" id="kX">-</div></div>
+      <div class="kpi" style="border-left-color:var(--purple)"><div class="l">아이돌봄</div><div class="v" id="kCare">-</div><div class="s" id="kCareS"></div></div>
     </div>
     <div class="panel"><h3>정원 채움 <span id="phaseNow" style="font-size:13px;font-weight:600;color:#5b7566"></span></h3><div class="bar" id="capBar"></div><p class="note" id="capNote"></p></div>
     <div class="panel"><h3>날짜별 신청</h3><div id="byDay"></div></div>
@@ -154,6 +155,14 @@ tr.dup td{background:#FFF7E1}
   </section>
 
   <section id="tab-ses" class="hidden">
+    <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+      <div class="kpi" style="border-left-color:var(--purple)"><div class="l">아이돌봄 확정</div><div class="v" id="cUsed">-</div><div class="s" id="cCap"></div></div>
+      <div class="kpi" style="border-left-color:var(--orange)"><div class="l">아이돌봄 대기</div><div class="v" id="cWait">-</div><div class="s">자리가 나면 아래에서 확정</div></div>
+      <div class="kpi" style="border-left-color:#9aa9a0"><div class="l">돌봄 안 맡기는 자녀</div><div class="v" id="cNo">-</div><div class="s">동반만 해요</div></div>
+      <div class="kpi" style="border-left-color:#9aa9a0"><div class="l">돌봄 카운터</div><div class="v" id="cCnt" style="font-size:18px">-</div><div class="s">숫자가 다르면 설정 → 다시 세기</div></div>
+    </div>
+    <div class="panel" id="carePanel"><h3>아이돌봄 신청 (408호 · 초등)</h3><p class="note">확정은 신청 순서대로 정원까지. 대기는 신청 시각 순서예요. 자리가 나면 대기에서 '확정'을 누르세요.</p>
+      <div style="overflow:auto;margin-top:8px"><table><thead><tr><th>순서</th><th>상태</th><th>이름</th><th>소속</th><th>맡길 아이</th><th>동반 자녀</th><th>신청 시각</th><th></th></tr></thead><tbody id="careRows"></tbody></table></div></div>
     <div class="kpis" style="grid-template-columns:repeat(6,1fr)">
       <div class="kpi" style="border-left-color:#8B5A2B"><div class="l">왕갈비맛 함박</div><div class="v" id="lGalbi">-</div></div>
       <div class="kpi" style="border-left-color:var(--red)"><div class="l">치폴레 함박</div><div class="v" id="lChip">-</div></div>
@@ -295,6 +304,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const TYPE = { nanum: '나눔회원', baeum: '배움회원', outside: '지딜 외' }, PILL = { nanum: 'pg', baeum: 'pb', outside: 'po' };
 const LEVEL = { new: '처음', some: '조금', often: '자주' };
+let CCn = null;
 let SPOT = [], SPK = {}, STAMP = [], QR2T = {}, HK = [], TM = [], HCn = null, SE = [], SEATS = [], WT = [], EX = {}, GM = {}, NT = [], RF = {};
 const LUNCH = { galbi: '왕갈비맛', chipotle: '치폴레', none: '필요 없음' };
 const ts = v => v?.toDate ? v.toDate() : null;
@@ -345,6 +355,7 @@ function start() {
   unsub.push(onSnapshot(query(collection(db, 'hackers'), orderBy('createdAt', 'desc')), q => { HK = q.docs.map(d => ({ id: d.id, ...d.data() })); renderHack(); }));
   unsub.push(onSnapshot(collection(db, 'teams'), q => { TM = q.docs.map(d => ({ id: d.id, ...d.data() })); renderHack(); }));
   unsub.push(onSnapshot(doc(db, 'hcounters', 'main'), s => { HCn = s.exists() ? s.data() : null; renderHack(); }));
+  unsub.push(onSnapshot(doc(db, 'ccounters', 'main'), s => { CCn = s.exists() ? s.data() : null; renderSes(); renderDash(); }));
   unsub.push(onSnapshot(collection(db, 'sessions'), q => { SE = q.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0)); renderSes(); }));
   unsub.push(onSnapshot(collection(db, 'seats'), q => { SEATS = q.docs.map(d => d.data()); renderSes(); renderList(); }));
   unsub.push(onSnapshot(collection(db, 'waits'), q => { WT = q.docs.map(d => d.data()); renderSes(); renderList(); }));
@@ -374,6 +385,7 @@ function renderDash() {
   $('#kTotal').textContent = C ? C.total : act.length;
   $('#kCap').textContent = `정원 ${cap} · 남은 자리 ${cap - (C ? C.total : act.length)}`;
   $('#kN').textContent = cnt('nanum'); $('#kB').textContent = cnt('baeum'); $('#kO').textContent = cnt('outside');
+  { const cap = S?.careCap || 20; if ($('#kCare')) { $('#kCare').textContent = (CCn ? CCn.used : 0) + '/' + cap; $('#kCareS').textContent = '대기 ' + (CCn ? CCn.wait : 0) + '명 · 동반 자녀 ' + [...actIds()].reduce((x, id) => x + ((EX[id] || {}).kids || 0), 0) + '명'; } }
   $('#kX').textContent = P.length - act.length;
   const tf = act.filter(p => p.staff).length, tst = act.filter(p => p.test).length;
   $('#kCap').textContent += (tf ? ` · TF ${tf}` : '') + (tst ? ` · 테스트 ${tst}` : '');
@@ -461,6 +473,18 @@ function renderSes() {
   const n = v => ex.filter(e => e && e.lunch === v).length;
   $('#kLunch').textContent = ex.reduce((a, e) => a + ((e && e.klunch) || 0), 0);
   $('#lGalbi').textContent = n('galbi'); $('#lChip').textContent = n('chipotle'); $('#lNone').textContent = n('none'); $('#lYet').textContent = ex.filter(e => !e || !e.lunch).length;
+  { const cap = S?.careCap || 20; const fam = [...act].map(id => ({ id, e: EX[id] || {} })).filter(x => (x.e.cc || 0) + (x.e.cwn || 0) > 0);
+    const used = fam.reduce((a, x) => a + (x.e.cc || 0), 0), wait = fam.reduce((a, x) => a + (x.e.cwn || 0), 0);
+    $('#cUsed').textContent = used + '/' + cap; $('#cCap').textContent = '남은 자리 ' + Math.max(0, cap - used) + '명'; $('#cWait').textContent = wait;
+    $('#cNo').textContent = ex.reduce((a, e) => a + Math.max(0, ((e && e.kids) || 0) - ((e && e.cc) || 0) - ((e && e.cwn) || 0)), 0);
+    $('#cCnt').textContent = CCn ? '확정 ' + CCn.used + ' · 대기 ' + CCn.wait : '없음';
+    const tsv = x => x.e.at && x.e.at.toMillis ? x.e.at.toMillis() : 0;
+    const rows = [...fam.filter(x => x.e.cc).sort((p, q) => tsv(p) - tsv(q)), ...fam.filter(x => x.e.cwn).sort((p, q) => tsv(p) - tsv(q))];
+    const nm = id => P.find(p => p.id === id) || {};
+    $('#careRows').innerHTML = rows.map((x, i) => { const p = nm(x.id); const w = !!x.e.cwn; return `<tr><td>${i + 1}</td><td>${w ? '<span style="color:var(--orange)">대기</span>' : '<span style="color:var(--g)">확정</span>'}</td><td><b>${esc(p.name || '?')}</b></td><td>${esc(p.school || '')}</td><td>${x.e.cc || x.e.cwn}명</td><td>${x.e.kids || 0}명</td><td style="font-size:12px">${x.e.at ? kst(ts(x.e.at), { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}</td><td>${w ? `<button class="b2" data-careok="${x.id}">확정</button>` : `<button class="b2" data-careoff="${x.id}">빼기</button>`}</td></tr>`; }).join('') || '<tr><td colspan="8" class="note">아직 아이돌봄 신청이 없어요</td></tr>';
+    document.querySelectorAll('[data-careok]').forEach(b => b.onclick = () => careMove(b.dataset.careok, 'ok'));
+    document.querySelectorAll('[data-careoff]').forEach(b => b.onclick = () => careMove(b.dataset.careoff, 'off'));
+  }
   const kids = ex.reduce((a, e) => a + ((e && e.kids) || 0), 0); $('#kidsT').textContent = kids; $('#kidsF').textContent = '자녀 동반 가족 ' + ex.filter(e => e && e.kids).length + '곳';
   const nameOf = id => (P.find(p => p.id === id) || {}).name || '?';
   $('#sesRows').innerHTML = SE.map(s => { const ppl = holdersOf(s.id).filter(x => act.has(x.tok)); const wl = waitersOf(s.id).filter(x => act.has(x.tok)); const warn = ppl.length !== s.count ? ` <span style="color:var(--red);font-size:11px">(숫자 ${s.count})</span>` : '';
@@ -606,7 +630,7 @@ $('#stSeed').onclick = async () => {
   const list = [['prog_open', 'program', '등록·오프닝 (입장 체크)', '창의관', 1]];
   SE.forEach((x, i) => list.push(['ses_' + x.id, 'session', x.name, x.room, 10 + i]));
   [['booth_apple', '블루포트'], ['booth_lg', 'LG 슈퍼스쿨'], ['booth_msecm', 'MSECM'], ['booth_edunity', '에듀니티랩'], ['booth_brixel', '브릭셀AI'], ['booth_adobe', '어도비']].forEach(([id, n], i) => list.push([id, 'booth', n + ' 부스', '', 40 + i]));
-  list.push(['prog_case', 'program', '수업사례발표', '세미나실(송원홀)', 60], ['prog_hack', 'program', '해커톤', '305호', 61], ['prog_close', 'program', '총회·폐막식', '', 62]);
+  list.push(['prog_case', 'program', '수업사례발표', '송원홀', 60], ['prog_hack', 'program', '해커톤', '305호', 61], ['prog_close', 'program', '총회·폐막식', '', 62]);
   const have = new Set(SPOT.map(x => x.id)); const add = list.filter(x => !have.has(x[0]));
   if (!add.length) return alert('이미 다 만들어져 있어요.');
   if (!confirm(add.length + '개 자리를 만들까요?\n' + add.map(x => STK[x[1]] + ' · ' + x[2]).join('\n'))) return;
@@ -657,6 +681,19 @@ function renderList() {
 }
 ['#q', '#fType', '#fStatus'].forEach(s => $(s).addEventListener('input', renderList));
 
+async function careMove(id, how) {
+  const e = EX[id] || {}; const p = P.find(x => x.id === id) || {};
+  const cap = S?.careCap || 20;
+  if (how === 'ok') { const n = e.cwn || 0; if ((CCn ? CCn.used : 0) + n > cap && !confirm(`정원 ${cap}명을 넘어요(지금 ${CCn ? CCn.used : 0}명). 그래도 ${p.name} 선생님 자녀 ${n}명을 확정할까요?`)) return; }
+  else if (!confirm(`${p.name} 선생님 자녀 ${e.cc || 0}명을 돌봄 확정에서 뺄까요?`)) return;
+  await runTransaction(db, async tx => {
+    const exRef = doc(db, 'extras', id), ccRef = doc(db, 'ccounters', 'main');
+    const o = (await tx.get(exRef)).data() || {}; const c = (await tx.get(ccRef)).data() || { used: 0, wait: 0 };
+    if (how === 'ok') { const n = o.cwn || 0; tx.update(exRef, { cc: n, cwn: 0 }); tx.set(ccRef, { used: (c.used || 0) + n, wait: Math.max(0, (c.wait || 0) - n), last: '' }); }
+    else { const n = o.cc || 0; tx.update(exRef, { cc: 0, cwn: 0 }); tx.set(ccRef, { used: Math.max(0, (c.used || 0) - n), wait: c.wait || 0, last: '' }); }
+  });
+}
+async function careRecount() { const act = actIds(); let used = 0, wait = 0; act.forEach(id => { const e = EX[id] || {}; used += e.cc || 0; wait += e.cwn || 0; }); await setDoc(doc(db, 'ccounters', 'main'), { used, wait, last: '' }); return used; }
 async function adminCancel(p) {
   if (!confirm(`${p.name} (${p.school}) 선생님 신청을 운영진 권한으로 취소할까요? 고른 세션 좌석도 함께 풀려요.`)) return;
   await releaseAll(p.id);
@@ -664,13 +701,14 @@ async function adminCancel(p) {
   b.update(doc(db, 'participants', p.id), { status: 'cancelled', cancelledAt: serverTimestamp(), cancelledBy: auth.currentUser.email });
   b.update(doc(db, 'counters', 'main'), { total: increment(-1), [p.type]: increment(-1), last: '' });
   if (p.phoneKey) b.delete(doc(db, 'phones', p.phoneKey));
+  const e = EX[p.id] || {}; if ((e.cc || 0) + (e.cwn || 0) > 0) { b.update(doc(db, 'extras', p.id), { cc: 0, cwn: 0 }); b.set(doc(db, 'ccounters', 'main'), { used: increment(-(e.cc || 0)), wait: increment(-(e.cwn || 0)), last: '' }, { merge: true }); }
   await b.commit();
 }
 
 $('#csv').onclick = () => {
   const rows = filtered();
-  const head = ['접수번호', '신청시각', '이름', '소속', '휴대폰', '이메일', '구분', '여권번호', '상태', '오전 세션', '오후 세션', '대기', '도시락', '동반 자녀', '아이 도시락', '출장 공문', '탑승권 링크'];
-  const body = rows.map(p => { const ss = seatsOf(p.id), e = EX[p.id] || {}; return [p.no || '', kst(ts(p.createdAt)), p.name, p.school, p.phone, p.email || '', TYPE[p.type], p.pno, p.status === 'active' ? '신청 중' : '취소', ss.filter(s => s.group === 'AM').map(s => s.name).join(' / '), ss.filter(s => s.group === 'PM').map(s => s.name).join(' / '), waitsOf(p.id).map(s => s.name).join(' / '), LUNCH[e.lunch] || '미선택', e.kids || 0, e.klunch || 0, gmLabel(p.id), location.origin + '/#/t/' + p.id]; });
+  const head = ['접수번호', '신청시각', '이름', '소속', '휴대폰', '이메일', '구분', '여권번호', '상태', '오전 세션', '오후 세션', '대기', '도시락', '동반 자녀', '아이 도시락', '아이돌봄', '출장 공문', '탑승권 링크'];
+  const body = rows.map(p => { const ss = seatsOf(p.id), e = EX[p.id] || {}; return [p.no || '', kst(ts(p.createdAt)), p.name, p.school, p.phone, p.email || '', TYPE[p.type], p.pno, p.status === 'active' ? '신청 중' : '취소', ss.filter(s => s.group === 'AM').map(s => s.name).join(' / '), ss.filter(s => s.group === 'PM').map(s => s.name).join(' / '), waitsOf(p.id).map(s => s.name).join(' / '), LUNCH[e.lunch] || '미선택', e.kids || 0, e.klunch || 0, e.cc ? '확정 ' + e.cc : e.cwn ? '대기 ' + e.cwn : '', gmLabel(p.id), location.origin + '/#/t/' + p.id]; });
   const csv = '\uFEFF' + [head, ...body].map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = '지딜한마당_신청명단_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
 };
@@ -708,6 +746,7 @@ $('#wipeTest').onclick = async () => {
   const act = P.filter(p => p.status === 'active' && !ids.has(p.id)); const c = t => act.filter(p => p.type === t).length;
   await setDoc(doc(db, 'counters', 'main'), { total: act.length, nanum: c('nanum'), baeum: c('baeum'), outside: c('outside'), last: '' }, { merge: true });
   await setDoc(doc(db, 'hcounters', 'main'), { total: HK.filter(h => h.status === 'active' && !ids.has(h.id)).length, last: '' });
+  { let used = 0, wait = 0; actIds().forEach(id => { if (ids.has(id)) return; const e = EX[id] || {}; used += e.cc || 0; wait += e.cwn || 0; }); await setDoc(doc(db, 'ccounters', 'main'), { used, wait, last: '' }); }
   $('#testMsg').textContent = `테스트 기록 ${tests.length}건을 지우고 숫자를 다시 맞췄어요.`;
 };
 $('#addAdmin').onclick = async () => { const e = $('#adminEmail').value.trim().toLowerCase(); if (!/^[^@\s]+@[^@\s]+$/.test(e)) return alert('이메일을 확인해 주세요.'); await setDoc(doc(db, 'admins', e), { role: $('#adminRole').value, addedBy: auth.currentUser.email, at: serverTimestamp() }); $('#adminEmail').value = ''; };
@@ -719,7 +758,8 @@ $('#recount').onclick = async () => {
   const hact = HK.filter(h => h.status === 'active').length;
   await setDoc(doc(db, 'hcounters', 'main'), { total: hact, last: '' });
   const nn = await assignNumbers();
-  $('#recountMsg').textContent = '맞췄어요: 한마당 ' + act.length + '명, 해커톤 ' + hact + '명' + (nn ? ', 접수번호 ' + nn + '명 새로 줌' : '');
+  const cu = await careRecount();
+  $('#recountMsg').textContent = '맞췄어요: 한마당 ' + act.length + '명, 해커톤 ' + hact + '명, 아이돌봄 ' + cu + '명' + (nn ? ', 접수번호 ' + nn + '명 새로 줌' : '');
 };
 $('#initBtn').onclick = async () => {
   const T = s => Timestamp.fromDate(new Date(s));

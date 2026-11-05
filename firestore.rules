@@ -396,22 +396,68 @@ service cloud.firestore {
               : !existsAfter(SEAT(resource.data.sid, resource.data.tok)));
     }
 
-    // ---------- 도시락·자녀 동반 ----------
+    // ---------- 도시락·자녀 동반·아이돌봄 ----------
+    function EXD(t) { return /databases/$(db)/documents/extras/$(t); }
+    function CC() { return /databases/$(db)/documents/ccounters/main; }
+    function careCap() { return S().get('careCap', 20); }
+    function extraBaseOk(d) {
+      return d.keys().hasOnly(['lunch', 'kids', 'klunch', 'cc', 'cwn', 'at'])
+        && d.lunch in ['galbi', 'chipotle', 'none']
+        && d.kids is int && d.kids >= 0 && d.kids <= 10
+        && d.get('klunch', 0) is int && d.get('klunch', 0) >= 0 && d.get('klunch', 0) <= d.kids
+        && d.get('cc', 0) is int && d.get('cwn', 0) is int
+        && d.get('cc', 0) >= 0 && d.get('cwn', 0) >= 0
+        && (d.get('cc', 0) == 0 || d.get('cwn', 0) == 0)
+        && d.get('cc', 0) + d.get('cwn', 0) <= d.kids
+        && d.at == request.time
+        && request.time < S().cancelDeadline;
+    }
+    // 돌봄 숫자가 바뀌면 같은 묶음에서 카운터도 이 토큰 표(mark)로 바뀌어야 함. 대기는 자리가 없을 때만
+    function careChangeOk(tok, d, occ, ocw) {
+      return (d.get('cc', 0) == occ && d.get('cwn', 0) == ocw)
+        || (getAfter(CC()).data.last != get(CC()).data.last
+            && tokOf(getAfter(CC()).data.last) == tok
+            && (d.get('cwn', 0) == 0 || get(CC()).data.used - occ + d.get('cwn', 0) > careCap()));
+    }
     match /extras/{tok} {
       allow get: if true;
       allow list: if isAdmin();
-      allow create, update: if isAdmin()
-        || (request.resource.data.keys().hasOnly(['lunch', 'kids', 'klunch', 'at'])
-            && request.resource.data.lunch in ['galbi', 'chipotle', 'none']
-            && request.resource.data.kids is int
-            && request.resource.data.kids >= 0 && request.resource.data.kids <= 10
-            && request.resource.data.get('klunch', 0) is int
-            && request.resource.data.get('klunch', 0) >= 0
-            && request.resource.data.get('klunch', 0) <= request.resource.data.kids
-            && request.resource.data.at == request.time
+      allow create: if isAdmin()
+        || (extraBaseOk(request.resource.data)
             && getAfter(P(tok)).data.status == 'active'
-            && request.time < S().cancelDeadline);
+            && careChangeOk(tok, request.resource.data, 0, 0));
+      allow update: if isAdmin()
+        || (extraBaseOk(request.resource.data)
+            && ((getAfter(P(tok)).data.status == 'active'
+                  && careChangeOk(tok, request.resource.data, resource.data.get('cc', 0), resource.data.get('cwn', 0)))
+              // 참가 취소하는 묶음에서는 돌봄을 0으로만 되돌릴 수 있음
+              || (get(P(tok)).data.status == 'active'
+                  && getAfter(P(tok)).data.status == 'cancelled'
+                  && request.resource.data.get('cc', 0) == 0 && request.resource.data.get('cwn', 0) == 0
+                  && careChangeOk(tok, request.resource.data, resource.data.get('cc', 0), resource.data.get('cwn', 0)))));
       allow delete: if isAdmin();
+    }
+    function careCounterOk(n, o) {
+      let tk = tokOf(n.last);
+      let e1 = getAfter(EXD(tk)).data;
+      return !exists(MK(n.last)) && existsAfter(MK(n.last))
+        && existsAfter(EXD(tk))
+        && ((!exists(EXD(tk))
+              && n.used == o.get('used', 0) + e1.get('cc', 0)
+              && n.wait == o.get('wait', 0) + e1.get('cwn', 0))
+          || (exists(EXD(tk))
+              && n.used == o.get('used', 0) + e1.get('cc', 0) - get(EXD(tk)).data.get('cc', 0)
+              && n.wait == o.get('wait', 0) + e1.get('cwn', 0) - get(EXD(tk)).data.get('cwn', 0)))
+        && n.used >= 0 && n.wait >= 0
+        && (n.used <= careCap() || n.used <= o.get('used', 0));
+    }
+    match /ccounters/{id} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (id == 'main'
+            && request.resource.data.keys().hasOnly(['used', 'wait', 'last'])
+            && careCounterOk(request.resource.data, resource.data));
     }
 
     // ---------- 스탬프 ----------
