@@ -41,6 +41,7 @@ tr.cx td:last-child,tr.cx td:nth-last-child(2){text-decoration:none}
 tr.dup td{background:#FFF7E1}
 .pill{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;color:#fff}
 #tab-hack table{min-width:760px}#tab-hack td b,#tab-hack td:nth-child(4){white-space:nowrap}#tab-hack .tel{font-family:var(--mono);font-size:12.5px;white-space:nowrap;color:#1d5a3c;font-weight:700;text-decoration:none}
+#tab-hack table.hall td{white-space:nowrap}#tab-hack table.hall td.w{white-space:normal;min-width:180px}
 .hcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin-top:10px}
 .hc{border:1px solid #dfe9e3;border-radius:12px;padding:10px 12px;background:#fff}
 .hc .t{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.hc .t b{font-size:16px}
@@ -132,7 +133,7 @@ header nav button{white-space:nowrap}
              style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
              d="m 0,0 h -259.19 c -7.99,0 -14.47,-6.48 -14.47,-14.47 v -51.14 h 8.51 v 51.14 c 0,3.29 2.67,5.97 5.96,5.97 H 0 c 3.29,0 5.97,-2.68 5.97,-5.97 v -47.75 c 3.88,0.87 6.65,1.61 8.5,2.17 v 45.58 C 14.47,-6.48 7.99,0 0,0 m -96.5,-237.99 h -66.18 v 20.76 h 66.18 z m 102.47,35.23 c 0,-3.29 -2.68,-5.97 -5.97,-5.97 h -259.19 c -3.29,0 -5.96,2.68 -5.96,5.97 v 38.14 c -3.68,1.54 -6.59,2.82 -8.51,3.69 v -41.83 c 0,-7.99 6.48,-14.47 14.47,-14.47 h 88.01 v -20.76 h -32.61 c -2.34,0 -4.25,-1.91 -4.25,-4.25 0,-1.18 0.48,-2.24 1.25,-3.01 0.77,-0.77 1.83,-1.25 3,-1.25 h 148.25 c 2.35,0 4.26,1.91 4.26,4.26 0,1.17 -0.48,2.23 -1.25,3 -0.77,0.77 -1.83,1.25 -3.01,1.25 H -88 v 20.76 H 0 c 7.99,0 14.47,6.48 14.47,14.47 v 53.83 c -4.86,0.52 -8.5,0.76 -8.5,0.76 z" /></g></g></g></g></svg> 운영실</div>
   <nav><button data-tab="dash" class="on">현황</button><button data-tab="list">명단</button><button data-tab="ses">세션·도시락·공문</button><button data-tab="ntc">알림</button><button data-tab="stp">스탬프</button><button data-tab="hack">해커톤</button><button data-tab="set">설정</button></nav>
-  <div class="me"><span id="meEmail"></span><button id="logout">로그아웃</button></div>
+  <div class="me"><span id="meEmail"></span><button id="xlsxAll" style="background:#f5c542;color:#1d3b2c;font-weight:800">전체 엑셀 받기</button><button id="logout">로그아웃</button></div>
 </header>
 <main>
   <div id="initWarn" class="warn hidden">아직 초기 설정이 없어요. <button class="b" id="initBtn">초기 설정 만들기</button> (접수 날짜·정원 기본값이 들어가요. 설정 탭에서 바꿀 수 있어요)</div>
@@ -246,7 +247,7 @@ header nav button{white-space:nowrap}
     </div>
     <div class="panel"><h3>전체 신청자 <span class="tools"><select id="hType"><option value="">구분 전체</option><option value="nanum">나눔회원</option><option value="baeum">배움회원</option><option value="outside">지딜 외</option></select><select id="hTeamF"><option value="">팀 전체</option><option value="team">팀 있음</option><option value="wait">매칭 대기</option></select><input id="hQ" placeholder="이름·소속 검색" style="width:140px"><button class="b2" id="hCopyPh">보이는 사람 번호 복사</button></span></h3>
       <p class="note" id="hTypeNote"></p>
-      <div id="hAllRows" class="hcards"></div>
+      <div style="overflow:auto;margin-top:8px"><table class="hall"><thead><tr><th>#</th><th>이름</th><th>구분</th><th>소속</th><th>팀</th><th>연락처</th><th>방식</th><th>경험</th><th>관심 주제</th><th>만들고 싶은 것</th><th>신청</th></tr></thead><tbody id="hAllRows"></tbody></table></div>
     </div>
     <div class="panel"><h3>매칭 대기 <span class="tools"><input id="newTeamName" placeholder="새 팀 이름" style="width:160px"><button class="b" id="mkTeam">선택한 사람으로 새 팀</button><select id="toTeam"></select><button class="b2" id="addToTeam">선택한 사람을 이 팀에</button></span></h3>
       <p class="note">체크한 사람을 새 팀으로 묶거나, 자리가 남은 팀에 넣어요. 팀이 정해지면 참가자 탑승권 화면에 바로 표시돼요.</p>
@@ -358,7 +359,7 @@ onAuthStateChanged(auth, async user => {
   catch (e) { $('#loginMsg').innerHTML = `<b>${esc(user.email)}</b> 계정은 아직 운영진으로 등록되어 있지 않아요. 등록된 계정으로 다시 로그인하거나, 대표님께 이 주소를 운영진에 추가해 달라고 해 주세요.`; await signOut(auth); return; }
   $('#loginView').classList.add('hidden'); $('#appView').classList.remove('hidden'); $('#meEmail').textContent = user.email + (OWNER ? ' · 총괄' : ' · 운영진');
   document.querySelector('nav button[data-tab="set"]').style.display = OWNER ? '' : 'none';
-  ['#csv', '#hcsv', '#hCopyPh'].forEach(s => $(s).style.display = OWNER ? '' : 'none');
+  ['#csv', '#hcsv', '#hCopyPh', '#xlsxAll'].forEach(s => $(s).style.display = OWNER ? '' : 'none');
   start();
 });
 
@@ -428,7 +429,7 @@ function renderHack() {
   const fmtPh = x => String(x || '').replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3');
   const modeT = { lead: '팀장', join: '합류', match: '매칭' };
   HALL = all;
-  $('#hAllRows').innerHTML = all.map((h, i) => { const ph = phoneOf(h.id), raw = String(ph).replace(/\D/g, ''); return `<div class="hc"><div class="t"><span class="note">${i + 1}</span><b>${esc(h.name)}</b>${tpill(h.id)}<span class="pill" style="background:${h.team ? 'var(--deep)' : 'var(--purple)'}">${h.team ? esc(tname(h.team)) : '매칭 대기'}</span></div><div class="m">${esc(school(h.id))} · ${modeT[h.mode] || ''} · 경험 ${LEVEL[h.level] || '-'}<br>${(h.topics || []).map(esc).join(', ')}${h.idea ? '<br>“' + esc(h.idea) + '”' : ''}</div><div class="ph">${ph ? (OWNER ? `<span>${esc(fmtPh(raw))}</span><a href="tel:${raw}">전화</a><a href="sms:${raw}">문자</a><button data-cp="${raw}">복사</button>` : `<span>${esc(maskPh(ph))}</span>`) : '<span class="note">번호 없음</span>'}<span class="note" style="margin-left:auto">${kst(ts(h.createdAt), { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span></div></div>`; }).join('') || '<p class="note">해당하는 신청자가 없어요</p>';
+  $('#hAllRows').innerHTML = all.map((h, i) => `<tr><td>${i + 1}</td><td><b>${esc(h.name)}</b></td><td>${tpill(h.id)}</td><td>${esc(school(h.id))}</td><td>${h.team ? esc(tname(h.team)) : '<span class="pill" style="background:var(--purple)">매칭 대기</span>'}</td><td>${telA(h.id)}</td><td>${modeT[h.mode] || ''}</td><td>${LEVEL[h.level] || ''}</td><td class="w">${(h.topics || []).map(esc).join(', ')}</td><td class="w">${esc(h.idea || '')}</td><td style="font-family:var(--mono);font-size:12px">${kst(ts(h.createdAt), { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td></tr>`).join('') || '<tr><td colspan="11" class="note">해당하는 신청자가 없어요</td></tr>';
   document.querySelectorAll('[data-cp]').forEach(b => b.onclick = () => copyTxt(b.dataset.cp, b));
   $('#hTotal').textContent = HCn ? HCn.total : act.length;
   $('#hCap').textContent = `정원 ${cap} · 남은 자리 ${cap - (HCn ? HCn.total : act.length)}` + (HCn && HCn.total !== act.length ? ` · 숫자(${HCn.total})와 명단(${act.length})이 달라요` : '');
@@ -489,8 +490,49 @@ $('#hcsv').onclick = () => {
   const ptype = id => (P.find(p => p.id === id) || {}).type || '';
   const head = ['신청시각', '이름', '소속', '지딜 구분', '휴대폰', '여권번호', '팀 코드', '팀 이름', '방식', '경험', '관심 주제', '만들고 싶은 것', '상태'];
   const body = HK.map(h => [kst(ts(h.createdAt)), h.name, school(h.id), TYPE[ptype(h.id)] || '', phone(h.id), h.pno, h.team || '', tn(h.team), { lead: '팀장', join: '합류', match: '매칭' }[h.mode], LEVEL[h.level] || '', (h.topics || []).join(' / '), h.idea || '', h.status === 'active' ? '신청 중' : '취소']);
-  const csv = '\uFEFF' + [head, ...body].map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  if (window.__grab) return window.__grab.push([head, ...body]); const csv = '\uFEFF' + [head, ...body].map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = '지딜한마당_해커톤_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
+};
+
+function xlsxBlob(sheets) {
+  const enc = new TextEncoder(), X = v => String(v ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])).replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g, '');
+  const col = i => { let t = ''; i++; while (i) { const m = (i - 1) % 26; t = String.fromCharCode(65 + m) + t; i = (i - m - 1) / 26; } return t; };
+  const files = [];
+  files.push(['[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' + sheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('') + '</Types>']);
+  files.push(['_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>']);
+  files.push(['xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' + sheets.map((sh, i) => `<sheet name="${X(sh.name.replace(/[\\\/\?\*\[\]:]/g, ' ').slice(0, 31))}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('') + '</sheets></workbook>']);
+  files.push(['xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('') + `<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`]);
+  files.push(['xl/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="맑은 고딕"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="맑은 고딕"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF2F5D46"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>']);
+  sheets.forEach((sh, i) => {
+    const rows = sh.rows, w = rows[0] ? rows[0].map((_, c) => Math.min(50, Math.max(6, ...rows.map(r => [...String(r[c] ?? '')].reduce((a, ch) => a + (ch.charCodeAt(0) > 255 ? 2 : 1), 0) + 2)))) : [];
+    const xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' + (w.length ? '<cols>' + w.map((x, c) => `<col min="${c + 1}" max="${c + 1}" width="${x}" customWidth="1"/>`).join('') + '</cols>' : '') + '<sheetData>' + rows.map((r, ri) => `<row r="${ri + 1}">` + r.map((v, ci) => { const ref = col(ci) + (ri + 1), st = ri === 0 ? ' s="1"' : ''; return (typeof v === 'number' && isFinite(v)) ? `<c r="${ref}"${st}><v>${v}</v></c>` : `<c r="${ref}" t="inlineStr"${st}><is><t xml:space="preserve">${X(v)}</t></is></c>`; }).join('') + '</row>').join('') + '</sheetData>' + (rows.length > 1 ? `<autoFilter ref="A1:${col(Math.max(0, rows[0].length - 1))}${rows.length}"/>` : '') + '</worksheet>';
+    files.push([`xl/worksheets/sheet${i + 1}.xml`, xml]);
+  });
+  const T = new Uint32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+  const crc = b => { let c = 0xFFFFFFFF; for (const x of b) c = T[(c ^ x) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+  const parts = [], cen = []; let off = 0;
+  const u16 = v => [v & 255, (v >> 8) & 255], u32 = v => [v & 255, (v >> 8) & 255, (v >> 16) & 255, (v >>> 24) & 255];
+  files.forEach(([name, txt]) => {
+    const nb = enc.encode(name), dd = enc.encode(txt), c = crc(dd);
+    const lh = new Uint8Array([...u32(0x04034b50), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x21), ...u32(c), ...u32(dd.length), ...u32(dd.length), ...u16(nb.length), ...u16(0)]);
+    parts.push(lh, nb, dd);
+    cen.push(new Uint8Array([...u32(0x02014b50), ...u16(20), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x21), ...u32(c), ...u32(dd.length), ...u32(dd.length), ...u16(nb.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(off)]), nb);
+    off += lh.length + nb.length + dd.length;
+  });
+  const csz = cen.reduce((a, b) => a + b.length, 0);
+  const end = new Uint8Array([...u32(0x06054b50), ...u16(0), ...u16(0), ...u16(files.length), ...u16(files.length), ...u32(csz), ...u32(off), ...u16(0)]);
+  return new Blob([...parts, ...cen, end], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+function allSheets() {
+  const grab = (id, name) => { window.__grab = []; try { const el = $(id); if (el && el.onclick) el.onclick(); } catch (e) { console.warn(name, e); } const r = window.__grab[0]; window.__grab = null; return r ? { name, rows: r } : null; };
+  const sheets = [grab('#csv', '전체 참가자'), grab('#hcsv', '해커톤'), grab('#sescsv', '세션 명단'), grab('#carecsv', '아이돌봄'), grab('#gmcsv', '출장 공문'), grab('#refcsv', '친구 초대'), grab('#stCsv', '스탬프')].filter(Boolean);
+  const act = P.filter(p => p.status === 'active');
+  sheets.unshift({ name: '요약', rows: [['항목', '인원'], ['한마당 신청 중', act.length], ['나눔회원', act.filter(p => p.type === 'nanum').length], ['배움회원', act.filter(p => p.type === 'baeum').length], ['지딜 외', act.filter(p => p.type === 'outside').length], ['취소', P.length - act.length], ['해커톤 신청 중', HK.filter(h => h.status === 'active').length], ['받은 시각', kst(new Date())]] });
+  return sheets;
+}
+$('#xlsxAll').onclick = () => {
+  if (!OWNER) return alert('전체 엑셀은 총괄만 받을 수 있어요.');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(xlsxBlob(allSheets())); a.download = '지딜한마당_전체명단_' + new Date().toISOString().slice(0, 10) + '.xlsx'; a.click();
 };
 
 const actIds = () => new Set(P.filter(p => p.status === 'active').map(p => p.id));
@@ -529,13 +571,13 @@ $('#carecsv').onclick = () => {
   const rows = [...fam.filter(x => x.e.cc).sort((p, q) => tsv(p.e) - tsv(q.e)), ...fam.filter(x => x.e.cwn).sort((p, q) => tsv(p.e) - tsv(q.e))];
   const head = ['순서', '상태', '이름', '소속', '휴대폰', '맡길 아이', '동반 자녀', '아이 도시락', '신청 시각', '접수번호'];
   const body = rows.map((x, i) => { const p = P.find(q => q.id === x.id) || {}; return [i + 1, x.e.cwn ? '대기' : '확정', p.name, p.school, OWNER ? p.phone : maskPh(p.phone), x.e.cc || x.e.cwn, x.e.kids || 0, x.e.klunch || 0, x.e.at ? kst(ts(x.e.at)) : '', p.no || '']; });
-  const csv = '\uFEFF' + [head, ...body].map(r => r.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  if (window.__grab) return window.__grab.push([head, ...body]); const csv = '\uFEFF' + [head, ...body].map(r => r.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(',')).join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = '지딜한마당_아이돌봄명단_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
 };
 $('#sescsv').onclick = () => {
   const act = actIds(); const head = ['시간', '세션', '장소', '상태', '이름', '소속', '휴대폰', '여권번호'];
   const body = []; SE.forEach(s => { holdersOf(s.id).filter(x => act.has(x.tok)).forEach(x => { const p = P.find(q => q.id === x.tok) || {}; body.push([s.start + '–' + s.end, s.name, s.room, '확정', p.name, p.school, OWNER ? p.phone : maskPh(p.phone), p.pno]); }); waitersOf(s.id).filter(x => act.has(x.tok)).forEach((x, i) => { const p = P.find(q => q.id === x.tok) || {}; body.push([s.start + '–' + s.end, s.name, s.room, '대기 ' + (i + 1), p.name, p.school, OWNER ? p.phone : maskPh(p.phone), p.pno]); }); });
-  const csv = '\uFEFF' + [head, ...body].map(r => r.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  if (window.__grab) return window.__grab.push([head, ...body]); const csv = '\uFEFF' + [head, ...body].map(r => r.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(',')).join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = '지딜한마당_세션명단_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
 };
 async function promoteNext(sid, freed) {
@@ -579,7 +621,7 @@ function renderRef() {
 $('#refcsv').onclick = () => {
   const rows = [['초대한 사람 접수번호', '초대한 사람', '소속', '초대 성공 수', '신청한 친구']];
   refGroups().forEach(x => rows.push([x.no, x.inv ? x.inv.name : '', x.inv ? x.inv.school || '' : '', x.fr.length, x.fr.map(f => f.name + '(' + (f.school || '') + ')').join(' / ')]));
-  const csv = '\ufeff' + rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  if (window.__grab) return window.__grab.push(rows); const csv = '\ufeff' + rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = '친구초대.csv'; a.click();
 };
 /* ---------- 초대장 링크 만들기 ---------- */
@@ -613,7 +655,7 @@ $('#gmcsv').onclick = () => {
   const head = ['소속', '이름', '휴대폰', '이메일', '여권번호', '공문 신청일', '발송 여부', '발송일'];
   const d8 = t => t ? kst(ts(t), { month: 'numeric', day: 'numeric' }) : '';
   const body = gmNeeders().map(({ g, p }) => [p.school, p.name, OWNER ? p.phone : maskPh(p.phone), p.email || '', p.pno, d8(g.at), g.sent ? '발송 완료' : '미발송', g.sent ? d8(g.sentAt) : '']);
-  const csv = '\uFEFF' + [head, ...body].map(r => r.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  if (window.__grab) return window.__grab.push([head, ...body]); const csv = '\uFEFF' + [head, ...body].map(r => r.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(',')).join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = '지딜한마당_공문명단_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
 };
 
@@ -699,7 +741,7 @@ $('#stManual').onclick = async () => {
 $('#stCsv').onclick = () => {
   const head = ['접수번호', '이름', '소속', '도장 수', ...SPOT.map(x => x.name)];
   const body = (window.__stRows || []).map(r => [r.p.no || '', r.p.name, r.p.school, r.bs.length, ...SPOT.map(x => r.bs.includes(x.id) ? 'O' : '')]);
-  const csv = '\uFEFF' + [head, ...body].map(r => r.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  if (window.__grab) return window.__grab.push([head, ...body]); const csv = '\uFEFF' + [head, ...body].map(r => r.map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(',')).join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = '지딜한마당_스탬프_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
 };
 
@@ -747,10 +789,10 @@ async function adminCancel(p) {
 }
 
 $('#csv').onclick = () => {
-  const rows = filtered();
+  const rows = window.__grab ? P.slice().sort((a, b) => (a.no || 9999) - (b.no || 9999)) : filtered();
   const head = ['접수번호', '신청시각', '이름', '소속', '휴대폰', '이메일', '구분', '여권번호', '상태', '오전 세션', '오후 세션', '대기', '도시락', '동반 자녀', '아이 도시락', '아이돌봄', '출장 공문', '탑승권 링크'];
   const body = rows.map(p => { const ss = seatsOf(p.id), e = EX[p.id] || {}; return [p.no || '', kst(ts(p.createdAt)), p.name, p.school, p.phone, p.email || '', TYPE[p.type], p.pno, p.status === 'active' ? '신청 중' : '취소', ss.filter(s => s.group === 'AM').map(s => s.name).join(' / '), ss.filter(s => s.group === 'PM').map(s => s.name).join(' / '), waitsOf(p.id).map(s => s.name).join(' / '), LUNCH[e.lunch] || '미선택', e.kids || 0, e.klunch || 0, e.cc ? '확정 ' + e.cc : e.cwn ? '대기 ' + e.cwn : '', gmLabel(p.id), location.origin + '/#/t/' + p.id]; });
-  const csv = '\uFEFF' + [head, ...body].map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  if (window.__grab) return window.__grab.push([head, ...body]); const csv = '\uFEFF' + [head, ...body].map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = '지딜한마당_신청명단_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
 };
 
