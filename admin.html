@@ -40,6 +40,14 @@ tr.cx td{color:#9aa9a0;text-decoration:line-through}
 tr.cx td:last-child,tr.cx td:nth-last-child(2){text-decoration:none}
 tr.dup td{background:#FFF7E1}
 .pill{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;color:#fff}
+#tab-hack table{min-width:760px}#tab-hack td b,#tab-hack td:nth-child(4){white-space:nowrap}#tab-hack .tel{font-family:var(--mono);font-size:12.5px;white-space:nowrap;color:#1d5a3c;font-weight:700;text-decoration:none}
+.hcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin-top:10px}
+.hc{border:1px solid #dfe9e3;border-radius:12px;padding:10px 12px;background:#fff}
+.hc .t{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.hc .t b{font-size:16px}
+.hc .m{font-size:13px;color:#4d6457;margin-top:4px;line-height:1.5}
+.hc .ph{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.hc .ph a,.hc .ph button{font-size:13px;font-weight:700;padding:6px 10px;border-radius:8px;border:1px solid #cfe0d6;background:#f3faf6;color:#1d5a3c;text-decoration:none;cursor:pointer}
+.hc .ph span{font-family:var(--mono);font-size:14px;font-weight:700}
 .pg{background:var(--g)}.pb{background:var(--blue)}.po{background:var(--orange)}.pd{background:#9aa9a0}
 .grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 18px}
 .f label{display:block;font-size:12.5px;font-weight:700;margin-bottom:4px;color:#3d5a4a}
@@ -234,9 +242,13 @@ tr.dup td{background:#FFF7E1}
       <div class="kpi" style="border-left-color:var(--purple)"><div class="l">매칭 대기</div><div class="v" id="hWait">-</div><div class="s">팀 없이 신청한 사람</div></div>
       <div class="kpi" style="border-left-color:var(--red)"><div class="l">취소</div><div class="v" id="hX">-</div></div>
     </div>
+    <div class="panel"><h3>전체 신청자 <span class="tools"><select id="hType"><option value="">구분 전체</option><option value="nanum">나눔회원</option><option value="baeum">배움회원</option><option value="outside">지딜 외</option></select><select id="hTeamF"><option value="">팀 전체</option><option value="team">팀 있음</option><option value="wait">매칭 대기</option></select><input id="hQ" placeholder="이름·소속 검색" style="width:140px"><button class="b2" id="hCopyPh">보이는 사람 번호 복사</button></span></h3>
+      <p class="note" id="hTypeNote"></p>
+      <div id="hAllRows" class="hcards"></div>
+    </div>
     <div class="panel"><h3>매칭 대기 <span class="tools"><input id="newTeamName" placeholder="새 팀 이름" style="width:160px"><button class="b" id="mkTeam">선택한 사람으로 새 팀</button><select id="toTeam"></select><button class="b2" id="addToTeam">선택한 사람을 이 팀에</button></span></h3>
       <p class="note">체크한 사람을 새 팀으로 묶거나, 자리가 남은 팀에 넣어요. 팀이 정해지면 참가자 탑승권 화면에 바로 표시돼요.</p>
-      <div style="overflow:auto;margin-top:8px"><table><thead><tr><th></th><th>이름</th><th>소속</th><th>경험</th><th>관심 주제</th><th>만들고 싶은 것</th><th>신청</th><th></th></tr></thead><tbody id="waitRows"></tbody></table></div>
+      <div style="overflow:auto;margin-top:8px"><table><thead><tr><th></th><th>이름</th><th>소속</th><th>연락처</th><th>경험</th><th>관심 주제</th><th>만들고 싶은 것</th><th>신청</th><th></th></tr></thead><tbody id="waitRows"></tbody></table></div>
     </div>
     <div class="panel"><h3>팀 목록 <button class="b2" id="hcsv">엑셀(CSV) 받기</button></h3>
       <div style="overflow:auto"><table><thead><tr><th>팀 코드</th><th>팀 이름</th><th>인원</th><th>팀원 (경험 · 관심 주제)</th></tr></thead><tbody id="teamRows"></tbody></table></div>
@@ -311,7 +323,7 @@ const ts = v => v?.toDate ? v.toDate() : null;
 const kst = (d, o) => d ? d.toLocaleString('ko-KR', Object.assign({ timeZone: 'Asia/Seoul' }, o)) : '';
 const toLocalInput = d => { if (!d) return ''; const k = new Date(d.getTime() + 9 * 3600e3); return k.toISOString().slice(0, 16); };
 const fromLocalInput = v => v ? Timestamp.fromDate(new Date(v + ':00+09:00')) : null;
-let S = null, C = null, P = [], unsub = [], OWNER = false;
+let S = null, C = null, P = [], unsub = [], OWNER = false, HALL = [];
 const maskPh = p => OWNER ? p : String(p || '').replace(/(\d{3})\d+(\d{4})/, '$1-****-$2');
 
 const inApp = /KAKAOTALK|Instagram|FBAN|FBAV|NAVER\(inapp|Line\/|; wv\)/i.test(navigator.userAgent);
@@ -344,14 +356,14 @@ onAuthStateChanged(auth, async user => {
   catch (e) { $('#loginMsg').innerHTML = `<b>${esc(user.email)}</b> 계정은 아직 운영진으로 등록되어 있지 않아요. 등록된 계정으로 다시 로그인하거나, 대표님께 이 주소를 운영진에 추가해 달라고 해 주세요.`; await signOut(auth); return; }
   $('#loginView').classList.add('hidden'); $('#appView').classList.remove('hidden'); $('#meEmail').textContent = user.email + (OWNER ? ' · 총괄' : ' · 운영진');
   document.querySelector('nav button[data-tab="set"]').style.display = OWNER ? '' : 'none';
-  ['#csv', '#hcsv'].forEach(s => $(s).style.display = OWNER ? '' : 'none');
+  ['#csv', '#hcsv', '#hCopyPh'].forEach(s => $(s).style.display = OWNER ? '' : 'none');
   start();
 });
 
 function start() {
   unsub.push(onSnapshot(doc(db, 'settings', 'main'), s => { S = s.exists() ? s.data() : null; $('#initWarn').classList.toggle('hidden', !!S || !OWNER); fillSettings(); renderDash(); }));
   unsub.push(onSnapshot(doc(db, 'counters', 'main'), c => { C = c.exists() ? c.data() : null; renderDash(); }));
-  unsub.push(onSnapshot(query(collection(db, 'participants'), orderBy('createdAt', 'desc')), q => { P = q.docs.map(d => ({ id: d.id, ...d.data() })); renderDash(); renderList(); renderRef(); }));
+  unsub.push(onSnapshot(query(collection(db, 'participants'), orderBy('createdAt', 'desc')), q => { P = q.docs.map(d => ({ id: d.id, ...d.data() })); renderDash(); renderList(); renderRef(); if (typeof renderHack === 'function') renderHack(); }));
   unsub.push(onSnapshot(query(collection(db, 'hackers'), orderBy('createdAt', 'desc')), q => { HK = q.docs.map(d => ({ id: d.id, ...d.data() })); renderHack(); }));
   unsub.push(onSnapshot(collection(db, 'teams'), q => { TM = q.docs.map(d => ({ id: d.id, ...d.data() })); renderHack(); }));
   unsub.push(onSnapshot(doc(db, 'hcounters', 'main'), s => { HCn = s.exists() ? s.data() : null; renderHack(); }));
@@ -402,6 +414,20 @@ function renderHack() {
   const act = HK.filter(h => h.status === 'active');
   const cap = S?.hackCap || 40, max = S?.hackTeamMax || 4;
   const school = id => (P.find(p => p.id === id) || {}).school || '';
+  const ptype = id => (P.find(p => p.id === id) || {}).type || '';
+  const tpill = id => { const t = ptype(id); return t ? `<span class="pill ${PILL[t]}">${TYPE[t]}</span>` : '<span class="pill pd">확인 안 됨</span>'; };
+  const telA = id => { const ph = (P.find(p => p.id === id) || {}).phone || ''; if (!ph) return ''; const raw = String(ph).replace(/\D/g, ''); return OWNER ? `<a class="tel" href="tel:${raw}">${raw.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3')}</a>` : `<span class="tel">${esc(maskPh(ph))}</span>`; };
+  const tcount = k => act.filter(h => ptype(h.id) === k).length;
+  $('#hTypeNote').innerHTML = `<span class="pill pg">나눔회원</span> ${tcount('nanum')}명 · <span class="pill pb">배움회원</span> ${tcount('baeum')}명 · <span class="pill po">지딜 외</span> ${tcount('outside')}명` + (act.length - tcount('nanum') - tcount('baeum') - tcount('outside') ? ` · 한마당 신청과 연결 안 됨 ${act.length - tcount('nanum') - tcount('baeum') - tcount('outside')}명` : '') + ' · 구분은 한마당 신청 때 고른 회원 구분이에요.';
+  const fT = $('#hType').value, fM = $('#hTeamF').value, fQ = $('#hQ').value.trim();
+  const tname = c => (TM.find(t => t.id === c) || {}).name || '';
+  const all = act.filter(h => (!fT || ptype(h.id) === fT) && (!fM || (fM === 'team' ? !!h.team : !h.team)) && (!fQ || (h.name + ' ' + school(h.id)).includes(fQ)));
+  const phoneOf = id => (P.find(p => p.id === id) || {}).phone || '';
+  const fmtPh = x => String(x || '').replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3');
+  const modeT = { lead: '팀장', join: '합류', match: '매칭' };
+  HALL = all;
+  $('#hAllRows').innerHTML = all.map((h, i) => { const ph = phoneOf(h.id), raw = String(ph).replace(/\D/g, ''); return `<div class="hc"><div class="t"><span class="note">${i + 1}</span><b>${esc(h.name)}</b>${tpill(h.id)}<span class="pill" style="background:${h.team ? 'var(--deep)' : 'var(--purple)'}">${h.team ? esc(tname(h.team)) : '매칭 대기'}</span></div><div class="m">${esc(school(h.id))} · ${modeT[h.mode] || ''} · 경험 ${LEVEL[h.level] || '-'}<br>${(h.topics || []).map(esc).join(', ')}${h.idea ? '<br>“' + esc(h.idea) + '”' : ''}</div><div class="ph">${ph ? (OWNER ? `<span>${esc(fmtPh(raw))}</span><a href="tel:${raw}">전화</a><a href="sms:${raw}">문자</a><button data-cp="${raw}">복사</button>` : `<span>${esc(maskPh(ph))}</span>`) : '<span class="note">번호 없음</span>'}<span class="note" style="margin-left:auto">${kst(ts(h.createdAt), { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span></div></div>`; }).join('') || '<p class="note">해당하는 신청자가 없어요</p>';
+  document.querySelectorAll('[data-cp]').forEach(b => b.onclick = () => copyTxt(b.dataset.cp, b));
   $('#hTotal').textContent = HCn ? HCn.total : act.length;
   $('#hCap').textContent = `정원 ${cap} · 남은 자리 ${cap - (HCn ? HCn.total : act.length)}` + (HCn && HCn.total !== act.length ? ` · 숫자(${HCn.total})와 명단(${act.length})이 달라요` : '');
   const teams = TM.filter(t => act.some(h => h.team === t.id));
@@ -409,12 +435,15 @@ function renderHack() {
   $('#hTeamNote').textContent = `팀당 최대 ${max}명 · 3명 미만 팀 ${teams.filter(t => act.filter(h => h.team === t.id).length < 3).length}개`;
   const wait = act.filter(h => !h.team);
   $('#hWait').textContent = wait.length; $('#hX').textContent = HK.length - act.length;
-  $('#waitRows').innerHTML = wait.map(h => `<tr><td><input type="checkbox" class="wsel" value="${h.id}"></td><td><b>${esc(h.name)}</b></td><td>${esc(school(h.id))}</td><td>${LEVEL[h.level] || ''}</td><td>${(h.topics || []).map(esc).join(', ')}</td><td>${esc(h.idea || '')}</td><td style="font-family:var(--mono);font-size:12px">${kst(ts(h.createdAt), { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td><td><button class="bx" data-hx="${h.id}">취소</button></td></tr>`).join('') || '<tr><td colspan="8" class="note">매칭 대기자 없음</td></tr>';
+  $('#waitRows').innerHTML = wait.map(h => `<tr><td><input type="checkbox" class="wsel" value="${h.id}"></td><td><b>${esc(h.name)}</b> ${tpill(h.id)}</td><td>${esc(school(h.id))}</td><td>${telA(h.id)}</td><td style="white-space:nowrap">${LEVEL[h.level] || ''}</td><td>${(h.topics || []).map(esc).join(', ')}</td><td>${esc(h.idea || '')}</td><td style="font-family:var(--mono);font-size:12px">${kst(ts(h.createdAt), { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td><td><button class="bx" data-hx="${h.id}">취소</button></td></tr>`).join('') || '<tr><td colspan="9" class="note">매칭 대기자 없음</td></tr>';
   const open = teams.filter(t => act.filter(h => h.team === t.id).length < max);
   $('#toTeam').innerHTML = '<option value="">넣을 팀 고르기</option>' + open.map(t => `<option value="${t.id}">${esc(t.name)} (${act.filter(h => h.team === t.id).length}/${max})</option>`).join('');
-  $('#teamRows').innerHTML = teams.map(t => { const ms = act.filter(h => h.team === t.id); return `<tr><td style="font-family:var(--mono)">${t.id}</td><td><b>${esc(t.name)}</b></td><td>${ms.length}/${max}</td><td>${ms.map(h => `<div>${esc(h.name)} <span class="note">(${esc(school(h.id))} · ${LEVEL[h.level] || ''} · ${(h.topics || []).map(esc).join(', ')})</span> <button class="bx" data-hx="${h.id}" style="padding:1px 6px">빼기</button></div>`).join('')}</td></tr>`; }).join('') || '<tr><td colspan="4" class="note">아직 팀 없음</td></tr>';
+  $('#teamRows').innerHTML = teams.map(t => { const ms = act.filter(h => h.team === t.id); return `<tr><td style="font-family:var(--mono)">${t.id}</td><td><b>${esc(t.name)}</b></td><td>${ms.length}/${max}</td><td>${ms.map(h => `<div>${esc(h.name)} ${tpill(h.id)} ${telA(h.id)} <span class="note">(${esc(school(h.id))} · ${LEVEL[h.level] || ''} · ${(h.topics || []).map(esc).join(', ')})</span> <button class="bx" data-hx="${h.id}" style="padding:1px 6px">빼기</button></div>`).join('')}</td></tr>`; }).join('') || '<tr><td colspan="4" class="note">아직 팀 없음</td></tr>';
   document.querySelectorAll('[data-hx]').forEach(b => b.onclick = () => adminHackRemove(HK.find(h => h.id === b.dataset.hx)));
 }
+function copyTxt(t, btn) { const done = () => { if (btn) { const o = btn.textContent; btn.textContent = '복사됨'; setTimeout(() => btn.textContent = o, 1200); } }; if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(done, () => { fb(); }); else fb(); function fb() { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); done(); } }
+$('#hCopyPh').onclick = () => { if (!OWNER) return alert('번호 복사는 총괄만 할 수 있어요.'); const nums = HALL.map(h => String((P.find(p => p.id === h.id) || {}).phone || '').replace(/\D/g, '')).filter(Boolean); if (!nums.length) return alert('복사할 번호가 없어요.'); copyTxt(nums.join(', '), $('#hCopyPh')); };
+['hType', 'hTeamF'].forEach(i => $('#' + i).onchange = () => renderHack()); $('#hQ').oninput = () => renderHack();
 const sel = () => [...document.querySelectorAll('.wsel:checked')].map(c => HK.find(h => h.id === c.value));
 $('#mkTeam').onclick = async () => {
   const ms = sel(), name = $('#newTeamName').value.trim(), max = S?.hackTeamMax || 4;
@@ -455,8 +484,9 @@ async function adminHackRemove(h) {
 $('#hcsv').onclick = () => {
   const school = id => (P.find(p => p.id === id) || {}).school || '', phone = id => (P.find(p => p.id === id) || {}).phone || '';
   const tn = c => (TM.find(t => t.id === c) || {}).name || '';
-  const head = ['신청시각', '이름', '소속', '휴대폰', '여권번호', '팀 코드', '팀 이름', '방식', '경험', '관심 주제', '만들고 싶은 것', '상태'];
-  const body = HK.map(h => [kst(ts(h.createdAt)), h.name, school(h.id), phone(h.id), h.pno, h.team || '', tn(h.team), { lead: '팀장', join: '합류', match: '매칭' }[h.mode], LEVEL[h.level] || '', (h.topics || []).join(' / '), h.idea || '', h.status === 'active' ? '신청 중' : '취소']);
+  const ptype = id => (P.find(p => p.id === id) || {}).type || '';
+  const head = ['신청시각', '이름', '소속', '지딜 구분', '휴대폰', '여권번호', '팀 코드', '팀 이름', '방식', '경험', '관심 주제', '만들고 싶은 것', '상태'];
+  const body = HK.map(h => [kst(ts(h.createdAt)), h.name, school(h.id), TYPE[ptype(h.id)] || '', phone(h.id), h.pno, h.team || '', tn(h.team), { lead: '팀장', join: '합류', match: '매칭' }[h.mode], LEVEL[h.level] || '', (h.topics || []).join(' / '), h.idea || '', h.status === 'active' ? '신청 중' : '취소']);
   const csv = '\uFEFF' + [head, ...body].map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = '지딜한마당_해커톤_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
 };
