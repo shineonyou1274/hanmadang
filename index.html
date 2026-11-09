@@ -797,6 +797,7 @@ async function home() {
   </section>
   <div class="wrap">
     ${testBanner()}
+    <div class="card" aria-label="둘러보기 메뉴"><h3>어디로 가볼까요?</h3><div class="row2"><a class="btn2" href="./mascot/">마스코트 전시 · 투표</a><a class="btn2" href="${active ? '#/t/' + me.tok : '#/find'}">내 탑승권 · 일정</a></div></div>
     ${S?.notice ? `<div class="notice">${esc(S.notice)}</div>` : ''}
     <div class="tabs" id="homeTabs" role="tablist"><button data-t="info">행사 안내</button><button data-t="tt">시간표</button><button data-t="way">오시는 길</button><button data-t="vid">홍보영상</button></div>
     <div class="tp" data-p="info">
@@ -1164,6 +1165,7 @@ async function ticket(tok) {
       <div class="row3"><button class="btn2" id="cp">링크 복사</button><button class="btn2" id="sh">나에게 보내기</button><button class="btn2" id="img">이미지 저장</button></div></div>
     ${(() => { const k = new Date(Date.now() + 9 * 3600e3); return (k.getUTCFullYear() === 2026 && k.getUTCMonth() === 11 && k.getUTCDate() === 19) || d.test; })() ? '<button class="btn" id="qrTop" style="margin-bottom:10px">도장 찍을 QR 보여 주기</button>' : ''}<button class="btn2" id="inv">✉ 동료 선생님께 초대장 보내기</button>
     ${d.no ? '<div class="refbox"><b>친구 초대 이벤트</b><p>' + esc(REF_NOTE.replace(/^친구 초대 이벤트 · /, '')) + '</p><p class="refno">내 접수번호 <b>' + d.no + '</b> · 친구가 신청서 "초대한 선생님" 칸에 이 번호를 넣어도 돼요</p></div>' : ''}
+    <a class="btn2" href="./mascot/" style="display:block;margin:12px 0;text-align:center">마스코트 전시 · 투표 보러 가기</a>
     <div class="acct">내 신청 관리 · 제목을 누르면 열려요</div>
     <div class="card" id="planCard"><h3>내 하루 일정</h3><p>불러오는 중…</p></div>
     <div class="card" id="stampCard"><h3>스탬프 여권</h3><p>불러오는 중…</p></div>
