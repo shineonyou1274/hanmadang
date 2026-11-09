@@ -12,6 +12,7 @@ const SECURITY_RULES_VERIFIED=true; // 실서비스 연동 금지. 보안 검증
 const local=['localhost','127.0.0.1','[::1]'].includes(location.hostname)&&window.self===window.top;
 const params=new URLSearchParams(location.search), MOCK=local&&params.get('mock')==='1', EMULATOR=local&&params.get('emulator')==='1'&&!MOCK;
 const EVENT=Date.parse('2026-12-19T00:00:00+09:00'), $=id=>document.getElementById(id);
+if(SECURITY_RULES_VERIFIED) $('safety').hidden=true;
 let candidates=[],api=null,view=null,owner=false,busy=false;
 const message=t=>$('message').textContent=t, show=(id,v)=>$(id).hidden=!v;
 function time(v){if(!/^\d{4}-\d\d-\d\dT\d\d:\d\d$/.test(v))return NaN;let n=Date.parse(v+':00+09:00');return Number.isFinite(n)&&new Date(n+32400000).toISOString().slice(0,16)===v?n:NaN}
