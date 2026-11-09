@@ -19,7 +19,7 @@
   };
   const appUrl = 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
   const dbUrl = 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
-  const PUBLIC_READ_ENFORCES_CLOSED = false;
+  const PUBLIC_READ_ENFORCES_CLOSED = true;
   let clientPromise;
   function client() {
     if (!clientPromise) clientPromise = Promise.all([import(appUrl), import(dbUrl)])

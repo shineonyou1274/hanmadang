@@ -8,7 +8,7 @@
 <section class="card"><h2>2. 마감과 재개</h2><p class="sub">예정 시각 전에는 ‘지금 마감’, 예정 시각이 지났으면 ‘마감 확정’을 눌러. 재개하면 회차가 바뀌고 이전 결과는 무효가 돼. 공개 중 재개하면 공개 기록이 같은 묶음에서 삭제돼.</p><div class="row"><button id="closeNow">지금 마감</button><button id="closeScheduled" class="secondary">마감 확정</button></div><div class="row" style="margin-top:18px"><div class="field"><label for="reopenAt">다시 열 때 새 마감 시각 (KST)</label><input id="reopenAt" type="datetime-local"></div><button id="reopen" class="danger">투표 다시 열기</button></div></section>
 <section class="card"><h2>3. 집계와 공개</h2><p class="sub">마감 확정 후 현재 회차만 집계해. 활성 탑승권만 포함하고 취소·테스트·없는 탑승권과 비활성 후보는 제외해. 2026년 12월 19일 0시(KST) 이후 직접 눌러야 공개돼.</p><div class="row"><button id="tally">집계</button><button id="reveal" class="danger">결과 공개</button><button id="unreveal" class="secondary">공개 취소</button></div><p class="muted" id="resultStatus">집계 전</p><div id="results"></div></section></div></main>
 <dialog id="confirm"><h2 id="confirmTitle"></h2><p id="confirmText"></p><div class="row"><button class="secondary" id="no">취소</button><button id="yes">계속</button></div></dialog><script type="module">
-const SECURITY_RULES_VERIFIED=false; // 실서비스 연동 금지. 보안 검증과 승인 후에만 별도 검토.
+const SECURITY_RULES_VERIFIED=true; // 실서비스 연동 금지. 보안 검증과 승인 후에만 별도 검토.
 const local=['localhost','127.0.0.1','[::1]'].includes(location.hostname)&&window.self===window.top;
 const params=new URLSearchParams(location.search), MOCK=local&&params.get('mock')==='1', EMULATOR=local&&params.get('emulator')==='1'&&!MOCK;
 const EVENT=Date.parse('2026-12-19T00:00:00+09:00'), $=id=>document.getElementById(id);

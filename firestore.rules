@@ -579,5 +579,158 @@ service cloud.firestore {
             && getAfter(P(request.resource.data.tok)).data.lookupKey == key);
       allow delete: if isAdmin();
     }
+
+    // ================= 마스코트 투표 (추가 전용 블록 · 초안 · 미배포) =================
+    // 기존 함수(P, isAdmin, isOwner)만 재사용하고 기존 match/함수는 바꾸지 않는다.
+    // 새 컬렉션: entries, votes, vstate, vreveal, vresults. 설정 문서: settings/vote (기존 settings 규칙: 누구나 읽기, owner 쓰기)
+    // vstate/main = 투표 진행 상태 { phase: 'open'|'closed', epoch: 1부터, at }. settings는 owner가 아무 값이나 쓸 수 있으므로
+    //   '마감·재개'는 이 문서의 정해진 전이로만 인정한다. 재개할 때마다 epoch가 1 오르고, 결과·공개 버튼은 epoch에 묶인다.
+    //   => 재개하면 예전 결과·예전 공개 버튼은 자동으로 무효. 재마감 뒤에도 새로 집계하고 새로 눌러야 공개된다.
+    // settings/vote 필드: open(bool), openAt/closeAt(timestamp, 사용자가 정함), allowTest(bool), staffTally(bool)
+    //   (reveal 필드는 더 이상 쓰지 않는다: settings는 기존 규칙상 owner가 아무 값이나 쓸 수 있어서 공개 시점 통제에 못 씀)
+    // 결과 공개 = vreveal/main 문서. 행사일(2026-12-19 00:00 KST) 이후에만 owner가 만들 수 있고, 그 전엔 무엇을 해도 비공개.
+    // 이 투표는 비밀투표가 아니다: owner/운영진은 마감 뒤 votes 목록에서 탑승권별 선택을 볼 수 있다.
+    function SV() { return /databases/$(db)/documents/settings/vote; }
+    function VS() { return /databases/$(db)/documents/vstate/main; }
+    function VR() { return /databases/$(db)/documents/vreveal/main; }
+    function VPUB() { return /databases/$(db)/documents/vresults/public; }
+    function MV() { return get(SV()).data; }
+    function mvEpoch() { return get(VS()).data.epoch; }
+    function mvPhaseOpen() { return exists(VS()) && get(VS()).data.phase == 'open'; }
+    function mvTimesSet() {
+      return MV().get('openAt', null) is timestamp && MV().get('closeAt', null) is timestamp;
+    }
+    function mvOpen() {
+      return MV().get('open', false) == true && mvTimesSet()
+        && request.time >= MV().openAt && request.time < MV().closeAt;
+    }
+    // 행사일 시작 = 2026-12-19 00:00 KST = 2026-12-18 15:00 UTC. 규칙 상수라 설정 문서 조작으로 못 바꾼다
+    // (투표 기간이 아니다. 결과 공개가 가능해지는 가장 이른 시각일 뿐)
+    function mvEventDay() { return timestamp.date(2026, 12, 18) + duration.value(15, 'h'); }
+    function mvClosed() {
+      return MV().get('closeAt', null) is timestamp && request.time >= MV().closeAt;
+    }
+    // 최종 마감 상태: vstate가 closed 이고 settings/vote도 open:false + closeAt 지남 (둘이 어긋나면 마감 아님)
+    function mvFinal() {
+      return exists(VS()) && get(VS()).data.phase == 'closed'
+        && MV().get('open', true) == false && mvClosed();
+    }
+    // 공개 버튼이 행사일 이후에 눌렸고, 지금 epoch의 버튼일 것
+    function mvRevealed() {
+      return request.time >= mvEventDay()
+        && exists(VR())
+        && get(VR()).data.at >= mvEventDay()
+        && get(VR()).data.get('epoch', -1) == mvEpoch();
+    }
+    function mvEntryOk(e) {
+      return e is string && e.size() >= 1 && e.size() <= 64
+        && get(/databases/$(db)/documents/entries/$(e)).data.get('on', true) == true;
+    }
+    // 유효 탑승권: 존재하고 active. test 탑승권은 allowTest일 때만
+    function mvVoterOk(t) {
+      let p = get(P(t)).data;
+      return t.size() >= 20
+        && p.status == 'active'
+        && (p.get('test', false) != true || MV().get('allowTest', false) == true);
+    }
+    function mvWriteOk(t) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['e', 'at']) && d.keys().hasAll(['e', 'at'])
+        && d.at == request.time
+        && mvEntryOk(d.e)
+        && mvOpen()
+        && mvPhaseOpen()
+        && mvVoterOk(t);
+    }
+
+    // 작품: 누구나 관람(로그인 없음). 출품자 정보·표 수는 넣지 않는다
+    // 필드 화이트리스트: 공개 문서에 표 수 같은 필드가 실수로 실리지 않게
+    match /entries/{e} {
+      allow read: if true;
+      allow create, update: if isOwner()
+        && request.resource.data.keys().hasOnly(['number', 'name', 'description', 'image', 'order', 'on'])
+        && request.resource.data.get('name', '') is string && request.resource.data.get('name', '').size() <= 40
+        && request.resource.data.get('description', '') is string && request.resource.data.get('description', '').size() <= 600
+        && request.resource.data.get('image', '') is string && request.resource.data.get('image', '').size() <= 300
+        && request.resource.data.get('number', 0) is int
+        && request.resource.data.get('order', 0) is int
+        && request.resource.data.get('on', true) is bool;
+      allow delete: if isOwner();
+    }
+
+    // 표: 탑승권 토큰 1개 = 문서 1개 = 1표. 변경은 같은 문서 덮어쓰기(단일 문서 쓰기라 원자적)
+    match /votes/{t} {
+      allow get: if true;   // 토큰을 아는 사람(본인, 어느 기기든)만 자기 선택 확인
+      allow list: if mvFinal()
+        && (isOwner() || (isAdmin() && MV().get('staffTally', false) == true));
+      allow create: if mvWriteOk(t);
+      allow update: if mvWriteOk(t);
+      allow delete: if false;
+    }
+
+    // 진행 상태: 시작(create) → 마감(open→closed) → [재개(closed→open, epoch+1) → 마감 …]. 삭제 불가.
+    // 각 전이는 같은 묶음(batch)에서 settings/vote도 맞춰 써야 통과한다 (규칙은 getAfter로 확인).
+    match /vstate/{id} {
+      allow read: if true;
+      allow create: if id == 'main' && isOwner()
+        && request.resource.data.keys().hasOnly(['phase', 'epoch', 'at'])
+        && request.resource.data.keys().hasAll(['phase', 'epoch', 'at'])
+        && request.resource.data.phase == 'open'
+        && request.resource.data.epoch == 1
+        && request.resource.data.at == request.time
+        && getAfter(SV()).data.get('open', false) == true
+        && !existsAfter(VR())
+        && !existsAfter(VPUB());
+      allow update: if id == 'main' && isOwner()
+        && request.resource.data.keys().hasOnly(['phase', 'epoch', 'at'])
+        && request.resource.data.keys().hasAll(['phase', 'epoch', 'at'])
+        && request.resource.data.at == request.time
+        && (
+          // 마감: epoch 그대로. settings/vote는 open:false, closeAt <= 지금 (수동 마감이면 누른 시각으로)
+          (resource.data.phase == 'open' && request.resource.data.phase == 'closed'
+            && request.resource.data.epoch == resource.data.epoch
+            && getAfter(SV()).data.get('open', true) == false
+            && getAfter(SV()).data.get('closeAt', null) is timestamp
+            && getAfter(SV()).data.closeAt <= request.time)
+          // 재개: epoch+1. 공개 버튼은 같은 묶음에서 지워져 있어야 하고, settings/vote는 open:true + 미래 closeAt
+          || (resource.data.phase == 'closed' && request.resource.data.phase == 'open'
+            && request.resource.data.epoch == resource.data.epoch + 1
+            && !existsAfter(VR())
+            && getAfter(SV()).data.get('open', false) == true
+            && getAfter(SV()).data.get('closeAt', null) is timestamp
+            && getAfter(SV()).data.closeAt > request.time)
+        );
+      allow delete: if false;
+    }
+
+    // 공개 버튼: 행사일 시작 이후, 최종 마감 상태에서, 지금 epoch의 public 결과가 있을 때 owner가 누른 순간만 기록.
+    // 내용은 at(서버 시각)과 epoch뿐 (누른 사람 이메일 없음 = 공개 문서라서)
+    match /vreveal/{id} {
+      allow read: if true;
+      allow create: if id == 'main' && isOwner()
+        && request.time >= mvEventDay()
+        && mvFinal()
+        && request.resource.data.keys().hasOnly(['at', 'epoch'])
+        && request.resource.data.keys().hasAll(['at', 'epoch'])
+        && request.resource.data.at == request.time
+        && request.resource.data.epoch == mvEpoch()
+        && exists(VPUB())
+        && get(VPUB()).data.get('epoch', -1) == mvEpoch();
+      allow update: if false;
+      allow delete: if isOwner();   // 공개 취소 (재개할 때는 반드시 같은 묶음에서 지워야 함)
+    }
+
+    // 결과: owner가 최종 마감 상태에서 지금 epoch로 작성. public은 최종 마감 + 행사일 이후 + 지금 epoch 공개 버튼 + 지금 epoch 결과일 때만 누구나 읽음
+    match /vresults/{id} {
+      allow read: if isOwner()
+        || (id == 'public' && mvFinal() && mvRevealed()
+            && resource.data.get('epoch', -1) == mvEpoch())
+        || (id == 'staff' && isAdmin() && MV().get('staffTally', false) == true && mvFinal()
+            && resource.data.get('epoch', -1) == mvEpoch());
+      allow create, update: if isOwner() && id in ['public', 'staff'] && mvFinal()
+        && request.resource.data.get('epoch', -1) == mvEpoch();
+      allow delete: if isOwner();
+    }
+    // ================= 마스코트 투표 블록 끝 =================
   }
 }
