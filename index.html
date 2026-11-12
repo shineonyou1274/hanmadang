@@ -391,6 +391,7 @@ details.sd ul{margin:5px 0 0;padding-left:16px;line-height:1.55}
 
 /* Invitation-only course welcome; native dialog keeps keyboard focus inside. */
 .rec-welcome{position:fixed;inset:0;margin:auto;width:min(420px,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:0;border:1px solid var(--gold);border-radius:22px;background:var(--cream);color:var(--ink);box-shadow:0 22px 80px #102d2666;font-family:var(--sans)}
+.rw-fallback-shade{position:fixed;inset:0;background:rgba(16,45,38,.58);backdrop-filter:blur(3px);z-index:2147483645}.rec-welcome.rw-fallback{display:block;z-index:2147483646;max-height:calc(100vh - 32px)}
 .rec-welcome::backdrop{background:rgba(16,45,38,.58);backdrop-filter:blur(3px)}
 .rec-welcome .rw-top{padding:17px 54px 17px 22px;background:var(--deep);color:#ead9a7;font:700 11px var(--mono);letter-spacing:.12em;border-bottom:2px dashed var(--gold)}
 .rec-welcome .rw-close{position:absolute;right:9px;top:7px;width:44px;height:44px;border:0;background:transparent;color:#fff;font:28px var(--sans);cursor:pointer;border-radius:50%}
@@ -1748,26 +1749,27 @@ async function recommend() {
 
 
 /* Only a fresh invitation landing may show this; no participant data is stored. */
-const REC_WELCOME_KEY = 'hm_rec_welcome_v1';
+const REC_WELCOME_VERSION = 'home-entry-v2';
 const recWelcomeLanding = !location.hash || location.hash === '#/' || location.hash === '#';
 let recWelcomeSeen = false, recWelcomeTimer = 0, recWelcomeDialog = null, recWelcomeFocus = null;
-try { recWelcomeSeen = sessionStorage.getItem(REC_WELCOME_KEY) === '1'; } catch (e) { /* memory-only fallback */ }
+// Per document load, never per passport or session. Old session keys are ignored.
 function closeRecWelcome(restore = true) {
   clearTimeout(recWelcomeTimer);
   if (!recWelcomeDialog) return;
   const el = recWelcomeDialog; recWelcomeDialog = null;
-  el.close(); el.remove();
+  if (typeof el.close === 'function' && el.open) el.close();
+  el._fallback?.remove(); el.remove();
+  document.removeEventListener('keydown', recWelcomeKeys, true);
+  (el._inert || []).forEach(([node, prior]) => { node.inert = prior; });
   if (restore && recWelcomeFocus?.isConnected) recWelcomeFocus.focus({preventScroll:true});
 }
 function maybeRecWelcome() {
   clearTimeout(recWelcomeTimer);
   if (!recWelcomeLanding || recWelcomeSeen || (location.hash && location.hash !== '#/' && location.hash !== '#')) return;
-  try { if (localStorage.getItem('hm_tok')) return; } catch (e) {}
   if (!view.querySelector('.rec-entry')) return;
   if (['#intro','#env'].some(s => { const e=$(s); return e && !e.classList.contains('hide') && getComputedStyle(e).display !== 'none'; }) || $('#modal')?.classList.contains('on')) {
     recWelcomeTimer = setTimeout(maybeRecWelcome,180); return;
   }
-  if (typeof HTMLDialogElement === 'undefined' || !HTMLDialogElement.prototype.showModal) return; // Existing recommendation card stays usable.
   const el = document.createElement('dialog');
   el.className = 'rec-welcome'; el.setAttribute('aria-labelledby','rwTitle'); el.setAttribute('aria-describedby','rwDesc');
   el.innerHTML = '<div class="rw-top">G-DEAL AIR · YOUR FIRST TRIP</div><button class="rw-close" type="button" aria-label="추천 안내 닫기">×</button><div class="rw-body"><p class="rw-label">나만의 한마당 여행 안내</p><h2 id="rwTitle">지딜 한마당이 처음이세요?</h2><p id="rwDesc" class="rw-desc">뭘 고를지 모르겠다면<br>질문 3개로 나에게 맞는 코스를 찾아봐요.</p><a class="btn" href="#/recommend" autofocus>나에게 맞는 코스 찾기</a><button class="rw-later" type="button">괜찮아요, 둘러볼게요</button></div>';
@@ -1777,8 +1779,29 @@ function maybeRecWelcome() {
   el.querySelector('.rw-close').onclick = el.querySelector('.rw-later').onclick = () => closeRecWelcome();
   el.querySelector('a').onclick = () => closeRecWelcome(false);
   el.addEventListener('cancel',e => {e.preventDefault();closeRecWelcome();});
-  el.showModal(); recWelcomeSeen = true;
-  try { sessionStorage.setItem(REC_WELCOME_KEY,'1'); } catch (e) { /* memory-only fallback */ }
+  recWelcomeSeen = true;
+  document.addEventListener('keydown', recWelcomeKeys, true);
+  try {
+    if (typeof el.showModal !== 'function') throw new Error('dialog fallback');
+    el.showModal();
+  } catch (e) {
+    const shade = document.createElement('div'); shade.className = 'rw-fallback-shade';
+    document.body.append(shade); el._fallback = shade;
+    el.classList.add('rw-fallback'); el.setAttribute('open','');
+    el.setAttribute('role','dialog'); el.setAttribute('aria-modal','true');
+    el._inert = [...document.body.children].filter(n => n !== el && n !== shade).map(n => [n, n.inert]);
+    el._inert.forEach(([n]) => { n.inert = true; });
+  }
+  el.querySelector('a').focus({preventScroll:true});
+}
+function recWelcomeKeys(e) {
+  const el = recWelcomeDialog; if (!el) return;
+  if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeRecWelcome(); return; }
+  if (e.key !== 'Tab') return;
+  const items = [...el.querySelectorAll('a[href],button:not([disabled])')];
+  const first = items[0], last = items[items.length - 1];
+  if (e.shiftKey && (document.activeElement === first || !el.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && (document.activeElement === last || !el.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
 }
 window.addEventListener('pageshow',() => { if (!recWelcomeDialog) maybeRecWelcome(); });
 
@@ -1789,6 +1812,7 @@ async function route() {
   clearInterval(timer);
   tfUnsub.forEach(f => f()); tfUnsub = [];
   const h = location.hash.replace(/^#/, '') || '/';
+  if (h !== '/') recWelcomeSeen = true; // Never resurrect after recommendation/back or direct links.
   window.scrollTo(0, 0);
   if (h.startsWith('/test/')) { sessionStorage.setItem('hm_test', h.slice(6)); sessionStorage.removeItem('hm_staff'); localStorage.removeItem('hm_tok'); location.hash = '#/'; return; }
   if (h.startsWith('/tf/')) {
