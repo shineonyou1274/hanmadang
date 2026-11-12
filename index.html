@@ -492,6 +492,9 @@ const view = $('#view');
 const TYPE = { nanum: '나눔회원', baeum: '배움회원', outside: '지딜 외' };
 const TYPEPILL = { nanum: 'pg', baeum: 'pb', outside: 'po' };
 const TOPICS = ['수업과 평가', '학생 생활과 관계', '교사 업무 개선', '학교·지역사회 연결', '디지털 윤리와 안전', '자유 주제'];
+const VIBE_DESC = '처음이어도 괜찮아요. 팀원·진행 도우미와 함께 학교에서 필요한 아이디어를 직접 만들어 봐요.';
+const VIBE_HELP = '초보 환영 · 팀이 없어도 신청 가능 · 팀마다 진행 도우미(퍼실리테이터) 1명이 함께해요.';
+const vibeGuide = () => `<div class="card" style="border-top:5px solid var(--orange)"><h3>바이브코딩 챌린지 (해커톤)</h3><p>${VIBE_DESC}</p><p class="hint">${VIBE_HELP}</p><p class="hint">12.19 10:00–14:50 · 305호 · 한마당 신청 후 탑승권에서 별도 신청</p><a class="btn2" href="#/hack">바이브코딩 챌린지 안내</a></div>`;
 const LEVEL = { new: '처음이에요', some: '조금 해 봤어요', often: '자주 만들어요' };
 const WEBINARS = [['1차', '11.10(화) 21:00', '바이브코딩 툴 실습 · 구글 앱스스크립트 기초'], ['2차', '11.17(화) 21:00', '교육 현장 문제를 "개발 가능한 단위"로 쪼개기'], ['3차', '11.24(화) 21:00', '협업 환경 세팅 · 당일 운영 규칙 · 팀 결성']];
 const AL = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789', UP = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -505,7 +508,7 @@ const QAL = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const qFmt = q => q ? q.slice(0, 4) + '-' + q.slice(4) : '';
 const ST_ICON = { session: '🎓', booth: '🏷️', program: '⭐' };
 let SPOTS = null;
-async function loadSpots() { if (SPOTS) return SPOTS; try { const q = await getDocs(collection(db, 'spots')); SPOTS = q.docs.map(d => ({ id: d.id, ...d.data() })).filter(x => x.on !== false).sort((a, b) => (a.order || 0) - (b.order || 0)); } catch (e) { SPOTS = []; } return SPOTS; }
+async function loadSpots() { if (SPOTS) return SPOTS; try { const q = await getDocs(collection(db, 'spots')); SPOTS = q.docs.map(d => ({ id: d.id, ...d.data(), ...(d.id === 'prog_hack' ? { name: '바이브코딩 챌린지' } : {}) })).filter(x => x.on !== false).sort((a, b) => (a.order || 0) - (b.order || 0)); } catch (e) { SPOTS = []; } return SPOTS; }
 // 탑승권마다 도장용 코드(q)를 하나 만든다. 토큰 대신 이 코드만 QR에 넣는다.
 async function myQ(tok, d) {
   const k = 'hm_q_' + tok; const c = localStorage.getItem(k); if (c) return c;
@@ -816,13 +819,14 @@ async function home() {
   <div class="wrap">
     <a class="card rec-entry" href="#/recommend"><span class="rec-kicker">나만의 한마당 여행</span><b>처음이거나 무엇을 고를지 모르겠다면?</b><span>질문 3개로 오늘의 코스 찾기 →</span></a>
     ${testBanner()}
+    ${vibeGuide()}
     <div class="card" aria-label="둘러보기 메뉴"><h3>어디로 가볼까요?</h3><div class="row2"><a class="btn2" href="./mascot/">마스코트 전시 · 투표</a><a class="btn2" href="${active ? '#/t/' + me.tok : '#/find'}">내 탑승권 · 일정</a></div></div>
     ${S?.notice ? `<div class="notice">${esc(S.notice)}</div>` : ''}
     <div class="tabs" id="homeTabs" role="tablist"><button data-t="info">행사 안내</button><button data-t="tt">시간표</button><button data-t="way">오시는 길</button><button data-t="vid">홍보영상</button></div>
     <div class="tp" data-p="info">
     <div class="card"><h3>행사 안내</h3>
       <div class="kv"><b>일시</b><span>2026년 12월 19일 토요일 09:00–17:00 (점심 1시간 30분)</span>
-      <b>시간</b><span>09:00 네트워킹으로 시작 · 10:00부터 세션·부스·해커톤</span>
+      <b>시간</b><span>09:00 네트워킹으로 시작 · 10:00부터 세션·부스·바이브코딩 챌린지</span>
       <b>장소</b><span>${esc(S?.venueText || '마산대학교 (경남 창원시 마산회원구 내서읍 함마대로 2640)')}</span>
       <b>규모</b><span>${S?.capacity || 300}명</span>
       <b>접수</b><span>나눔회원 → 배움회원 → 모두 순서로 열려요</span></div>
@@ -902,7 +906,7 @@ function promoHTML() {
       <div class="vmain"><video id="vMain" src="promo-hanmadang.mp4" poster="poster-hanmadang.jpg" muted autoplay loop playsinline preload="metadata"></video><button class="vsnd" id="vSnd">소리 켜기</button></div>
       <div class="vrow">
         <div class="vside"><span class="lab" style="background:var(--purple)">마스코트 공모전</span><video src="promo-mascot.mp4" poster="poster-mascot.jpg" playsinline preload="none"></video><button class="vplay" aria-label="마스코트 공모전 영상 재생"><span></span></button></div>
-        <div class="vside"><span class="lab" style="background:var(--orange)">해커톤 챌린지</span><video src="promo-hackathon.mp4" poster="poster-hackathon.jpg" playsinline preload="none"></video><button class="vplay" aria-label="해커톤 영상 재생"><span></span></button></div>
+        <div class="vside"><span class="lab" style="background:var(--orange)">바이브코딩 챌린지</span><video src="promo-hackathon.mp4" poster="poster-hackathon.jpg" playsinline preload="none"></video><button class="vplay" aria-label="바이브코딩 챌린지 영상 재생"><span></span></button></div>
       </div>
     </div>`;
 }
@@ -926,7 +930,7 @@ const fxInfoHTML = f => { const i = FX_INFO[f.name]; if (!i) return ''; return `
 const TIMETABLE_FX = [
     { name: '부스', room: '송원홀', note: '블루포트·LG 외 6곳 · 자유 관람', start: '10:00', end: '16:20' },
     { name: '수업사례발표', room: '송원홀', note: '자유 입장', start: '10:00', end: '16:20' },
-    { name: '해커톤 챌린지', room: '305호', note: '3~4인 1팀 · 참가비 없음', start: '10:00', end: '14:50', show: 1, hack: 1 },
+    { name: '바이브코딩 챌린지', room: '305호', note: '초보 환영 · 팀이 없어도 신청 가능 · 3~4인 1팀 · 참가비 없음', start: '10:00', end: '14:50', show: 1, hack: 1 },
     { name: '아이돌봄 (초등)', room: '408호', note: '아이돌봄 신청 마감 · 기존 확정 유지', start: '10:00', end: '16:20' }];
 async function renderTimetable() {
   const box = $('#ttCard'); if (!box) return;
@@ -951,7 +955,7 @@ async function renderTimetable() {
   let HC = { total: 0 }; try { const hq = await getDoc(doc(db, 'hcounters', 'main')); if (hq.exists()) HC = hq.data(); } catch (e) { }
   const hx = f => { const hs = hackState(), cap = S?.hackCap || 40, left = Math.max(0, cap - (HC.total || 0));
     const lab = hs === 'open' ? (left > 0 ? '남은 자리 ' + left + ' / ' + cap : '마감') : hs === 'before' ? md(ts(S.hackOpen)) + ' 신청 열림' : '신청 마감';
-    return `<div class="tc"><div class="nm">${f.name}</div><span class="rm">${f.room}</span><div class="mt"><span>${f.note} · ${f.start}–${f.end}</span><b class="${hs === 'open' && left > 0 ? '' : 'full'}">${lab}</b></div>${hs === 'open' && left > 0 ? '<button type="button" class="tgo" data-hack="1">해커톤 신청하기</button>' : ''}</div>`; };
+    return `<div class="tc"><div class="nm">${f.name}</div><p class="hint">${VIBE_DESC}<br>${VIBE_HELP}</p><span class="rm">${f.room}</span><div class="mt"><span>${f.note} · ${f.start}–${f.end}</span><b class="${hs === 'open' && left > 0 ? '' : 'full'}">${lab}</b></div>${hs === 'open' && left > 0 ? '<button type="button" class="tgo" data-hack="1">바이브코딩 챌린지 신청하기</button>' : ''}</div>`; };
   await loadCare();
   const careLab = () => { const cap = careCapN(), u = (CCN && CCN.used) || 0, w = (CCN && CCN.wait) || 0; return '정원 ' + cap + '명 · 확정 ' + u + '명 · 대기 ' + w + '명 · ' + '아이돌봄 신청 마감 · 대기도 받지 않아요'; };
   const fx = (f, t) => { const care = /^아이돌봄/.test(f.name); return `<div class="tc fx"><div class="nm">${f.name}</div><span class="rm">${f.room}</span><div class="mt"${care ? ' style="display:block"' : ''}><span>${f.note}${f.show ? ' · ' + f.start + '–' + f.end : ''}</span>${care ? `<b class="${(CCN && CCN.used || 0) >= careCapN() ? 'full' : ''}" style="white-space:normal;text-align:left;display:block;margin-top:4px">${careLab()}</b>` : '<b style="color:#8a9a90;font-family:var(--sans)">신청 없음</b>'}</div>${care ? '<p class="hint" style="margin-top:8px">KTCS 디지털새싹 프로그램 (돌봄 로봇, 코딩큐브, AI오케스트라, 디지털 독서) 주제로 혼합 운영. 전문 강사 초빙</p>' : ''}${fxInfoHTML(f)}</div>`; };
@@ -964,7 +968,7 @@ async function renderTimetable() {
     <div class="ttp">${panel(TABS.find(t => t.k === cur))}</div></div>`;
     box.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { cur = window.__ttTab = b.dataset.tt; draw(); });
     box.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { sessionStorage.setItem('hm_want', b.dataset.go); const t = localStorage.getItem('hm_tok'); location.hash = t ? '#/t/' + t : '#/apply'; });
-    box.querySelectorAll('[data-hack]').forEach(b => b.onclick = () => { const t = localStorage.getItem('hm_tok'); if (t) { location.hash = '#/hack'; return; } sessionStorage.setItem('hm_hackwant', '1'); toast('한마당 참가 신청을 먼저 하면, 탑승권에서 바로 해커톤을 신청할 수 있어요'); location.hash = '#/apply'; }); };
+    box.querySelectorAll('[data-hack]').forEach(b => b.onclick = () => { const t = localStorage.getItem('hm_tok'); if (t) { location.hash = '#/hack'; return; } sessionStorage.setItem('hm_hackwant', '1'); toast('한마당 참가 신청을 먼저 하면, 탑승권에서 바로 바이브코딩 챌린지를 신청할 수 있어요'); location.hash = '#/apply'; }); };
   draw();
 }
 
@@ -1023,6 +1027,7 @@ async function apply() {
     <h2>탑승 수속</h2>
     <div class="sub">한마당 참가 신청이에요. 3분이면 끝나요.</div>
     ${testBanner()}
+    <div class="card"><h3>바이브코딩 챌린지도 궁금하세요?</h3><p>${VIBE_DESC}</p><p class="hint">${VIBE_HELP}<br>이 신청서는 한마당 참가 신청이에요. 발권 후 탑승권에서 별도로 신청해 주세요. 10:00–14:50에는 다른 세션과 함께 참여할 수 없어요.</p></div>
     <form id="f" novalidate>
       <div class="field"><label>회원 구분</label><div class="types">
         ${['nanum', 'baeum', 'outside'].map(t => `<label class="${types.includes(t) ? '' : 'dis'}"><input type="radio" name="type" value="${t}" ${types.includes(t) ? '' : 'disabled'} ${types[0] === t && types.length === 1 ? 'checked' : ''}><span>${tLabel[t][0]}<small>${types.includes(t) ? tLabel[t][1] : (t === 'baeum' ? md(ts(S.baeumStart)) + '부터' : md(ts(S.openStart)) + '부터')}</small></span></label>`).join('')}
@@ -1234,7 +1239,7 @@ function tfStatus() {
     const el = $('#tfStat'); if (!el || !c) return;
     const cap = S?.capacity || 300, hcap = S?.hackCap || 40, w = n => (n / cap * 100).toFixed(2) + '%';
     const ph = { unset: '설정 전', before: '접수 전 (TF 사전 접수 중)', nanum: '나눔회원 접수 중', baeum: '배움회원 접수 중', open: '모두 공개', closed: '접수 마감' }[phase()];
-    el.innerHTML = `<div class="tfgrid"><div>한마당 신청<b>${c.total} / ${cap}</b></div><div>남은 자리<b>${Math.max(0, cap - c.total)}</b></div><div>해커톤 신청<b>${h ? h.total : 0} / ${hcap}</b></div><div>지금 단계<b style="font-size:13px;font-family:var(--sans)">${ph}</b></div></div>
+    el.innerHTML = `<div class="tfgrid"><div>한마당 신청<b>${c.total} / ${cap}</b></div><div>남은 자리<b>${Math.max(0, cap - c.total)}</b></div><div>바이브코딩 챌린지 신청<b>${h ? h.total : 0} / ${hcap}</b></div><div>지금 단계<b style="font-size:13px;font-family:var(--sans)">${ph}</b></div></div>
       <div class="tfbar"><i style="width:${w(c.nanum || 0)};background:var(--g)"></i><i style="width:${w(c.baeum || 0)};background:var(--blue)"></i><i style="width:${w(c.outside || 0)};background:var(--orange)"></i></div>
       <div style="font-size:12px;color:#5b7566">나눔회원 ${c.nanum || 0} · 배움회원 ${c.baeum || 0} · 지딜 외 ${c.outside || 0}</div>`;
   };
@@ -1332,7 +1337,7 @@ async function seatCard(tok, d) {
     let act = '', stat = '';
     if (held) { stat = h.seat ? '' : ' · 대기에서 확정됐어요'; act = canEdit ? `<button class="drop" data-drop="${s.id}">취소</button>` : '<span class="tag2">확정</span>'; }
     else if (waiting) { stat = ` · <b style="color:var(--orange)">대기 ${Math.max(1, h.n - (s.wh || 0) + 1)}번</b>`; act = canEdit ? `<button class="drop" data-drop="${s.id}">대기 취소</button>` : ''; }
-    else if (hackHit) act = '<span class="tag2">해커톤 시간</span>';
+    else if (hackHit) act = '<span class="tag2">바이브코딩 챌린지 시간</span>';
     else if (!canEdit) act = '';
     else if (!isOpen) act = '<span class="tag2">' + md(ts(S.nanumStart)) + ' 열림</span>';
     else if (full) act = `<button class="swap" data-wait="${s.id}">${clash ? '대기로 바꾸기' : '대기 신청'}</button>`;
@@ -1343,7 +1348,7 @@ async function seatCard(tok, d) {
   const am = ss.filter(s => s.group === 'AM'), pm = ss.filter(s => s.group === 'PM');
   box.innerHTML = `<h3>세션 신청</h3>
     <p style="font-size:13px">세션은 안 골라도 괜찮아요. 블루포트·LG 등 부스가 여러 곳 있고, 디지털 방탈출 이벤트도 있어요.</p>
-    <p style="font-size:13px;margin-top:4px">시간이 겹치지 않으면 여러 개 신청할 수 있어요. 자리가 다 차면 대기 신청을 받고, 취소가 나오면 대기 순서대로 자동 확정돼요.${hackOn ? ' <b>해커톤 신청자는 10:00–14:50 세션을 고를 수 없어요.</b>' : ''}</p>
+    <p style="font-size:13px;margin-top:4px">시간이 겹치지 않으면 여러 개 신청할 수 있어요. 자리가 다 차면 대기 신청을 받고, 취소가 나오면 대기 순서대로 자동 확정돼요.${hackOn ? ' <b>바이브코딩 챌린지 신청자는 10:00–14:50 세션을 고를 수 없어요.</b>' : ''}</p>
     ${!isOpen && canEdit ? '<p style="font-size:13px;margin-top:4px"><b>세션 신청은 ' + md(ts(S.nanumStart)) + ' ' + String(new Date(ts(S.nanumStart).getTime() + 9 * 3600e3).getUTCHours()).padStart(2, '0') + ':' + String(new Date(ts(S.nanumStart).getTime() + 9 * 3600e3).getUTCMinutes()).padStart(2, '0') + '에 열려요.</b></p>' : ''}
     <div class="grp">오전 10:00–11:30</div>${am.map(item).join('')}
     <div class="grp">오후 13:00–16:20</div>${pm.map(item).join('')}
@@ -1438,7 +1443,7 @@ async function planCard(tok, d) {
   const sesLi = (x, t) => x.held ? li(t, esc(x.s.name), room(x.s) + ' · ' + x.s.start + '–' + x.s.end) : li(t, esc(x.s.name) + ' <span class="warn">대기 ' + x.wait + '번</span>', '확정되면 여기 바로 표시돼요 · 그동안은 부스 자유 관람', '');
   const L = [li('09:00', '오프닝 · 네트워킹', '송원홀 (창의관) · 도착하면 이 탑승권(여권)을 보여 주세요')];
   const am = slotLine('AM');
-  if (hackOn) L.push(li('10:00–14:50', '해커톤 챌린지', '305호 (멀티미디어실) · 점심 포함'));
+  if (hackOn) L.push(li('10:00–14:50', '바이브코딩 챌린지', '305호 (멀티미디어실) · 점심 포함'));
   else L.push(am ? sesLi(am, '10:00–11:30') : li('10:00–11:30', '부스 자유 관람', '세션을 안 골랐어요 · 수업사례발표(송원홀)도 자유 입장'));
   const lunch = !e.lunch ? '<span class="warn">도시락을 아직 안 골랐어요</span>' : e.lunch === 'none' ? '도시락 안 받아요' : LUNCH[e.lunch];
   L.push(li('11:30–13:00', '점심 · ' + lunch, e.klunch ? '아이 도시락 ' + e.klunch + '개 함께' : ''));
@@ -1489,43 +1494,43 @@ async function hackCard(tok, d) {
   if (sessionStorage.getItem('hm_hackwant')) { sessionStorage.removeItem('hm_hackwant'); if (!(hacker && hacker.status === 'active')) setTimeout(() => { box.scrollIntoView({ behavior: 'smooth', block: 'center' }); box.style.outline = '3px solid var(--orange)'; box.style.borderRadius = '16px'; setTimeout(() => { box.style.outline = ''; }, 3000); }, 1800); }
   if (hacker && hacker.status === 'active') {
     const hn = sessionStorage.getItem('hm_hacknew'); sessionStorage.removeItem('hm_hacknew');
-    if (hn) celebrate({ name: d.name, head: 'HACKATHON PASS', title: '해커톤 탑승 확정!', sub: hn === 'match' ? '운영진이 딱 맞는 팀을 찾아 드릴게요' : hn === 'lead' ? '팀 코드를 팀원에게 보내 주세요' : '팀에 합류했어요', stamp: ['해커톤', '확정'], color: 'var(--orange)' });
-    box.innerHTML = `<div class="hk"><h3>해커톤 챌린지 신청 완료</h3>
+    if (hn) celebrate({ name: d.name, head: 'HACKATHON PASS', title: '바이브코딩 챌린지 탑승 확정!', sub: hn === 'match' ? '운영진이 딱 맞는 팀을 찾아 드릴게요' : hn === 'lead' ? '팀 코드를 팀원에게 보내 주세요' : '팀에 합류했어요', stamp: ['바이브코딩', '확정'], color: 'var(--orange)' });
+    box.innerHTML = `<div class="hk"><h3>바이브코딩 챌린지 신청 완료</h3>
       ${team ? `<p>팀 <b>${esc(team.name)}</b> · ${team.count}/${S?.hackTeamMax || 4}명<br>팀원: ${team.names.map(esc).join(', ')}</p><div class="code">${esc(hacker.team)}</div><p>아직 안 들어온 팀원에게 이 팀 코드를 보내 주세요. 팀원도 한마당 신청을 먼저 해야 해요.</p><div class="gap"></div><button class="btn" id="hkShare">팀 코드 보내기</button>`
              : `<p>매칭 대기 중이에요. 운영진이 관심 주제와 경험을 보고 3~4명 팀을 짜 드려요. 팀이 정해지면 이 칸에 표시돼요.</p>`}
       <p style="margin-top:8px">사전 웨비나 ${WEBINARS.map(w => w[0] + ' ' + w[1]).join(' · ')}</p>
-      ${S && new Date() < ts(S.cancelDeadline) ? '<div style="text-align:center;margin-top:6px"><button class="btn3" id="hkCx" style="color:#fff">해커톤 신청만 취소</button></div>' : ''}</div>`;
-    const sh = $('#hkShare'); if (sh) sh.onclick = () => share('지딜 한마당 해커톤 팀 코드', `지딜 한마당 해커톤 팀 "${team.name}" 코드: ${hacker.team}\n한마당 신청 후 탑승권 화면의 "해커톤 신청"에서 이 코드를 넣으면 같은 팀이 돼요.`, location.origin + location.pathname + '#/');
+      ${S && new Date() < ts(S.cancelDeadline) ? '<div style="text-align:center;margin-top:6px"><button class="btn3" id="hkCx" style="color:#fff">바이브코딩 챌린지 신청만 취소</button></div>' : ''}</div>`;
+    const sh = $('#hkShare'); if (sh) sh.onclick = () => share('지딜 한마당 바이브코딩 챌린지 팀 코드', `지딜 한마당 바이브코딩 챌린지 팀 "${team.name}" 코드: ${hacker.team}\n한마당 신청 후 탑승권 화면의 "바이브코딩 챌린지 신청"에서 이 코드를 넣으면 같은 팀이 돼요.`, location.origin + location.pathname + '#/');
     const cx = $('#hkCx'); if (cx) cx.onclick = () => hackCancelFlow(tok, d);
     return;
   }
   if (hs === 'open') {
-    box.innerHTML = `<div class="hk"><h3>해커톤 챌린지</h3><p>12.19 10:00–14:50 · 3~4인 1팀 · 참가비 없음<br>선착순 ${cap}명 · 남은 자리 ${left}</p><div class="gap"></div>${left > 0 ? '<a class="btn" href="#/hack">해커톤 신청하기</a>' : '<p><b>자리가 모두 찼어요</b></p>'}</div>`;
+    box.innerHTML = `<div class="hk"><h3>바이브코딩 챌린지 (해커톤)</h3><p>${VIBE_DESC}</p><p class="hint">${VIBE_HELP}</p><p>12.19 10:00–14:50 · 3~4인 1팀 · 참가비 없음<br>선착순 ${cap}명 · 남은 자리 ${left}</p><div class="gap"></div>${left > 0 ? '<a class="btn" href="#/hack">바이브코딩 챌린지 신청하기</a>' : '<p><b>자리가 모두 찼어요</b></p>'}</div>`;
   } else if (hs === 'before') {
-    box.innerHTML = `<div class="hk"><h3>해커톤 챌린지</h3><p>신청은 ${md(ts(S.hackOpen))}에 열려요 · 선착순 ${cap}명</p></div>`;
+    box.innerHTML = `<div class="hk"><h3>바이브코딩 챌린지 (해커톤)</h3><p>${VIBE_DESC}</p><p class="hint">${VIBE_HELP}</p><p>신청은 ${md(ts(S.hackOpen))}에 열려요 · 선착순 ${cap}명</p></div>`;
   }
 }
 
 async function hack() {
   const tok = localStorage.getItem('hm_tok');
   let p = null; if (tok) { try { const s = await getDoc(doc(db, 'participants', tok)); p = s.exists() ? s.data() : null; } catch (e) { } }
-  if (!p || p.status !== 'active') { view.innerHTML = `<div class="wrap"><h2>해커톤 챌린지</h2><div class="card"><p>해커톤은 한마당 참가 신청(탑승 수속)을 마친 선생님만 신청할 수 있어요. 이미 신청했다면 "내 여권 찾기"로 탑승권을 열어 주세요.</p></div><a class="btn" href="#/">초대장으로</a><div class="gap"></div><a class="btn2" href="#/find">내 여권 찾기</a></div>`; return; }
+  if (!p || p.status !== 'active') { view.innerHTML = `<div class="wrap"><h2>바이브코딩 챌린지 (해커톤)</h2><div class="card"><p>${VIBE_DESC}</p><p>${VIBE_HELP}</p><p>바이브코딩 챌린지는 한마당 참가 신청(탑승 수속)을 마친 선생님만 신청할 수 있어요. 이미 신청했다면 "내 여권 찾기"로 탑승권을 열어 주세요.</p><a class="btn2" href="#/apply">한마당 참가 신청부터 하기</a></div><a class="btn" href="#/">초대장으로</a><div class="gap"></div><a class="btn2" href="#/find">내 여권 찾기</a></div>`; return; }
   const st = await loadHack(tok);
   if (st.hacker && st.hacker.status === 'active') { location.hash = '#/t/' + tok; return; }
   const ms0 = await mySlots(tok); const clashH = [...new Set(['AM', 'PM1'].filter(k => ms0[k]).map(k => ms0[k]))];
   if (clashH.length) {
     const ss0 = await loadSessions(); const nm = clashH.map(c => ss0.find(x => x.id === c)?.name || c).join(', ');
-    view.innerHTML = `<div class="wrap"><h2>해커톤 챌린지</h2><div class="card"><p>해커톤(10:00–14:50)과 시간이 겹치는 세션 <b>${esc(nm)}</b>을(를) 신청해 두셨어요. 해커톤에 참가하려면 이 세션을 먼저 취소해야 해요.</p></div><button class="btn" id="hxRel" style="background:var(--orange)">세션 취소하고 해커톤 신청하기</button><div class="gap"></div><a class="btn2" href="#/t/${tok}">그대로 둘게요</a></div>`;
+    view.innerHTML = `<div class="wrap"><h2>바이브코딩 챌린지</h2><div class="card"><p>바이브코딩 챌린지(10:00–14:50)과 시간이 겹치는 세션 <b>${esc(nm)}</b>을(를) 신청해 두셨어요. 바이브코딩 챌린지에 참가하려면 이 세션을 먼저 취소해야 해요.</p></div><button class="btn" id="hxRel" style="background:var(--orange)">세션 취소하고 바이브코딩 챌린지 신청하기</button><div class="gap"></div><a class="btn2" href="#/t/${tok}">그대로 둘게요</a></div>`;
     $('#hxRel').onclick = async () => { $('#hxRel').disabled = true; try { for (const c of clashH) await releaseSeat(tok, c); hack(); } catch (e) { toast('잠시 문제가 생겼어요'); $('#hxRel').disabled = false; } };
     return;
   }
   const cap = S?.hackCap || 40, left = Math.max(0, cap - (st.hc.total || 0)), hs = (p.test || p.staff) ? 'open' : hackState();
-  if (hs !== 'open' || left <= 0) { view.innerHTML = `<div class="wrap"><h2>해커톤 챌린지</h2><div class="card"><p>${left <= 0 ? '자리가 모두 찼어요.' : hs === 'before' ? '신청은 ' + md(ts(S.hackOpen)) + '에 열려요.' : '지금은 신청을 받지 않아요.'}</p></div><a class="btn2" href="#/t/${tok}">내 탑승권으로</a></div>`; return; }
+  if (hs !== 'open' || left <= 0) { view.innerHTML = `<div class="wrap"><h2>바이브코딩 챌린지</h2><div class="card"><p>${left <= 0 ? '자리가 모두 찼어요.' : hs === 'before' ? '신청은 ' + md(ts(S.hackOpen)) + '에 열려요.' : '지금은 신청을 받지 않아요.'}</p></div><a class="btn2" href="#/t/${tok}">내 탑승권으로</a></div>`; return; }
   view.innerHTML = `
   <div class="wrap">
-    <div class="hk"><h3 style="font-size:20px">해커톤 챌린지</h3><p>아이디어가 코드가 되고, 교육이 되다</p>
+    <div class="hk"><h3 style="font-size:20px">바이브코딩 챌린지 (해커톤)</h3><p>${VIBE_DESC}</p><p>${VIBE_HELP}</p>
       <div class="hgrid"><div>일시<b>12.19 10:00–14:50</b></div><div>모집<b>선착순 ${cap}명 (남은 ${left})</b></div><div>팀<b>3~4인 1팀</b></div><div>참가비<b>없음</b></div></div>
-      <p>팀마다 퍼실리테이터 1명이 함께해요. 해커톤 시간(10:00–14:50)에는 다른 세션에 들어갈 수 없어요.</p></div>
+      <p>바이브코딩 챌린지 시간(10:00–14:50)에는 다른 세션에 들어갈 수 없어요.</p></div>
     <form id="hf" novalidate>
       <div class="field"><label>참가 방식</label><div class="types">
         <label><input type="radio" name="mode" value="lead"><span>팀을 만들게요 (팀장)<small>팀 코드가 나오면 팀원에게 보내요</small></span></label>
@@ -1540,7 +1545,7 @@ async function hack() {
       <div class="consent"><b>대회 전 사전 웨비나 (온라인)</b>${WEBINARS.map(w => `<div class="web"><b class="n">${w[0]}</b><span><b>${w[1]}</b><br>${esc(w[2])}</span></div>`).join('')}
         <label class="chk"><input type="checkbox" id="laptop"> 당일 노트북을 가져올게요</label></div>
       <div class="err" id="herr"></div>
-      <button class="btn" id="hgo" type="submit" style="background:var(--orange)">해커톤 신청하기</button>
+      <button class="btn" id="hgo" type="submit" style="background:var(--orange)">바이브코딩 챌린지 신청하기</button>
       <div class="gap"></div><a class="btn2" href="#/t/${tok}">내 탑승권으로</a>
     </form>
   </div>`;
@@ -1551,7 +1556,7 @@ async function hack() {
   f.addEventListener('submit', async e => {
     e.preventDefault();
     const err = $('#herr'); err.style.display = 'none';
-    const fail = m => { err.textContent = m; err.style.display = 'block'; err.scrollIntoView({ block: 'center', behavior: 'smooth' }); $('#hgo').disabled = false; $('#hgo').textContent = '해커톤 신청하기'; };
+    const fail = m => { err.textContent = m; err.style.display = 'block'; err.scrollIntoView({ block: 'center', behavior: 'smooth' }); $('#hgo').disabled = false; $('#hgo').textContent = '바이브코딩 챌린지 신청하기'; };
     const mode = f.querySelector('input[name=mode]:checked')?.value;
     const topics = [...f.querySelectorAll('input[name=topic]:checked')].map(x => x.value);
     const level = f.querySelector('input[name=level]:checked')?.value;
@@ -1586,13 +1591,13 @@ async function hack() {
       location.hash = '#/t/' + tok;
     } catch (e2) {
       console.error(e2);
-      const m = { FULL: '방금 해커톤 자리가 모두 찼어요.', NOTEAM: '그 팀 코드를 찾지 못했어요. 팀장에게 다시 확인해 주세요.', TEAMFULL: '그 팀은 이미 인원이 다 찼어요.', RETRY: '잠시 문제가 생겼어요. 한 번 더 눌러 주세요.' }[e2.message];
+      const m = { FULL: '방금 바이브코딩 챌린지 자리가 모두 찼어요.', NOTEAM: '그 팀 코드를 찾지 못했어요. 팀장에게 다시 확인해 주세요.', TEAMFULL: '그 팀은 이미 인원이 다 찼어요.', RETRY: '잠시 문제가 생겼어요. 한 번 더 눌러 주세요.' }[e2.message];
       fail(m || '신청이 안 됐어요. 잠시 뒤 다시 해 주세요. (' + (e2.code || e2.message) + ')');
     }
   });
 }
 
-// 해커톤 취소 쓰기 (트랜잭션 안에서, 읽기는 미리)
+// 바이브코딩 챌린지 취소 쓰기 (트랜잭션 안에서, 읽기는 미리)
 async function hackReads(tx, tok) {
   const hRef = doc(db, 'hackers', tok), hcRef = doc(db, 'hcounters', 'main');
   const h = await tx.get(hRef); if (!h.exists() || h.data().status !== 'active') return null;
@@ -1608,9 +1613,9 @@ function hackWrites(tx, tok, r, phone) {
   if (r.tRef && r.t) { tx.set(doc(db, 'hjoins', v), { tok, team: r.h.team, kind: 'leave' }); tx.update(r.tRef, { count: r.t.count - 1, names: r.t.names.filter(n => n !== r.h.name), v }); }
 }
 function hackCancelFlow(tok, d) {
-  modal(`<h2>해커톤 신청을 취소할까요?</h2><div class="sub">한마당 참가는 그대로 유지돼요. 확인을 위해 휴대폰 번호 전체를 넣어 주세요.</div>
+  modal(`<h2>바이브코딩 챌린지 신청을 취소할까요?</h2><div class="sub">한마당 참가는 그대로 유지돼요. 확인을 위해 휴대폰 번호 전체를 넣어 주세요.</div>
     <div class="field"><input type="tel" id="hxp" inputmode="numeric" placeholder="01012345678"></div><div class="err" id="hxe"></div>
-    <button class="btn" id="hxgo" style="background:var(--red)">해커톤 취소하기</button><div class="gap"></div><button class="btn2" id="hxno">그대로 둘게요</button>`);
+    <button class="btn" id="hxgo" style="background:var(--red)">바이브코딩 챌린지 취소하기</button><div class="gap"></div><button class="btn2" id="hxno">그대로 둘게요</button>`);
   $('#hxno').onclick = closeModal;
   $('#hxgo').onclick = async () => {
     const ph = digits($('#hxp').value), e = $('#hxe'); e.style.display = 'none';
@@ -1618,13 +1623,13 @@ function hackCancelFlow(tok, d) {
     $('#hxgo').disabled = true;
     try {
       await runTransaction(db, async tx => { const r = await hackReads(tx, tok); if (!r) throw new Error('NONE'); hackWrites(tx, tok, r, ph); });
-      closeModal(); toast('해커톤 신청을 취소했어요'); ticket(tok);
+      closeModal(); toast('바이브코딩 챌린지 신청을 취소했어요'); ticket(tok);
     } catch (err) { console.error(err); e.textContent = '취소가 안 됐어요. (' + (err.code || err.message) + ')'; e.style.display = 'block'; $('#hxgo').disabled = false; }
   };
 }
 
 function cancelFlow(tok, d) {
-  modal(`<h2>참가를 취소할까요?</h2><div class="sub">취소하면 자리가 다른 선생님께 돌아가요. 해커톤을 신청했다면 그것도 함께 취소돼요. 확인을 위해 신청한 휴대폰 번호 전체를 넣어 주세요.</div>
+  modal(`<h2>참가를 취소할까요?</h2><div class="sub">취소하면 자리가 다른 선생님께 돌아가요. 바이브코딩 챌린지를 신청했다면 그것도 함께 취소돼요. 확인을 위해 신청한 휴대폰 번호 전체를 넣어 주세요.</div>
     <div class="field"><input type="tel" id="cxp" inputmode="numeric" placeholder="01012345678"></div><div class="err" id="cxe"></div>
     <button class="btn" id="cxgo" style="background:var(--red)">참가 취소하기</button><div class="gap"></div><button class="btn2" id="cxno">그대로 둘게요</button>`);
   $('#cxno').onclick = closeModal;
@@ -1733,7 +1738,7 @@ async function recommend() {
   const booths=sp.filter(x=>x.kind==='booth'&&x.on!==false).sort((a,b)=>{const rank=x=>boothPriority.includes(x.id)?boothPriority.indexOf(x.id):99;return rank(a)-rank(b);}).slice(0,3);
   const boothHTML=booths.map(b=>'<article class="rec-item"><h3>'+esc(b.name)+'</h3><p class="rec-reason">자유 관람하며 도구를 살펴보고 궁금한 점을 물어보세요.</p><p>'+esc(boothFX.start)+'–'+esc(boothFX.end)+' 운영 중 자유 관람 · '+esc(b.room||boothFX.room)+'</p><p>별도 예약 없음 · 현장 혼잡도는 제공하지 않아요</p></article>').join('');
   const opened=[...body.querySelectorAll('details[open] summary')].map(x=>x.textContent), focused=body.contains(document.activeElement)?document.activeElement.dataset?.recGo:null;
-  body.innerHTML='<div class="rec-pass"><span class="rec-stamp" aria-hidden="true">G<br>PASS</span><div><p class="rec-progress">오늘의 추천 유형</p><h2 tabindex="-1">'+types[mode][0]+'</h2><p>'+types[mode][1]+'</p></div></div><p class="rec-warning"><b>아직 신청된 게 아니에요.</b><br>추천은 예약이 아니에요. 세션을 담은 뒤 신청서 작성과 탑승권 발권까지 마쳐야 해요. 이미 발권했다면 내 탑승권에서 신청을 확정해 주세요.</p><p id="recLive" role="status">'+(fresh?'실시간 좌석 연결 · '+checked+' 확인':'실시간 연결 확인 중 · 좌석을 보장하지 않아요. 시간표에서 다시 확인해 주세요.')+'</p><p class="hint">아래는 선택 가능한 대안이에요. 시간이 겹치는 프로그램은 하나만 골라요. 추천에 없는 세션도 시간표에서 고를 수 있어요.</p>'+(mode==='listen'?'<h3>듣고 싶은 이야기</h3>'+caseHTML:mode==='free'?'<h3>자유롭게 들를 곳</h3>'+boothHTML:'')+'<details '+(mode==='hands'?'open':'')+'><summary>좌석을 신청하는 세션 추천</summary>'+(sessionHTML||'<p>조건에 맞는 세션을 확인하지 못했어요. 전체 시간표를 확인해 주세요.</p>')+'</details>'+(mode!=='listen'?'<details><summary>수업나눔에 들러보기</summary>'+caseHTML+'</details>':'')+(mode!=='free'?'<details><summary>부스도 함께 둘러보기</summary>'+(boothHTML||'<p>부스 안내를 불러오지 못했어요. 시간표를 확인해 주세요.</p>')+'</details>':'')+'<div class="rec-choices"><a class="btn" href="#/apply">바로 참가 신청</a><button type="button" class="btn2" data-restart>다시 골라보기</button></div>';
+  body.innerHTML='<div class="rec-pass"><span class="rec-stamp" aria-hidden="true">G<br>PASS</span><div><p class="rec-progress">오늘의 추천 유형</p><h2 tabindex="-1">'+types[mode][0]+'</h2><p>'+types[mode][1]+'</p></div></div><p class="rec-warning"><b>아직 신청된 게 아니에요.</b><br>추천은 예약이 아니에요. 세션을 담은 뒤 신청서 작성과 탑승권 발권까지 마쳐야 해요. 이미 발권했다면 내 탑승권에서 신청을 확정해 주세요.</p><p id="recLive" role="status">'+(fresh?'실시간 좌석 연결 · '+checked+' 확인':'실시간 연결 확인 중 · 좌석을 보장하지 않아요. 시간표에서 다시 확인해 주세요.')+'</p><p class="hint">아래는 선택 가능한 대안이에요. 시간이 겹치는 프로그램은 하나만 골라요. 추천에 없는 세션도 시간표에서 고를 수 있어요.</p>'+(mode==='listen'?'<h3>듣고 싶은 이야기</h3>'+caseHTML:mode==='free'?'<h3>자유롭게 들를 곳</h3>'+boothHTML:'')+'<details '+(mode==='hands'?'open':'')+'><summary>좌석을 신청하는 세션 추천</summary>'+(sessionHTML||'<p>조건에 맞는 세션을 확인하지 못했어요. 전체 시간표를 확인해 주세요.</p>')+'</details>'+(mode!=='listen'?'<details><summary>수업나눔에 들러보기</summary>'+caseHTML+'</details>':'')+(mode!=='free'?'<details><summary>부스도 함께 둘러보기</summary>'+(boothHTML||'<p>부스 안내를 불러오지 못했어요. 시간표를 확인해 주세요.</p>')+'</details>':'')+(interest==='make'&&time==='all'&&!sp.some(p=>p.id==='prog_hack'&&p.on===false)?vibeGuide():'')+'<div class="rec-choices"><a class="btn" href="#/apply">바로 참가 신청</a><button type="button" class="btn2" data-restart>다시 골라보기</button></div>';
   body.querySelectorAll('details').forEach(d=>{if(opened.includes(d.querySelector('summary').textContent))d.open=true;}); if(focused) [...body.querySelectorAll('[data-rec-go]')].find(b=>b.dataset.recGo===focused)?.focus();
   body.querySelector('[data-restart]').onclick=()=>{answers=[];step=0;draw();body.querySelector('h3')?.focus();};
   body.querySelectorAll('[data-rec-go]').forEach(b=>b.onclick=()=>{const t=localStorage.getItem('hm_tok'); if(t){sessionStorage.removeItem('hm_want');toast('추천만으로 신청되지 않아요. 탑승권의 세션 신청에서 직접 골라 주세요');location.hash='#/t/'+t;}else{sessionStorage.setItem('hm_want',b.dataset.recGo);toast('아직 신청 전이에요. 신청서를 작성하고 발권까지 마쳐 주세요');location.hash='#/apply';}});
