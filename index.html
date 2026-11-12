@@ -673,7 +673,7 @@ function wireLunchKids(root) {
   fillCareHint(root);
   on.addEventListener('change', sync); n.addEventListener('change', sync);
 }
-const attendanceNoticeField = (required = false) => `<p style="font-size:13px;line-height:1.7;margin-bottom:10px">출장 공문은 별도로 발송하지 않습니다. 참가확인서를 발급해 드리니, 개최 알림 공문과 참가확인서를 활용해 소속 기관의 복무 인정 기준을 확인해 주세요.</p><label class="lnone" style="margin-top:0"><input type="checkbox" id="attendanceNoticeRead" ${required ? 'required' : ''} style="accent-color:var(--g)"> 위 안내를 확인했으며, 소속 기관의 복무 인정 기준을 직접 확인하는 데 동의합니다.</label>`;
+const attendanceNoticeField = (required = false) => `<p style="font-size:13px;line-height:1.7;margin-bottom:10px">출장 공문은 별도로 발송하지 않습니다. 참가확인서는 행사 당일 실제 참가자에게 발급해 드립니다. 개최 알림 공문과 참가확인서를 활용해 소속 기관의 복무 인정 기준을 확인해 주세요.</p><label class="lnone" style="margin-top:0"><input type="checkbox" id="attendanceNoticeRead" ${required ? 'required' : ''} style="accent-color:var(--g)"> 위 안내를 확인했으며, 소속 기관의 복무 인정 기준을 직접 확인하는 데 동의합니다.</label>`;
 const readLunchKids = root => { const k = root.querySelector('#kidsOn')?.checked ? Number(root.querySelector('#kidsN').value) : 0; return { lunch: root.querySelector('input[name=lunch]:checked')?.value || '', kids: k, klunch: k ? Number(root.querySelector('#klN').value) || 0 : 0, care: k ? Number(root.querySelector('#crN')?.value) || 0 : 0 }; };
 const testKey = () => sessionStorage.getItem('hm_test');
 const staffOpen = () => !S || new Date() < ts(S.nanumStart);
