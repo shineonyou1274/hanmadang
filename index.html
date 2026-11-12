@@ -388,6 +388,21 @@ details.sd ul{margin:5px 0 0;padding-left:16px;line-height:1.55}
 .web b.n{background:var(--orange);color:#fff;border-radius:8px;text-align:center;padding:3px 0;font-size:12px;height:fit-content}
 .sub2{display:none;margin:8px 0 0 28px}
 .rec-entry{display:grid;gap:7px;text-decoration:none;border:2px solid #45af76;background:linear-gradient(120deg,#e3f4ea,#fff4cf);color:var(--deep)}.rec-kicker{font:700 11px var(--mono);letter-spacing:.07em;color:#577356}.rec-entry b{font-size:18px}.rec-entry span:last-child{font-size:14px}.rec h2{font-size:21px;line-height:1.4;word-break:keep-all;overflow-wrap:normal}.rec-choices{display:grid;gap:10px;margin:16px 0}.rec-choices button{font:700 16px var(--sans);text-align:left;background:#eff8f1;color:var(--deep);border:2px solid #b8d9c3;border-radius:14px;padding:17px;cursor:pointer}.rec button:focus-visible,.rec a:focus-visible,.rec-entry:focus-visible{outline:3px solid #aa6611;outline-offset:4px}.rec-progress{color:#577356;font-size:12px;margin:18px 0 5px}.rec-pass{display:flex;align-items:center;gap:18px;background:#e3f4ea;border-radius:16px;padding:16px;margin:18px 0}.rec-stamp{display:grid;place-content:center;text-align:center;flex:none;width:74px;height:74px;border:3px double #ba812a;border-radius:50%;color:#885914;transform:rotate(-12deg);font:800 15px var(--mono)}.rec-warning{background:#fff3d6;border-radius:12px;padding:12px;font-size:13px}.rec-item{background:#f4f8f3;border:1px solid #d7e5d5;border-radius:13px;padding:14px;margin:12px 0}.rec-item h3{font-size:16px}.rec-item p{font-size:13px;margin:6px 0}.rec-reason{color:#577356}.rec-seat{font-weight:800;color:var(--deep)}.rec-foot{font-size:13px;border-top:1px dashed #bfd0be;padding-top:14px;margin:18px 0 10px}.rec details{margin-top:16px}.rec summary{cursor:pointer;font-weight:800;padding:10px 0}.rec #recLive{font-size:12px;color:#577356;margin:12px 0}.rec a.btn{text-align:center}.rec *{overflow-wrap:anywhere}
+
+/* Invitation-only course welcome; native dialog keeps keyboard focus inside. */
+.rec-welcome{position:fixed;inset:0;margin:auto;width:min(420px,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:0;border:1px solid var(--gold);border-radius:22px;background:var(--cream);color:var(--ink);box-shadow:0 22px 80px #102d2666;font-family:var(--sans)}
+.rec-welcome::backdrop{background:rgba(16,45,38,.58);backdrop-filter:blur(3px)}
+.rec-welcome .rw-top{padding:17px 54px 17px 22px;background:var(--deep);color:#ead9a7;font:700 11px var(--mono);letter-spacing:.12em;border-bottom:2px dashed var(--gold)}
+.rec-welcome .rw-close{position:absolute;right:9px;top:7px;width:44px;height:44px;border:0;background:transparent;color:#fff;font:28px var(--sans);cursor:pointer;border-radius:50%}
+.rec-welcome .rw-body{padding:25px 22px 22px;background:radial-gradient(circle at 100% 0,#e3f4ea,transparent 65%)}
+.rec-welcome .rw-label{font-size:12px;font-weight:800;color:var(--deep);letter-spacing:.08em;margin-bottom:12px}
+.rec-welcome h2{font-family:var(--serif);font-size:25px;line-height:1.45;margin:0 0 9px;word-break:keep-all}
+.rec-welcome .rw-desc{font-size:15px;line-height:1.6;margin:0 0 20px;word-break:keep-all}
+.rec-welcome .btn{background:var(--deep);font-size:16px;white-space:normal}
+.rec-welcome .rw-later{display:block;width:100%;padding:13px 3px 0;border:0;background:transparent;color:#506e5c;font:600 14px var(--sans);cursor:pointer;white-space:normal}
+.rec-welcome :focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+@media(max-width:380px){.rec-welcome h2{font-size:23px}.rec-welcome .rw-body{padding:22px 18px}}
+
 </style>
 </head>
 <body>
@@ -1731,8 +1746,45 @@ async function recommend() {
  const offline=()=>{fresh=false;draw();};window.addEventListener('offline',offline);unsubs.push(()=>window.removeEventListener('offline',offline));
 }
 
+
+/* Only a fresh invitation landing may show this; no participant data is stored. */
+const REC_WELCOME_KEY = 'hm_rec_welcome_v1';
+const recWelcomeLanding = !location.hash || location.hash === '#/' || location.hash === '#';
+let recWelcomeSeen = false, recWelcomeTimer = 0, recWelcomeDialog = null, recWelcomeFocus = null;
+try { recWelcomeSeen = sessionStorage.getItem(REC_WELCOME_KEY) === '1'; } catch (e) { /* memory-only fallback */ }
+function closeRecWelcome(restore = true) {
+  clearTimeout(recWelcomeTimer);
+  if (!recWelcomeDialog) return;
+  const el = recWelcomeDialog; recWelcomeDialog = null;
+  el.close(); el.remove();
+  if (restore && recWelcomeFocus?.isConnected) recWelcomeFocus.focus({preventScroll:true});
+}
+function maybeRecWelcome() {
+  clearTimeout(recWelcomeTimer);
+  if (!recWelcomeLanding || recWelcomeSeen || (location.hash && location.hash !== '#/' && location.hash !== '#')) return;
+  try { if (localStorage.getItem('hm_tok')) return; } catch (e) {}
+  if (!view.querySelector('.rec-entry')) return;
+  if (['#intro','#env'].some(s => { const e=$(s); return e && !e.classList.contains('hide') && getComputedStyle(e).display !== 'none'; }) || $('#modal')?.classList.contains('on')) {
+    recWelcomeTimer = setTimeout(maybeRecWelcome,180); return;
+  }
+  if (typeof HTMLDialogElement === 'undefined' || !HTMLDialogElement.prototype.showModal) return; // Existing recommendation card stays usable.
+  const el = document.createElement('dialog');
+  el.className = 'rec-welcome'; el.setAttribute('aria-labelledby','rwTitle'); el.setAttribute('aria-describedby','rwDesc');
+  el.innerHTML = '<div class="rw-top">G-DEAL AIR · YOUR FIRST TRIP</div><button class="rw-close" type="button" aria-label="추천 안내 닫기">×</button><div class="rw-body"><p class="rw-label">나만의 한마당 여행 안내</p><h2 id="rwTitle">지딜 한마당이 처음이세요?</h2><p id="rwDesc" class="rw-desc">뭘 고를지 모르겠다면<br>질문 3개로 나에게 맞는 코스를 찾아봐요.</p><a class="btn" href="#/recommend" autofocus>나에게 맞는 코스 찾기</a><button class="rw-later" type="button">괜찮아요, 둘러볼게요</button></div>';
+  recWelcomeFocus = document.activeElement;
+  if (recWelcomeFocus === document.body) recWelcomeFocus = view.querySelector('.rec-entry');
+  document.body.append(el); recWelcomeDialog = el;
+  el.querySelector('.rw-close').onclick = el.querySelector('.rw-later').onclick = () => closeRecWelcome();
+  el.querySelector('a').onclick = () => closeRecWelcome(false);
+  el.addEventListener('cancel',e => {e.preventDefault();closeRecWelcome();});
+  el.showModal(); recWelcomeSeen = true;
+  try { sessionStorage.setItem(REC_WELCOME_KEY,'1'); } catch (e) { /* memory-only fallback */ }
+}
+window.addEventListener('pageshow',() => { if (!recWelcomeDialog) maybeRecWelcome(); });
+
 /* ---------- router ---------- */
 async function route() {
+  closeRecWelcome(false);
   recStop();
   clearInterval(timer);
   tfUnsub.forEach(f => f()); tfUnsub = [];
@@ -1753,7 +1805,8 @@ async function route() {
     if (h === '/find') return find();
     if (h === '/hack') return hack();
     if (h === '/tt' || h === '/timetable') { await home(); const b = document.querySelector('#homeTabs [data-t="tt"]'); if (b) { b.click(); setTimeout(() => document.querySelector('#homeTabs')?.scrollIntoView({ behavior: 'smooth' }), 300); } return; }
-    return home();
+    await home();
+    maybeRecWelcome();
   } catch (e) { console.error(e); view.innerHTML = `<div class="wrap"><div class="err" style="display:block">화면을 불러오지 못했어요. 새로고침해 주세요.</div></div>`; }
 }
 window.addEventListener('hashchange', route);
