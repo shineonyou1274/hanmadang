@@ -732,5 +732,77 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
     // ================= 마스코트 투표 블록 끝 =================
+
+    // ---------- SESSION ROSTER: isolated, no participant tokens ----------
+    function rosterEmail() { return request.auth.token.email.lower(); }
+    function rosterSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true
+        && request.auth.token.email is string;
+    }
+    function ownRosterEmail(email) { return rosterSignedIn() && email == rosterEmail(); }
+    function assignedRoster(sid) {
+      return rosterSignedIn()
+        && exists(/databases/$(db)/documents/sessionLeaderAccess/$(rosterEmail()))
+        && sid in get(/databases/$(db)/documents/sessionLeaderAccess/$(rosterEmail())).data.sessions;
+    }
+    // Only trusted owners write snapshots. Member projection is validated by sync code.
+    // Rules cannot iterate arbitrary arrays; never use this as a generic untrusted writer.
+    match /sessionLeaderAccess/{email} {
+      allow get: if isOwner() || ownRosterEmail(email);
+      allow list: if isOwner();
+      allow create, update: if isOwner()
+        && email == email.lower() && email.matches('[^/ ]+@[^/ ]+\\.[^/ ]+')
+        && request.resource.data.keys().hasOnly(['sessions'])
+        && request.resource.data.keys().hasAll(['sessions'])
+        && request.resource.data.sessions is list
+        && request.resource.data.sessions.size() <= 30
+        && request.resource.data.sessions.toSet().size() == request.resource.data.sessions.size()
+        && (request.resource.data.sessions.size() <= 0 || (request.resource.data.sessions[0] is string && request.resource.data.sessions[0].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 1 || (request.resource.data.sessions[1] is string && request.resource.data.sessions[1].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 2 || (request.resource.data.sessions[2] is string && request.resource.data.sessions[2].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 3 || (request.resource.data.sessions[3] is string && request.resource.data.sessions[3].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 4 || (request.resource.data.sessions[4] is string && request.resource.data.sessions[4].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 5 || (request.resource.data.sessions[5] is string && request.resource.data.sessions[5].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 6 || (request.resource.data.sessions[6] is string && request.resource.data.sessions[6].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 7 || (request.resource.data.sessions[7] is string && request.resource.data.sessions[7].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 8 || (request.resource.data.sessions[8] is string && request.resource.data.sessions[8].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 9 || (request.resource.data.sessions[9] is string && request.resource.data.sessions[9].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 10 || (request.resource.data.sessions[10] is string && request.resource.data.sessions[10].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 11 || (request.resource.data.sessions[11] is string && request.resource.data.sessions[11].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 12 || (request.resource.data.sessions[12] is string && request.resource.data.sessions[12].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 13 || (request.resource.data.sessions[13] is string && request.resource.data.sessions[13].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 14 || (request.resource.data.sessions[14] is string && request.resource.data.sessions[14].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 15 || (request.resource.data.sessions[15] is string && request.resource.data.sessions[15].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 16 || (request.resource.data.sessions[16] is string && request.resource.data.sessions[16].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 17 || (request.resource.data.sessions[17] is string && request.resource.data.sessions[17].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 18 || (request.resource.data.sessions[18] is string && request.resource.data.sessions[18].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 19 || (request.resource.data.sessions[19] is string && request.resource.data.sessions[19].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 20 || (request.resource.data.sessions[20] is string && request.resource.data.sessions[20].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 21 || (request.resource.data.sessions[21] is string && request.resource.data.sessions[21].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 22 || (request.resource.data.sessions[22] is string && request.resource.data.sessions[22].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 23 || (request.resource.data.sessions[23] is string && request.resource.data.sessions[23].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 24 || (request.resource.data.sessions[24] is string && request.resource.data.sessions[24].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 25 || (request.resource.data.sessions[25] is string && request.resource.data.sessions[25].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 26 || (request.resource.data.sessions[26] is string && request.resource.data.sessions[26].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 27 || (request.resource.data.sessions[27] is string && request.resource.data.sessions[27].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 28 || (request.resource.data.sessions[28] is string && request.resource.data.sessions[28].matches('[A-Za-z0-9_-]{1,80}')))
+        && (request.resource.data.sessions.size() <= 29 || (request.resource.data.sessions[29] is string && request.resource.data.sessions[29].matches('[A-Za-z0-9_-]{1,80}')));
+      allow delete: if isOwner();
+    }
+    match /sessionRosters/{sid} {
+      allow get: if isOwner() || assignedRoster(sid);
+      allow list: if false;
+      allow create, update: if isOwner()
+        && sid.matches('[A-Za-z0-9_-]{1,80}') && exists(SE(sid))
+        && request.resource.data.keys().hasOnly(['name', 'room', 'updatedAt', 'members'])
+        && request.resource.data.keys().hasAll(['name', 'room', 'updatedAt', 'members'])
+        && request.resource.data.name is string && request.resource.data.name.size() <= 200
+        && request.resource.data.room is string && request.resource.data.room.size() <= 100
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.members is list
+        && request.resource.data.members.size() <= 1000;
+      allow delete: if isOwner();
+    }
+    // ---------- SESSION ROSTER END ----------
   }
 }
