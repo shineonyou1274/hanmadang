@@ -137,7 +137,7 @@ async function boot() {
       import('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js')
     ]);
     api = storeApi;
-    const app = appApi.initializeApp({apiKey:'AIzaSyAm-uo720r9Lq4ZzbTgwVnCmrej6Yohf2w',authDomain:'gdeal-hanmadang.firebaseapp.com',projectId:'gdeal-hanmadang',storageBucket:'gdeal-hanmadang.firebasestorage.app',messagingSenderId:'428027399816',appId:'1:428027399816:web:4d8a8177dd5e69b79cd93d'});
+    const app = appApi.initializeApp({apiKey:'AIzaSyAm-uo720r9Lq4ZzbTgwVnCmrej6Yohf2w',authDomain:'gdeal-hanmadang.firebaseapp.com',projectId:'gdeal-hanmadang',storageBucket:'gdeal-hanmadang.firebasestorage.app',messagingSenderId:'428027399816',appId:'1:428027399816:web:4d8a8177dd5e69b79cd93d'}, 'gdeal-session-leader');
     auth = authApi.getAuth(app);
     await authApi.setPersistence(auth, authApi.inMemoryPersistence);
     db = storeApi.initializeFirestore(app, { localCache:storeApi.memoryLocalCache() });
