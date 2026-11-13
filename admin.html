@@ -292,11 +292,11 @@ header nav button{white-space:nowrap}
     </div>
     <div class="panel hidden" id="leaderPanel">
       <h3>세션 담당자 · 명단 공유 <button class="b2" id="refreshLeaderRosters" disabled>명단 새로고침</button></h3>
-      <p class="note"><b>총괄만 설정할 수 있어요.</b> 이미 신청한 TF 참가자를 선택하면 돼요. 담당자는 별도로 신청할 필요 없이 지정한 Google 계정으로 로그인해 담당 세션 명단을 확인해요.</p>
+      <p class="note"><b>총괄만 설정할 수 있어요.</b> TF 참가자는 목록에서 고르고, TF 등록이 안 된 담당자는 Google 이메일을 직접 입력하면 돼요. 담당자는 별도 신청 없이 지정된 계정으로 로그인해요.</p>
       <p><a href="/leader.html" target="_blank" rel="noopener">담당자 명단 화면 열기</a> · 주소를 지정된 리더에게 보내 주세요.</p>
       <p class="warn" style="margin-top:8px">담당자용 명단은 총괄이 ‘명단 새로고침’을 누를 때만 업데이트돼요. 신청·취소·대기 변동은 자동 반영되지 않아요. 공유되는 정보는 이름·소속·확정/대기뿐이에요.</p>
       <div class="grid2">
-        <div class="f"><label for="leaderParticipant">TF 참가자 (신청 중)</label><select id="leaderParticipant" style="width:100%" disabled><option value="">불러오는 중</option></select></div>
+        <div class="f"><label for="leaderParticipant">TF 참가자 (선택)</label><select id="leaderParticipant" style="width:100%" disabled><option value="">불러오는 중</option></select></div>
         <div class="f"><label for="leaderEmail">담당자가 로그인할 Google 이메일</label><input id="leaderEmail" type="email" placeholder="참가자 이메일을 채운 뒤 수정할 수 있어요" autocomplete="off" disabled></div>
       </div>
       <fieldset style="border:1px solid #d3e2d8;border-radius:9px;padding:10px;margin-top:10px"><legend>담당 세션 (여러 개 선택 가능)</legend><div id="leaderSessions" class="tools"></div></fieldset>
@@ -353,7 +353,7 @@ const leaderAccessReady = () => OWNER && !!auth.currentUser && ['participants', 
 function resetLeaderState() {
   leaderEpoch++; leaderReady = {}; leaderErrors = {}; leaderAccess = []; leaderAdmins = [];
   leaderBusy = false; leaderSaving = false; OWNER = false;
-  $('#leaderPanel').classList.add('hidden'); $('#leaderParticipant').innerHTML = '<option value="">TF 참가자 선택</option>';
+  $('#leaderPanel').classList.add('hidden'); $('#leaderParticipant').innerHTML = '<option value="">직접 입력 또는 TF 선택</option>';
   $('#leaderEmail').value = ''; $('#leaderSessions').innerHTML = ''; $('#leaderAccessList').innerHTML = '';
   $('#leaderAccessMsg').textContent = ''; $('#leaderRosterMsg').textContent = '';
   renderLeaderReadiness();
@@ -396,7 +396,7 @@ function renderLeaderOptions() {
   if (!OWNER) return;
   const picked = $('#leaderParticipant').value;
   const checked = new Set([...$('#leaderSessions').querySelectorAll('input:checked')].map(i => i.value));
-  $('#leaderParticipant').innerHTML = '<option value="">TF 참가자 선택</option>' + P.filter(p => p.staff && p.status === 'active').map(p => '<option value="' + esc(p.id) + '">' + esc(p.name) + ' · ' + esc(p.school) + '</option>').join('');
+  $('#leaderParticipant').innerHTML = '<option value="">직접 입력 또는 TF 선택</option>' + P.filter(p => p.staff && p.status === 'active').map(p => '<option value="' + esc(p.id) + '">' + esc(p.name) + ' · ' + esc(p.school) + '</option>').join('');
   $('#leaderParticipant').value = picked;
   $('#leaderSessions').innerHTML = SE.map(s => '<label style="display:flex;gap:5px;align-items:center"><input type="checkbox" value="' + esc(s.id) + '"' + (checked.has(s.id) ? ' checked' : '') + '> ' + esc(s.name) + ' · ' + esc(s.room) + '</label>').join('') || '<span class="note">등록된 세션 없음</span>';
   renderLeaderAccessList(); renderLeaderReadiness();
@@ -410,7 +410,7 @@ function renderLeaderAccessList() {
     const p = P.find(x => x.staff && x.status === 'active' && String(x.email || '').trim().toLowerCase() === a.email);
     $('#leaderParticipant').value = p ? p.id : ''; $('#leaderEmail').value = a.email;
     $('#leaderSessions').querySelectorAll('input').forEach(i => i.checked = a.sessions.includes(i.value));
-    $('#leaderAccessMsg').textContent = p ? '수정 후 저장해 주세요.' : '이 이메일에 해당하는 TF 참가자를 선택한 뒤 이메일과 세션을 확인해 주세요.';
+    $('#leaderAccessMsg').textContent = p ? '수정 후 저장해 주세요.' : '이메일과 담당 세션을 확인해 주세요.';
     renderLeaderAdminWarning();
   });
   $('#leaderAccessList').querySelectorAll('[data-leader-delete]').forEach(b => b.onclick = async () => {
@@ -432,7 +432,6 @@ $('#saveLeaderAccess').onclick = async () => {
   const p = P.find(x => x.id === $('#leaderParticipant').value && x.staff && x.status === 'active');
   const email = $('#leaderEmail').value.trim().toLowerCase();
   const sessions = [...new Set([...$('#leaderSessions').querySelectorAll('input:checked')].map(i => i.value))];
-  if (!p) return alert('신청 중인 TF 참가자를 선택해 주세요.');
   if (!/^[^@\s/]+@[^@\s/]+\.[^@\s/]+$/.test(email) || email.length > 254) return alert('Google 로그인 이메일을 확인해 주세요.');
   if (!sessions.length || sessions.some(sid => !SE.some(s => s.id === sid))) return alert('담당 세션을 하나 이상 선택해 주세요.');
   const epoch = leaderEpoch; leaderSaving = true; renderLeaderReadiness();
