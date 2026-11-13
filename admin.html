@@ -294,7 +294,7 @@ header nav button{white-space:nowrap}
       <h3>세션 담당자 · 명단 공유 <button class="b2" id="refreshLeaderRosters" disabled>명단 새로고침</button></h3>
       <p class="note"><b>총괄만 설정할 수 있어요.</b> TF 참가자는 목록에서 고르고, TF 등록이 안 된 담당자는 Google 이메일을 직접 입력하면 돼요. 담당자는 별도 신청 없이 지정된 계정으로 로그인해요.</p>
       <p><a href="/leader.html" target="_blank" rel="noopener">담당자 명단 화면 열기</a> · 주소를 지정된 리더에게 보내 주세요.</p>
-      <p class="warn" style="margin-top:8px">담당자용 명단은 총괄이 ‘명단 새로고침’을 누를 때만 업데이트돼요. 신청·취소·대기 변동은 자동 반영되지 않아요. 공유되는 정보는 이름·소속·확정/대기뿐이에요.</p>
+      <p class="warn" style="margin-top:8px">담당자용 명단은 총괄이 ‘명단 새로고침’을 누를 때만 업데이트돼요. 신청·취소·대기 변동은 자동 반영되지 않아요. 공유되는 정보는 이름·소속·신청 상태(세션 확정/대기, 해커톤 신청)뿐이에요.</p>
       <div class="grid2">
         <div class="f"><label for="leaderParticipant">TF 참가자 (선택)</label><select id="leaderParticipant" style="width:100%" disabled><option value="">불러오는 중</option></select></div>
         <div class="f"><label for="leaderEmail">담당자가 로그인할 Google 이메일</label><input id="leaderEmail" type="email" placeholder="참가자 이메일을 채운 뒤 수정할 수 있어요" autocomplete="off" disabled></div>
@@ -346,10 +346,14 @@ let S = null, C = null, P = [], unsub = [], OWNER = false, HALL = [];
 // Session-leader sharing: owner-only UI, manual sanitized snapshots, no auto writes.
 let leaderEpoch = 0, leaderBusy = false, leaderSaving = false;
 let leaderReady = {}, leaderErrors = {}, leaderAccess = [], leaderAdmins = [];
-const leaderSources = ['participants', 'sessions', 'seats', 'waits'];
+const HACKATHON_LEADER_SID = 'leader_hackathon_v1';
+const HACKATHON_LEADER_NAME = '바이브코딩 챌린지 (해커톤)';
+// Virtual leader-only option: never add it to SE or the sessions collection.
+const leaderSessionOptions = () => [...SE.filter(s => s.id !== HACKATHON_LEADER_SID), { id: HACKATHON_LEADER_SID, name: HACKATHON_LEADER_NAME, room: '' }];
+const leaderSources = ['participants', 'sessions', 'seats', 'waits', 'hackers'];
 const leaderServerReady = q => !!q.metadata && !q.metadata.fromCache && !q.metadata.hasPendingWrites;
 const leaderRosterReady = () => OWNER && !!auth.currentUser && leaderSources.every(k => leaderReady[k]);
-const leaderAccessReady = () => OWNER && !!auth.currentUser && ['participants', 'sessions', 'access', 'admins'].every(k => leaderReady[k]);
+const leaderAccessReady = () => OWNER && !!auth.currentUser && ['participants', 'sessions', 'hackers', 'access', 'admins'].every(k => leaderReady[k]);
 function resetLeaderState() {
   leaderEpoch++; leaderReady = {}; leaderErrors = {}; leaderAccess = []; leaderAdmins = [];
   leaderBusy = false; leaderSaving = false; OWNER = false;
@@ -398,12 +402,12 @@ function renderLeaderOptions() {
   const checked = new Set([...$('#leaderSessions').querySelectorAll('input:checked')].map(i => i.value));
   $('#leaderParticipant').innerHTML = '<option value="">직접 입력 또는 TF 선택</option>' + P.filter(p => p.staff && p.status === 'active').map(p => '<option value="' + esc(p.id) + '">' + esc(p.name) + ' · ' + esc(p.school) + '</option>').join('');
   $('#leaderParticipant').value = picked;
-  $('#leaderSessions').innerHTML = SE.map(s => '<label style="display:flex;gap:5px;align-items:center"><input type="checkbox" value="' + esc(s.id) + '"' + (checked.has(s.id) ? ' checked' : '') + '> ' + esc(s.name) + ' · ' + esc(s.room) + '</label>').join('') || '<span class="note">등록된 세션 없음</span>';
+  $('#leaderSessions').innerHTML = leaderSessionOptions().map(s => '<label style="display:flex;gap:5px;align-items:center"><input type="checkbox" value="' + esc(s.id) + '"' + (checked.has(s.id) ? ' checked' : '') + '> ' + esc(s.name) + (s.room ? ' · ' + esc(s.room) : '') + '</label>').join('') || '<span class="note">등록된 세션 없음</span>';
   renderLeaderAccessList(); renderLeaderReadiness();
 }
 function renderLeaderAccessList() {
   if (!OWNER) return;
-  $('#leaderAccessList').innerHTML = leaderReady.access ? leaderAccess.map(a => '<div style="border-bottom:1px solid #e6efe9;padding:8px 0"><b>' + esc(a.email) + '</b> · ' + a.sessions.map(sid => esc((SE.find(s => s.id === sid) || {}).name || ('없는 세션: ' + sid))).join(', ') + (leaderAdmins.includes(a.email) || a.email === 'shineonyou1274@gmail.com' ? ' <b style="color:var(--red)">기존 관리자 권한 유지</b>' : '') + ' <button class="b2" data-leader-edit="' + esc(a.email) + '">수정</button> <button class="bx" data-leader-delete="' + esc(a.email) + '">배정 삭제</button></div>').join('') || '<p class="note">현재 배정 없음</p>' : '<p class="note">서버의 배정 목록 확인 중</p>';
+  $('#leaderAccessList').innerHTML = leaderReady.access ? leaderAccess.map(a => '<div style="border-bottom:1px solid #e6efe9;padding:8px 0"><b>' + esc(a.email) + '</b> · ' + a.sessions.map(sid => esc((leaderSessionOptions().find(s => s.id === sid) || {}).name || ('없는 세션: ' + sid))).join(', ') + (leaderAdmins.includes(a.email) || a.email === 'shineonyou1274@gmail.com' ? ' <b style="color:var(--red)">기존 관리자 권한 유지</b>' : '') + ' <button class="b2" data-leader-edit="' + esc(a.email) + '">수정</button> <button class="bx" data-leader-delete="' + esc(a.email) + '">배정 삭제</button></div>').join('') || '<p class="note">현재 배정 없음</p>' : '<p class="note">서버의 배정 목록 확인 중</p>';
   $('#leaderAccessList').querySelectorAll('[data-leader-edit]').forEach(b => b.onclick = () => {
     if (!leaderAccessReady()) return;
     const a = leaderAccess.find(x => x.email === b.dataset.leaderEdit); if (!a) return;
@@ -433,7 +437,7 @@ $('#saveLeaderAccess').onclick = async () => {
   const email = $('#leaderEmail').value.trim().toLowerCase();
   const sessions = [...new Set([...$('#leaderSessions').querySelectorAll('input:checked')].map(i => i.value))];
   if (!/^[^@\s/]+@[^@\s/]+\.[^@\s/]+$/.test(email) || email.length > 254) return alert('Google 로그인 이메일을 확인해 주세요.');
-  if (!sessions.length || sessions.some(sid => !SE.some(s => s.id === sid))) return alert('담당 세션을 하나 이상 선택해 주세요.');
+  if (!sessions.length || sessions.some(sid => !leaderSessionOptions().some(s => s.id === sid))) return alert('담당 세션을 하나 이상 선택해 주세요.');
   const epoch = leaderEpoch; leaderSaving = true; renderLeaderReadiness();
   try { await setDoc(doc(db, 'sessionLeaderAccess', email), { sessions }); if (epoch === leaderEpoch) $('#leaderAccessMsg').textContent = '담당 세션을 저장했어요. 공유 명단 변동은 명단 새로고침으로 반영해 주세요.'; }
   catch (e) { if (epoch === leaderEpoch) $('#leaderAccessMsg').textContent = '저장 실패: ' + (e.code || e.message); }
@@ -447,15 +451,26 @@ function buildLeaderRoster(s) {
     ...waitersOf(s.id).filter(x => act.has(x.tok)).map(x => member(x, '대기'))
   ] };
 }
+function buildHackathonLeaderRoster() {
+  const people = new Map(P.filter(p => p.status === 'active').map(p => [p.id, p]));
+  return { name: HACKATHON_LEADER_NAME, room: '', updatedAt: serverTimestamp(), members: HK
+    .filter(h => h.status === 'active' && people.has(h.id))
+    .map(h => {
+      const p = people.get(h.id);
+      // HK/P share the same document ID. Team matching is not a registration waitlist.
+      return { name: String(p.name || ''), school: String(p.school || ''), status: '신청' };
+    }) };
+}
 $('#refreshLeaderRosters').onclick = async () => {
   if (!leaderRosterReady() || leaderBusy) return;
-  if (!SE.length) { $('#leaderRosterMsg').textContent = '등록된 세션이 없어 기록하지 않았어요.'; return; }
-  if (SE.length > 500) { $('#leaderRosterMsg').textContent = '세션 500개를 넘어 한 번에 안전하게 저장할 수 없어요. 저장하지 않았어요.'; return; }
+  if (SE.some(s => s.id === HACKATHON_LEADER_SID)) { $('#leaderRosterMsg').textContent = '해커톤 전용 ID와 기존 세션 ID가 겹쳐 저장하지 않았어요.'; return; }
+  if (SE.length + 1 > 500) { $('#leaderRosterMsg').textContent = '해커톤을 포함한 명단이 500개를 넘어 한 번에 안전하게 저장할 수 없어요. 저장하지 않았어요.'; return; }
   const epoch = leaderEpoch; leaderBusy = true; renderLeaderReadiness();
   try {
-    const batch = writeBatch(db), count = SE.length;
+    const batch = writeBatch(db), count = SE.length + 1;
     // Exact replacement, not merge: never copy token/phone/email from source records.
     SE.forEach(s => batch.set(doc(db, 'sessionRosters', s.id), buildLeaderRoster(s)));
+    batch.set(doc(db, 'sessionRosters', HACKATHON_LEADER_SID), buildHackathonLeaderRoster());
     await batch.commit();
     if (epoch === leaderEpoch) $('#leaderRosterMsg').textContent = '명단 ' + count + '개 저장 완료 · ' + kst(new Date()) + '. 이후 신청·취소 변동은 다음 새로고침 때 반영돼요.';
   } catch (e) { if (epoch === leaderEpoch) $('#leaderRosterMsg').textContent = '명단 일괄 저장 실패: ' + (e.code || e.message) + '. 완료로 처리하지 않았어요.'; }
@@ -505,7 +520,7 @@ function start() {
   unsub.push(onSnapshot(doc(db, 'settings', 'main'), s => { S = s.exists() ? s.data() : null; $('#initWarn').classList.toggle('hidden', !!S || !OWNER); fillSettings(); renderDash(); }));
   unsub.push(onSnapshot(doc(db, 'counters', 'main'), c => { C = c.exists() ? c.data() : null; renderDash(); }));
   unsub.push(leaderSnapshot('participants', query(collection(db, 'participants'), orderBy('createdAt', 'desc')), q => { P = q.docs.map(d => ({ id: d.id, ...d.data() })); renderDash(); renderList(); renderRef(); if (typeof renderHack === 'function') renderHack(); renderLeaderOptions(); }));
-  unsub.push(onSnapshot(query(collection(db, 'hackers'), orderBy('createdAt', 'desc')), q => { HK = q.docs.map(d => ({ id: d.id, ...d.data() })); renderHack(); }));
+  unsub.push(leaderSnapshot('hackers', query(collection(db, 'hackers'), orderBy('createdAt', 'desc')), q => { HK = q.docs.map(d => ({ id: d.id, ...d.data() })); renderHack(); }));
   unsub.push(onSnapshot(collection(db, 'teams'), q => { TM = q.docs.map(d => ({ id: d.id, ...d.data() })); renderHack(); }));
   unsub.push(onSnapshot(doc(db, 'hcounters', 'main'), s => { HCn = s.exists() ? s.data() : null; renderHack(); }));
   unsub.push(onSnapshot(doc(db, 'ccounters', 'main'), s => { CCn = s.exists() ? s.data() : null; renderSes(); renderDash(); }));

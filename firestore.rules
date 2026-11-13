@@ -793,7 +793,7 @@ service cloud.firestore {
       allow get: if isOwner() || assignedRoster(sid);
       allow list: if false;
       allow create, update: if isOwner()
-        && sid.matches('[A-Za-z0-9_-]{1,80}') && exists(SE(sid))
+        && sid.matches('[A-Za-z0-9_-]{1,80}') && (sid == 'leader_hackathon_v1' || exists(SE(sid)))
         && request.resource.data.keys().hasOnly(['name', 'room', 'updatedAt', 'members'])
         && request.resource.data.keys().hasAll(['name', 'room', 'updatedAt', 'members'])
         && request.resource.data.name is string && request.resource.data.name.size() <= 200
