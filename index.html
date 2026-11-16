@@ -554,7 +554,7 @@ async function luckyCard(tok, d) {
   if (w) {
     const z = LK[w.prize] || {};
     box.innerHTML = `<h3>✈ 행운 비행 · 착륙 성공</h3><p>${z.i} ${esc(z.a)}에 착륙했어요. 1인 1회 당첨이라 이제 비행은 쉬어요.</p>
-      <div class="lkv"><div style="font-size:11.5px;font-weight:800;letter-spacing:.12em;color:#8a6d1e">당첨 교환권 · ${d.no ? noTxt(d.no) : ''}</div><div class="pz">${z.i} ${esc(z.n)}</div>
+      <div class="lkv"><div style="font-size:11.5px;font-weight:800;letter-spacing:.12em;color:#8a6d1e">당첨 교환권${d.no ? ' · ' + noTxt(d.no) : ''}</div><div class="pz">${z.i} ${esc(z.n)}</div>
       <div class="ex">${w.ex ? '<b>✓ 교환 완료</b>' : '행사 당일(12/19) 등록 데스크에서 이 화면이나 접수번호를 보여 주고 받아 가세요.'}</div></div>`;
     return;
   }
@@ -642,7 +642,7 @@ function luckyAnim() {
         go([z.x, z.y], 1700, 0.55, () => {
           done = true; ov.querySelector('#lkp_' + res).classList.add('hit'); msg.textContent = '';
           for (let i = 0; i < 26; i++) { const c = document.createElement('span'); c.className = 'lkcf'; c.textContent = ['🎉', '✨', z.i, '🎊'][i % 4]; c.style.left = Math.random() * 100 + '%'; c.style.animationDelay = Math.random() * .6 + 's'; ov.querySelector('.lkbox').appendChild(c); }
-          R.innerHTML = `<div class="big">${z.i} ${esc(z.a)} 착륙!</div><div class="pz">${esc(z.n)} 당첨</div><p>행사 당일(12/19) 등록 데스크에서 탑승권의 접수번호 <b>${d.no ? noTxt(d.no) : ''}</b>를 보여 주고 받아 가세요.<br>1인 1회만 당첨돼요.</p><button>교환권 보기</button>`;
+          R.innerHTML = `<div class="big">${z.i} ${esc(z.a)} 착륙!</div><div class="pz">${esc(z.n)} 당첨</div><p>행사 당일(12/19) 등록 데스크에서 ${d.no ? '접수번호 <b>' + noTxt(d.no) + '</b>를' : '이 탑승권을'} 보여 주고 받아 가세요.<br>1인 1회만 당첨돼요.</p><button>교환권 보기</button>`;
           R.querySelector('button').onclick = () => close(cb);
         });
       }, wait);
