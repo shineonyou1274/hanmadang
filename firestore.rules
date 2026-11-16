@@ -160,8 +160,10 @@ service cloud.firestore {
             && request.resource.data.keys().hasOnly(['total', 'last'])
             && ((request.resource.data.total == resource.data.total + 1
                   && request.resource.data.total <= S().hackCap
-                  && !exists(H(tokOf(request.resource.data.last)))
-                  && existsAfter(H(tokOf(request.resource.data.last))))
+                  && (!exists(H(tokOf(request.resource.data.last)))
+                      || get(H(tokOf(request.resource.data.last))).data.status == 'cancelled')
+                  && existsAfter(H(tokOf(request.resource.data.last)))
+                  && getAfter(H(tokOf(request.resource.data.last))).data.status == 'active')
               || (request.resource.data.total == resource.data.total - 1
                   && get(H(tokOf(request.resource.data.last))).data.status == 'active'
                   && getAfter(H(tokOf(request.resource.data.last))).data.status == 'cancelled')));
@@ -209,7 +211,9 @@ service cloud.firestore {
       allow get: if true;
       allow list: if isAdmin();
       allow create: if hackCreateOk(tok);
-      allow update: if isAdmin() || hackCancelOk(tok);
+      // 취소했던 사람이 다시 신청: 새로 신청할 때와 같은 조건을 그대로 검사
+      allow update: if isAdmin() || hackCancelOk(tok)
+        || (resource.data.status == 'cancelled' && hackCreateOk(tok));
       allow delete: if isAdmin();
     }
 
@@ -251,7 +255,8 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['tok', 'team', 'kind'])
         && getAfter(H(request.resource.data.tok)).data.v == v
         && ((request.resource.data.kind in ['lead', 'join']
-              && !exists(H(request.resource.data.tok))
+              && (!exists(H(request.resource.data.tok))
+                  || get(H(request.resource.data.tok)).data.status == 'cancelled')
               && getAfter(H(request.resource.data.tok)).data.team == request.resource.data.team)
           || (request.resource.data.kind == 'leave'
               && get(H(request.resource.data.tok)).data.status == 'active'
