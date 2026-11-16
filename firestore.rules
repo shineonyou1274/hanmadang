@@ -804,5 +804,86 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
     // ---------- SESSION ROSTER END ----------
+
+    // ---------- 행운 비행 (하루 한 번 이륙, 1인 1회 당첨) ----------
+    // 당첨은 비밀 열쇠(secrets/lucky.salt)로 만든 해시로 규칙이 정한다. 화면에서는 결과를 만들 수 없다.
+    function LKS() { return get(/databases/$(db)/documents/secrets/lucky).data; }
+    function LM() { return /databases/$(db)/documents/lucky/main; }
+    function LDY(d) { return /databases/$(db)/documents/lday/$(d); }
+    function WN(t) { return /databases/$(db)/documents/wins/$(t); }
+    function FLT(t, d) { return /databases/$(db)/documents/flights/$(t + '_' + string(d)); }
+    function kday() { return math.floor((request.time.toMillis() + 32400000) / 86400000); }
+    function lpick(c) { return c in ['0', '1'] ? 'hum' : (c in ['2', '3'] ? 'lnl' : (c in ['4', '5', '6', '7', '8', '9'] ? 'chs' : 'cal')); }
+    function lin(m, p) { return m.get(p, 0) < m.cap.get(p, 0); }
+    function lfall(m) { return lin(m, 'cal') ? 'cal' : (lin(m, 'chs') ? 'chs' : (lin(m, 'lnl') ? 'lnl' : 'hum')); }
+    function lprize(m, p, c) { return lin(m, p) && ((lin(m, lpick(c)) && p == lpick(c)) || (!lin(m, lpick(c)) && p == lfall(m))); }
+    function lhex(t, d) { return hashing.sha256(LKS().salt + ':' + string(d) + ':' + t).toHexString().lower(); }
+    function ldaily(d) {
+      return exists(LDY(string(d)))
+        ? (get(LDY(string(d))).data.n < LKS().daily && getAfter(LDY(string(d))).data.n == get(LDY(string(d))).data.n + 1)
+        : (LKS().daily >= 1 && getAfter(LDY(string(d))).data.n == 1);
+    }
+    function winOk(t) {
+      let w = request.resource.data;
+      let p = get(P(t)).data;
+      let m = get(LM()).data;
+      let h = lhex(t, w.day);
+      return w.keys().hasOnly(['prize', 'day', 'at', 'no', 'name'])
+        && w.prize in ['hum', 'lnl', 'chs', 'cal']
+        && w.day == kday() && w.at == request.time
+        && p.status == 'active' && w.no == p.get('no', 0) && w.name == p.name
+        && exists(FLT(t, w.day))
+        && h[0:2] < LKS().th
+        && lprize(m, w.prize, h[2:3])
+        && getAfter(LM()).data[w.prize] == m.get(w.prize, 0) + 1
+        && ldaily(w.day);
+    }
+    function lmOk() {
+      let n = request.resource.data;
+      let o = resource.data;
+      let t = tokOf(n.last);
+      let pz = getAfter(WN(t)).data.prize;
+      return !exists(WN(t)) && existsAfter(WN(t))
+        && n.diff(o).affectedKeys().hasOnly([pz, 'last'])
+        && n[pz] == o.get(pz, 0) + 1;
+    }
+    function ldOk(d) {
+      let t = tokOf(request.resource.data.last);
+      return !exists(WN(t)) && existsAfter(WN(t)) && string(getAfter(WN(t)).data.day) == d;
+    }
+    match /lucky/{id} {
+      allow read: if true;
+      allow create, delete: if isOwner();
+      allow update: if isAdmin() || (id == 'main' && lmOk());
+    }
+    match /lday/{d} {
+      allow read: if true;
+      allow create: if isAdmin()
+        || (request.resource.data.keys().hasOnly(['n', 'last']) && request.resource.data.n == 1 && ldOk(d));
+      allow update: if isAdmin()
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['n', 'last'])
+            && request.resource.data.n == resource.data.n + 1 && ldOk(d));
+      allow delete: if isAdmin();
+    }
+    match /flights/{id} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        || (request.resource.data.keys().hasOnly(['tok', 'day', 'at'])
+            && id == request.resource.data.tok + '_' + string(request.resource.data.day)
+            && request.resource.data.day == kday()
+            && request.resource.data.at == request.time
+            && get(P(request.resource.data.tok)).data.status == 'active'
+            && (get(P(request.resource.data.tok)).data.get('test', false) == true
+                || (request.time >= S().luckyStart && request.time < S().luckyEnd))
+            && !exists(WN(request.resource.data.tok)));
+      allow update, delete: if isAdmin();
+    }
+    match /wins/{t} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if isAdmin() || winOk(t);
+      allow update, delete: if isAdmin();
+    }
   }
 }

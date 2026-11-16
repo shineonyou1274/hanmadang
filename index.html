@@ -242,6 +242,41 @@ details.sd ul{margin:5px 0 0;padding-left:16px;line-height:1.55}
 .kids input[type=checkbox]{width:18px;height:18px;accent-color:var(--g)}
 .kids select{font:inherit;border:1.5px solid #d3e2d8;border-radius:10px;padding:6px 10px}
 .need{border:2px solid var(--orange)!important}
+/* 행운 비행 */
+.lkcard{background:linear-gradient(160deg,#14304d,#2F6FD6 75%,#5aa0f0);color:#fff;border-radius:18px;padding:16px;margin-bottom:12px;position:relative;overflow:hidden;box-shadow:var(--paper)}
+.lkcard:after{content:"";position:absolute;right:-30px;top:-30px;width:150px;height:150px;border-radius:50%;background:repeating-radial-gradient(circle,rgba(255,255,255,.08) 0 2px,transparent 2px 14px);pointer-events:none}
+.lkcard h3{color:#fff;font-size:17px;display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.lkcard p{color:#dbe8fb;font-size:13px;line-height:1.5}
+.lkchips{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0}
+.lkchips span{background:rgba(255,255,255,.14);border-radius:10px;padding:6px 8px;font-size:12.5px;font-weight:700;display:flex;justify-content:space-between;gap:6px}
+.lkchips span b{font-family:var(--mono);color:#FFD54F}
+.lkchips span.out{opacity:.45;text-decoration:line-through}
+.lkgo{display:block;width:100%;border:0;border-radius:14px;padding:14px;font-family:inherit;font-weight:900;font-size:16px;background:#FFD54F;color:#14304d;cursor:pointer;position:relative;z-index:1;box-shadow:0 4px 0 #c9a227}
+.lkgo:active{transform:translateY(2px);box-shadow:0 2px 0 #c9a227}
+.lkgo[disabled]{background:rgba(255,255,255,.25);color:#e6eefb;box-shadow:none;cursor:default}
+.lkcard.win{background:linear-gradient(160deg,#7a4b00,#C9A24A 70%,#F3D98A);color:#2b1d00}
+.lkcard.win h3,.lkcard.win p{color:#2b1d00}
+.lkv{background:#FFFBEA;border-radius:14px;padding:12px 14px;margin-top:8px;border:2px dashed #b88a1e;position:relative;z-index:1}
+.lkv .pz{font-size:19px;font-weight:900;color:#4a3200}
+.lkv .ex{font-size:12.5px;color:#6b5a2a;margin-top:4px;line-height:1.5}
+.lkov{position:fixed;inset:0;background:rgba(5,14,24,.88);z-index:9999;display:flex;align-items:center;justify-content:center;padding:14px}
+.lkbox{width:min(430px,100%);background:linear-gradient(180deg,#0e2236,#16385a);border-radius:22px;padding:14px;color:#fff;position:relative;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.lkhd{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-weight:700;font-size:12px;letter-spacing:.14em;color:#9fc3ee;margin-bottom:8px}
+.lkflap{display:inline-flex;gap:3px}
+.lkflap i{font-style:normal;background:#0a1826;color:#FFD54F;border-radius:5px;padding:4px 6px;font-size:18px;font-weight:800;letter-spacing:0;min-width:24px;text-align:center;box-shadow:inset 0 -2px 0 rgba(0,0,0,.5)}
+.lkmap{width:100%;display:block;border-radius:16px;background:radial-gradient(circle at 50% 45%,#1f4d78,#10273f 75%)}
+.lkmap .pl{font-size:10px;font-weight:800;fill:#e6f0ff;text-anchor:middle;font-family:Pretendard,sans-serif}
+.lkmap .pe{font-size:22px;text-anchor:middle}
+.lkmap .pc{fill:rgba(255,255,255,.1);stroke:rgba(255,255,255,.55);stroke-width:1.5;stroke-dasharray:3 3}
+.lkmap .hit .pc{fill:rgba(255,213,79,.35);stroke:#FFD54F;stroke-width:3;stroke-dasharray:none}
+.lkmsg{text-align:center;font-size:14px;font-weight:700;color:#cfe1f7;margin:10px 0 2px;min-height:21px}
+.lkres{text-align:center;padding:6px 4px 2px}
+.lkres .big{font-size:22px;font-weight:900;margin-bottom:4px}
+.lkres .pz{display:inline-block;background:#FFD54F;color:#3a2a00;border-radius:99px;padding:6px 14px;font-weight:900;font-size:16px;margin:4px 0 8px}
+.lkres p{font-size:13.5px;color:#d6e4f6;line-height:1.55;margin-bottom:12px}
+.lkres button{width:100%;border:0;border-radius:14px;padding:13px;font-family:inherit;font-weight:900;font-size:15px;background:#fff;color:#14304d;cursor:pointer}
+.lkcf{position:absolute;top:-20px;font-size:20px;animation:lkfall 2.4s ease-in forwards;pointer-events:none}
+@keyframes lkfall{to{transform:translateY(560px) rotate(540deg);opacity:.2}}
 /* stamp passport */
 .stg{font-size:12.5px;font-weight:800;color:var(--blue);margin:12px 0 6px}
 .stgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
@@ -504,6 +539,116 @@ const LUNCH_IMG = { galbi: 'lunch-galbi.jpg', chipotle: 'lunch-chipotle.jpg' };
 const SLOTKEYS = ['AM', 'PM1', 'PM2'];
 const dday = () => { const k = new Date(Date.now() + 9 * 3600e3); const today = Date.UTC(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate()); const n = Math.round((Date.UTC(2026, 11, 19) - today) / 864e5); return n > 0 ? 'D-' + n : n === 0 ? 'D-DAY' : '행사 종료'; };
 let SESS = null;
+/* ---------- 행운 비행: 하루 한 번 이륙, 당첨되면 행사 당일 교환 (1인 1회) ---------- */
+const LK = { hum: { n: '미니 가습기', i: '💧', c: 'HUM', a: '가습기 공항', x: 64, y: 70 }, lnl: { n: '락앤락 그릇 세트', i: '🍱', c: 'LNL', a: '락앤락 항구', x: 296, y: 70 }, chs: { n: '춘식이 온열 데스크패드', i: '🐱', c: 'CHS', a: '춘식이 섬', x: 70, y: 184 }, cal: { n: '2027 캘린더', i: '📅', c: 'CAL', a: '캘린더 시티', x: 290, y: 184 } };
+const LKORD = ['hum', 'lnl', 'chs', 'cal'];
+const kday = () => Math.floor((Date.now() + 9 * 3600e3) / 864e5);
+async function luckyCard(tok, d) {
+  const box = $('#luckyCard'); if (!box) return;
+  if (!S || !S.luckyStart || !S.luckyEnd) { box.innerHTML = ''; box.className = ''; return; }
+  const now = new Date(), st = ts(S.luckyStart), en = ts(S.luckyEnd);
+  let w = null, f = null, m = null;
+  try { const r = await Promise.all([getDoc(doc(db, 'wins', tok)), getDoc(doc(db, 'flights', tok + '_' + kday())), getDoc(doc(db, 'lucky', 'main'))]); w = r[0].exists() ? r[0].data() : null; f = r[1].exists(); m = r[2].exists() ? r[2].data() : null; } catch (e) { box.innerHTML = ''; return; }
+  if (!m) { box.innerHTML = ''; box.className = ''; return; }
+  box.className = 'lkcard' + (w ? ' win' : '');
+  if (w) {
+    const z = LK[w.prize] || {};
+    box.innerHTML = `<h3>✈ 행운 비행 · 착륙 성공</h3><p>${z.i} ${esc(z.a)}에 착륙했어요. 1인 1회 당첨이라 이제 비행은 쉬어요.</p>
+      <div class="lkv"><div style="font-size:11.5px;font-weight:800;letter-spacing:.12em;color:#8a6d1e">당첨 교환권 · ${d.no ? noTxt(d.no) : ''}</div><div class="pz">${z.i} ${esc(z.n)}</div>
+      <div class="ex">${w.ex ? '<b>✓ 교환 완료</b>' : '행사 당일(12/19) 등록 데스크에서 이 화면이나 접수번호를 보여 주고 받아 가세요.'}</div></div>`;
+    return;
+  }
+  const left = k => Math.max(0, ((m.cap || {})[k] || 0) - (m[k] || 0));
+  const chips = '<div class="lkchips">' + LKORD.map(k => `<span class="${left(k) ? '' : 'out'}">${LK[k].i} ${esc(LK[k].n)}<b>${left(k)}</b></span>`).join('') + '</div>';
+  const open = d.test || (now >= st && now < en);
+  const head = '<h3>✈ 오늘의 행운 비행</h3><p>하루 한 번 이륙해요. 경품 공항에 착륙하면 당첨! 행사 당일 교환하고, 1인 1회만 당첨돼요.</p>';
+  if (!open) { box.innerHTML = head + chips + `<button class="lkgo" disabled>${now < st ? md(st) + '부터 운항해요' : '운항이 끝났어요 · 남은 경품은 총회 추첨으로'}</button>`; return; }
+  if (f) { box.innerHTML = head + chips + '<button class="lkgo" disabled>오늘 비행은 끝났어요 · 내일 다시 이륙해요</button>'; return; }
+  box.innerHTML = head + chips + '<button class="lkgo" id="lkGo">✈ 오늘의 행운 비행 이륙하기</button>';
+  $('#lkGo').onclick = () => { $('#lkGo').disabled = true; flyLucky(tok, d); };
+}
+async function flyLucky(tok, d) {
+  const an = luckyAnim();
+  const day = kday();
+  let res = 'miss';
+  try {
+    try { await setDoc(doc(db, 'flights', tok + '_' + day), { tok, day, at: serverTimestamp() }); }
+    catch (e) { const ex = await getDoc(doc(db, 'flights', tok + '_' + day)); if (!ex.exists()) throw e; }
+    for (const pz of LKORD) {
+      try {
+        await runTransaction(db, async tx => {
+          const mRef = doc(db, 'lucky', 'main'), lRef = doc(db, 'lday', String(day));
+          const m = (await tx.get(mRef)).data(); const l = await tx.get(lRef);
+          if (!((m[pz] || 0) < ((m.cap || {})[pz] || 0))) throw new Error('OUT');
+          const mk = mark(tx, tok);
+          tx.set(doc(db, 'wins', tok), { prize: pz, day, at: serverTimestamp(), no: d.no || 0, name: d.name });
+          tx.update(mRef, { [pz]: (m[pz] || 0) + 1, last: mk });
+          tx.set(lRef, { n: (l.exists() ? l.data().n : 0) + 1, last: mk });
+        });
+        res = pz; break;
+      } catch (e) { }
+    }
+  } catch (e) { console.error(e); res = 'err'; }
+  an.land(res, d, () => luckyCard(tok, d));
+}
+function luckyAnim() {
+  const ov = document.createElement('div'); ov.className = 'lkov';
+  const pin = (k, z) => `<g class="lkpin" id="lkp_${k}" transform="translate(${z.x},${z.y})"><circle r="25" class="pc"/><text class="pe" y="8">${z.i}</text><text class="pl" y="40">${z.c} · ${z.a}</text></g>`;
+  ov.innerHTML = `<div class="lkbox"><div class="lkhd"><span>GD-LUCKY · 행운 비행</span><span class="lkflap" id="lkFlap"><i>-</i><i>-</i><i>-</i></span></div>
+    <svg class="lkmap" viewBox="0 0 360 290">
+      <circle cx="180" cy="135" r="62" fill="none" stroke="rgba(255,255,255,.08)" stroke-dasharray="2 6"/>
+      ${LKORD.map(k => pin(k, LK[k])).join('')}
+      <g transform="translate(180,128)" opacity=".8"><text class="pe" y="8" style="font-size:26px">☁️</text></g>
+      <g id="lkp_kor" transform="translate(180,258)"><rect x="-34" y="-12" width="68" height="24" rx="12" fill="rgba(255,255,255,.12)" stroke="rgba(255,255,255,.4)"/><text class="pl" y="4">KOR 출발</text></g>
+      <path id="lkTrail" d="" fill="none" stroke="rgba(255,213,79,.55)" stroke-width="2" stroke-dasharray="4 5"/>
+      <g id="lkPlane"><path d="M16,0 L4,-3 L-3,-14 L-8,-14 L-3,-3 L-11,-3 L-15,-8 L-18,-8 L-15,0 L-18,8 L-15,8 L-11,3 L-3,3 L-8,14 L-3,14 L4,3 Z" fill="#fff" stroke="#14304d" stroke-width="1"/></g>
+    </svg>
+    <div class="lkmsg" id="lkMsg">이륙! 오늘의 목적지를 찾고 있어요…</div><div class="lkres" id="lkRes"></div></div>`;
+  document.body.appendChild(ov);
+  const pl = ov.querySelector('#lkPlane'), trail = ov.querySelector('#lkTrail'), flap = ov.querySelector('#lkFlap'), msg = ov.querySelector('#lkMsg');
+  let pts = [], seg = null, done = false, pos = [180, 258], ang = -Math.PI / 2; const T0 = performance.now();
+  const put = (x, y, a, s = 1) => { pos = [x, y]; ang = a; pl.setAttribute('transform', `translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${(a * 180 / Math.PI).toFixed(1)}) scale(${s.toFixed(2)})`); pts.push(x.toFixed(1) + ',' + y.toFixed(1)); if (pts.length > 70) pts.shift(); trail.setAttribute('d', 'M' + pts.join(' L')); };
+  const cx = 180, cy = 135, r = 62;
+  const loopAt = t => { if (t < 0.7) { const u = t / 0.7, e = u * u * (3 - 2 * u); return [cx, 258 - (258 - (cy + r)) * e, -Math.PI / 2, 0.7 + 0.3 * e]; } const th = Math.PI / 2 + (t - 0.7) * 2.6; return [cx + r * Math.cos(th), cy + r * Math.sin(th), th + Math.PI / 2, 1]; };
+  const codes = ['HUM', 'LNL', 'CHS', 'CAL', 'KOR', '???'];
+  const setFlap = c => { flap.innerHTML = c.split('').map(ch => '<i>' + ch + '</i>').join(''); };
+  let fi = 0, flapOn = true; const fl = setInterval(() => { if (flapOn) setFlap(codes[fi++ % codes.length]); }, 90);
+  const bez = (p0, p1, p2, p3, u) => { const v = 1 - u; return [v * v * v * p0[0] + 3 * v * v * u * p1[0] + 3 * v * u * u * p2[0] + u * u * u * p3[0], v * v * v * p0[1] + 3 * v * v * u * p1[1] + 3 * v * u * u * p2[1] + u * u * u * p3[1]]; };
+  const tick = () => {
+    const now = performance.now();
+    if (!seg) { const [x, y, a, s] = loopAt((now - T0) / 1000); put(x, y, a, s); return; }
+    const u = Math.min(1, (now - seg.t0) / seg.dur); const e = u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
+    const p = bez(seg.p0, seg.p1, seg.p2, seg.p3, e), q = bez(seg.p0, seg.p1, seg.p2, seg.p3, Math.min(1, e + .02));
+    const a = Math.hypot(q[0] - p[0], q[1] - p[1]) > .01 ? Math.atan2(q[1] - p[1], q[0] - p[0]) : ang;
+    put(p[0], p[1], a, seg.s0 + (seg.s1 - seg.s0) * e);
+    if (u >= 1) { const nx = seg.next; seg = { idle: true, t0: 0, dur: 1, p0: pos, p1: pos, p2: pos, p3: pos, s0: seg.s1, s1: seg.s1 }; if (nx) nx(); }
+  };
+  const iv = setInterval(() => { if (!done) tick(); }, 16);
+  const go = (to, dur, s1, next) => { const p0 = pos.slice(), hd = [Math.cos(ang), Math.sin(ang)]; seg = { t0: performance.now(), dur, p0, p1: [p0[0] + hd[0] * 70, p0[1] + hd[1] * 70], p2: [to[0], to[1] - 70], p3: to, s0: 1, s1, next }; };
+  const close = cb => { done = true; clearInterval(iv); clearInterval(fl); ov.remove(); cb && cb(); };
+  return {
+    land(res, d, cb) {
+      const wait = Math.max(0, 2600 - (performance.now() - T0));
+      setTimeout(() => {
+        const R = ov.querySelector('#lkRes');
+        if (res === 'err') { done = true; flapOn = false; setFlap('ERR'); msg.textContent = ''; R.innerHTML = '<div class="big">📡 관제탑 연결이 불안정해요</div><p>오늘 비행 기회는 그대로 남아 있어요. 잠시 뒤 다시 이륙해 주세요.</p><button>닫기</button>'; R.querySelector('button').onclick = () => close(cb); return; }
+        flapOn = false;
+        if (res === 'miss') {
+          setFlap('RTN'); msg.textContent = '목적지 상공에 구름이 짙어요…';
+          seg = { t0: performance.now(), dur: 1300, p0: pos.slice(), p1: [pos[0] + Math.cos(ang) * 60, pos[1] + Math.sin(ang) * 60], p2: [180, 70], p3: [180, 128], s0: 1, s1: 1, next: () => { msg.textContent = '기상 악화로 회항합니다'; go([180, 258], 1500, 0.6, () => { done = true; msg.textContent = ''; R.innerHTML = '<div class="big">☁️ 기상 악화로 회항했어요</div><p>오늘은 착륙 실패! 내일 다시 이륙할 수 있어요.<br>매일 들어올수록 기회가 많아져요.</p><button>탑승권으로 돌아가기</button>'; R.querySelector('button').onclick = () => close(cb); }); } };
+          return;
+        }
+        const z = LK[res]; setFlap(z.c); msg.textContent = z.a + '(으)로 착륙 허가가 났어요!';
+        go([z.x, z.y], 1700, 0.55, () => {
+          done = true; ov.querySelector('#lkp_' + res).classList.add('hit'); msg.textContent = '';
+          for (let i = 0; i < 26; i++) { const c = document.createElement('span'); c.className = 'lkcf'; c.textContent = ['🎉', '✨', z.i, '🎊'][i % 4]; c.style.left = Math.random() * 100 + '%'; c.style.animationDelay = Math.random() * .6 + 's'; ov.querySelector('.lkbox').appendChild(c); }
+          R.innerHTML = `<div class="big">${z.i} ${esc(z.a)} 착륙!</div><div class="pz">${esc(z.n)} 당첨</div><p>행사 당일(12/19) 등록 데스크에서 탑승권의 접수번호 <b>${d.no ? noTxt(d.no) : ''}</b>를 보여 주고 받아 가세요.<br>1인 1회만 당첨돼요.</p><button>교환권 보기</button>`;
+          R.querySelector('button').onclick = () => close(cb);
+        });
+      }, wait);
+    }
+  };
+}
 const QAL = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const qFmt = q => q ? q.slice(0, 4) + '-' + q.slice(4) : '';
 const ST_ICON = { session: '🎓', booth: '🏷️', program: '⭐' };
@@ -1176,6 +1321,7 @@ async function ticket(tok) {
   <div class="wrap">
     ${isNew ? `<h2>탑승권이 발권됐어요</h2><div class="sub">12월 19일, 마산대학교에서 만나요 · <b>${dday()}</b></div>` : `<h2>내 탑승권</h2><div class="sub">${cancelled ? '취소된 탑승권이에요' : '12월 19일, 마산대학교에서 만나요 · <b>' + dday() + '</b>'}</div>`}
     <div id="noticeBox"></div>
+    <div id="luckyCard"></div>
     <div class="bp" id="bp">
       <div class="hd"><span>BOARDING PASS</span><span>G-DEAL AIR</span></div>
       <div class="nm">${d.staff ? CROWN : ''}${esc(d.name)} 선생님 <span class="pill ${TYPEPILL[d.type]}" style="font-family:var(--sans);font-size:11px">${TYPE[d.type]}</span>${d.test ? ' <span class="pill" style="background:#7A4FD0;font-family:var(--sans);font-size:11px">테스트</span>' : ''}${d.staff ? ' <span class="tfpill">운영진 TF</span>' : ''}</div>
@@ -1227,6 +1373,7 @@ async function ticket(tok) {
   { let pt = null; const re = () => { clearTimeout(pt); pt = setTimeout(() => planCard(tok, d), 400); }; ['#seatCard', '#extraCard', '#hackCard', '#gmCard'].forEach(q => { const el = $(q); if (el) new MutationObserver(re).observe(el, { childList: true }); }); }
   acc($('#stampCard'), el => el.dataset.t ? '<span class="okk">도장 ' + el.dataset.n + '개</span>' : '');
   stampCard(tok, d);
+  luckyCard(tok, d);
   if ($('#qrTop')) $('#qrTop').onclick = () => showStampQR(tok, d);
   acc($('#infoCard'), () => S && canCancel ? '취소는 ' + md(ts(S.cancelDeadline)) + '까지' : '');
   document.querySelectorAll('#view .promo video').forEach(v => v.pause());
