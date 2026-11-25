@@ -890,5 +890,65 @@ service cloud.firestore {
       allow create: if isAdmin() || winOk(t);
       allow update, delete: if isAdmin();
     }
+
+    // ---------- 별빛결 (인사 연결 게임) ----------
+    // 참여(sbo)와 연결(sblinks)은 탑승권 열쇠를 가진 본인만 만들 수 있다. 역할(sbrole)은 운영진만 읽고 쓴다.
+    function SBO(q) { return /databases/$(db)/documents/sbo/$(q); }
+    function sbOpenOk(test) {
+      return test == true
+        || (S().get('sbShow', false) == true && ('sbOpen' in S()) && ('sbClose' in S())
+            && request.time >= S().sbOpen && request.time < S().sbClose);
+    }
+    function sboOk(q) {
+      let d = request.resource.data;
+      let t = tokOf(d.m);
+      let p = get(P(t)).data;
+      return d.keys().hasOnly(['m', 'test', 'on', 'at'])
+        && d.at == request.time && d.on is bool && d.test is bool
+        && get(QB(t)).data.q == q
+        && p.status == 'active'
+        && d.test == p.get('test', false)
+        && (d.test == true || S().get('sbShow', false) == true);
+    }
+    function sblOk(id) {
+      let d = request.resource.data;
+      let t = tokOf(d.m);
+      let mq = get(QB(t)).data.q;
+      let o = mq == d.a ? d.b : d.a;
+      let p = get(P(t)).data;
+      return d.keys().hasOnly(['a', 'b', 'm', 'test', 'at'])
+        && d.at == request.time && d.test is bool
+        && d.a is string && d.b is string && d.a < d.b
+        && id == d.a + '_' + d.b
+        && (mq == d.a || mq == d.b)
+        && p.status == 'active' && d.test == p.get('test', false)
+        && get(SBO(d.a)).data.on == true && get(SBO(d.b)).data.on == true
+        && get(SBO(d.a)).data.test == d.test && get(SBO(d.b)).data.test == d.test
+        && get(P(get(QR(o)).data.tok)).data.status == 'active'
+        && sbOpenOk(d.test);
+    }
+    match /sbo/{q} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create, update: if isAdmin() || sboOk(q);
+      allow delete: if isAdmin();
+    }
+    match /sblinks/{id} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if isAdmin() || sblOk(id);
+      allow update, delete: if isAdmin();
+    }
+    match /sbrole/{q} {
+      allow read, write: if isAdmin();
+    }
+    match /sbme/{t} {
+      allow get: if true;
+      allow list, write: if isAdmin();
+    }
+    match /sbstat/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }

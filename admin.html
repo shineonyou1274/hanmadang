@@ -132,7 +132,7 @@ header nav button{white-space:nowrap}
              id="w4_path46"
              style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
              d="m 0,0 h -259.19 c -7.99,0 -14.47,-6.48 -14.47,-14.47 v -51.14 h 8.51 v 51.14 c 0,3.29 2.67,5.97 5.96,5.97 H 0 c 3.29,0 5.97,-2.68 5.97,-5.97 v -47.75 c 3.88,0.87 6.65,1.61 8.5,2.17 v 45.58 C 14.47,-6.48 7.99,0 0,0 m -96.5,-237.99 h -66.18 v 20.76 h 66.18 z m 102.47,35.23 c 0,-3.29 -2.68,-5.97 -5.97,-5.97 h -259.19 c -3.29,0 -5.96,2.68 -5.96,5.97 v 38.14 c -3.68,1.54 -6.59,2.82 -8.51,3.69 v -41.83 c 0,-7.99 6.48,-14.47 14.47,-14.47 h 88.01 v -20.76 h -32.61 c -2.34,0 -4.25,-1.91 -4.25,-4.25 0,-1.18 0.48,-2.24 1.25,-3.01 0.77,-0.77 1.83,-1.25 3,-1.25 h 148.25 c 2.35,0 4.26,1.91 4.26,4.26 0,1.17 -0.48,2.23 -1.25,3 -0.77,0.77 -1.83,1.25 -3.01,1.25 H -88 v 20.76 H 0 c 7.99,0 14.47,6.48 14.47,14.47 v 53.83 c -4.86,0.52 -8.5,0.76 -8.5,0.76 z" /></g></g></g></g></svg> 운영실</div>
-  <nav><button data-tab="dash" class="on">현황</button><button data-tab="list">명단</button><button data-tab="ses">세션·도시락·공문</button><button data-tab="ntc">알림</button><button data-tab="stp">스탬프</button><button data-tab="lucky">행운 비행</button><button data-tab="hack">해커톤</button><button data-tab="set">설정</button></nav>
+  <nav><button data-tab="dash" class="on">현황</button><button data-tab="list">명단</button><button data-tab="ses">세션·도시락·공문</button><button data-tab="ntc">알림</button><button data-tab="stp">스탬프</button><button data-tab="lucky">행운 비행</button><button data-tab="sb">별빛결</button><button data-tab="hack">해커톤</button><button data-tab="set">설정</button></nav>
   <div class="me"><span id="meEmail"></span><button id="xlsxAll" style="background:#f5c542;color:#1d3b2c;font-weight:800">전체 엑셀 받기</button><button id="logout">로그아웃</button></div>
 </header>
 <main>
@@ -260,6 +260,29 @@ header nav button{white-space:nowrap}
     <div class="panel"><h3>당첨자 <span class="tools"><button class="b2" id="lkCsv">엑셀(CSV)</button></span></h3>
       <p class="note">행사 당일 경품을 건네면 "교환" 칸을 체크하세요. 참가자 교환권에 바로 "교환 완료"가 떠요.</p>
       <div style="overflow:auto;margin-top:8px"><table><thead><tr><th>당첨일</th><th>접수번호</th><th>이름</th><th>소속</th><th>경품</th><th>교환</th></tr></thead><tbody id="lkRows"></tbody></table></div></div>
+  </section>
+
+  <section id="tab-sb" class="hidden">
+    <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+      <div class="kpi" style="border-left-color:#3b3f8f"><div class="l">참여 별빛</div><div class="v" id="sbP">-</div></div>
+      <div class="kpi" style="border-left-color:var(--blue)"><div class="l">인사 연결</div><div class="v" id="sbL">-</div></div>
+      <div class="kpi" style="border-left-color:var(--gold)"><div class="l">은하</div><div class="v" id="sbG">-</div></div>
+      <div class="kpi" style="border-left-color:var(--purple)"><div class="l">역할 분포 (운영진만)</div><div class="v" id="sbR" style="font-size:16px">-</div></div>
+    </div>
+    <div class="panel"><h3>별빛 지도 <span class="tools"><select id="sbU"><option value="main">실제 참가자</option><option value="test">테스트</option></select><button class="b2" id="sbFull">큰 화면으로 보기</button></span></h3>
+      <p class="note">이름 없는 불빛과 선만 보여요. 역할 색은 "역할 공개"를 켠 뒤에만 보여요. 행사 때 이 화면을 큰 화면에 띄우세요.</p>
+      <div id="sbWrap" style="background:#05070f;border-radius:14px;overflow:hidden;margin-top:8px"><canvas id="sbCv" style="width:100%;height:min(62vh,560px);display:block"></canvas></div></div>
+    <div class="panel"><h3>운영 설정 <span class="tools"><button class="b" id="sbSave">저장</button></span></h3>
+      <div class="grid2">
+        <div class="f"><label><input type="checkbox" id="sbShow"> 참가자 탑승권에 별빛결 카드 보이기 (참여 신청 가능)</label></div>
+        <div class="f"><label><input type="checkbox" id="sbReveal"> 역할 공개 (총회 때 켜기)</label></div>
+        <div class="f"><label>인사 연결 열림</label><input type="datetime-local" id="sbOpen"></div>
+        <div class="f"><label>인사 연결 닫힘</label><input type="datetime-local" id="sbClose"></div>
+      </div>
+      <p class="note">테스트 신청자는 이 설정과 상관없이 언제든 써 볼 수 있고, 실제 참가자와는 연결되지 않아요.</p></div>
+    <div class="panel"><h3>집계 <span class="tools"><label style="font-size:13px;font-weight:600"><input type="checkbox" id="sbAuto"> 자동 집계 (15초마다)</label><button class="b2" id="sbNow">지금 집계</button></span></h3>
+      <p class="note">역할 배정과 은하·개인 숫자 갱신은 이 화면(총괄 계정)에서 해요. 행사 중에는 이 화면을 켜 두고 자동 집계를 켜 주세요. <span id="sbMsg"></span></p>
+      <p class="note"><b>은하 규칙</b>: 한 사람이 인사한 사람 중 자기와 다른 두 역할을 한 명씩 짝지을 때마다 은하 1개. 같은 세 사람은 한 번만 세요. 세 사람이 서로 다 찍을 필요는 없어요.</p></div>
   </section>
 
   <section id="tab-hack" class="hidden">
@@ -518,7 +541,7 @@ $('#loginBtn').onclick = async () => {
 $('#logout').onclick = () => signOut(auth);
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
   document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
-  ['dash', 'list', 'ses', 'ntc', 'stp', 'lucky', 'hack', 'set'].forEach(t => $('#tab-' + t).classList.toggle('hidden', t !== b.dataset.tab));
+  ['dash', 'list', 'ses', 'ntc', 'stp', 'lucky', 'sb', 'hack', 'set'].forEach(t => $('#tab-' + t).classList.toggle('hidden', t !== b.dataset.tab));
 });
 
 onAuthStateChanged(auth, async user => {
@@ -555,6 +578,11 @@ function start() {
   unsub.push(onSnapshot(collection(db, 'spotkeys'), q => { SPK = {}; q.docs.forEach(d => SPK[d.id] = d.data().key); renderSt(); }, () => { }));
   unsub.push(onSnapshot(collection(db, 'stamps'), q => { STAMP = q.docs.map(d => d.data()); renderSt(); }));
   unsub.push(onSnapshot(collection(db, 'qr'), q => { QR2T = {}; q.docs.forEach(d => QR2T[d.id] = d.data().tok); renderSt(); }));
+  unsub.push(onSnapshot(collection(db, 'sbo'), q => { SBO = {}; q.docs.forEach(d => SBO[d.id] = d.data()); renderSb(); }, () => { }));
+  unsub.push(onSnapshot(collection(db, 'sblinks'), q => { SBL = q.docs.map(d => d.data()); renderSb(); }, () => { }));
+  unsub.push(onSnapshot(collection(db, 'sbrole'), q => { SBRO = {}; q.docs.forEach(d => SBRO[d.id] = d.data().r); renderSb(); }, () => { }));
+  getDocs(collection(db, 'sbme')).then(q => q.docs.forEach(d => SBME[d.id] = d.data())).catch(() => { });
+  getDocs(collection(db, 'sbstat')).then(q => q.docs.forEach(d => SBST[d.id] = d.data())).catch(() => { });
   unsub.push(onSnapshot(collection(db, 'wins'), q => { WINS = q.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (ts(b.at) || 0) - (ts(a.at) || 0)); renderLucky(); }, () => { }));
   unsub.push(onSnapshot(doc(db, 'lucky', 'main'), x => { LKM = x.exists() ? x.data() : null; renderLucky(); }, () => { }));
   unsub.push(onSnapshot(query(collection(db, 'flights'), where('day', '==', lkDay())), q => { LKFT = q.size; renderLucky(); }, () => { }));
@@ -980,6 +1008,85 @@ $('#lkCsv').onclick = () => {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = '지딜한마당_행운비행_당첨자_' + new Date().toISOString().slice(0, 10) + '.csv'; a.click();
 };
 
+/* ---------- 별빛결 ---------- */
+const SBRN = { star: ['⭐', '별', '#FFD54F'], light: ['✨', '빛', '#7FD8FF'], grain: ['🌊', '결', '#B98CFF'] };
+let SBO = {}, SBL = [], SBRO = {}, SBME = {}, SBST = {}, sbTimer = null, sbBusy = false, sbLastRun = 0;
+const sbHash = s => { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; };
+// 은하: 한 사람(중심)이 인사한 사람 중 자기와 다른 두 역할을 한 명씩 짝지을 때마다 1개. 같은 세 사람은 한 번만.
+function sbGalaxies(people, links, role) {
+  const adj = {}; people.forEach(q => adj[q] = []);
+  links.forEach(l => { if (adj[l.a] && adj[l.b]) { adj[l.a].push(l.b); adj[l.b].push(l.a); } });
+  const used = new Set(), trios = [];
+  [...people].sort().forEach(c => {
+    if (!role[c]) return;
+    const others = Object.keys(SBRN).filter(r => r !== role[c]);
+    const nb = [...adj[c]].sort(); const Y = nb.filter(o => role[o] === others[0]), Z = nb.filter(o => role[o] === others[1]);
+    const zu = new Set();
+    for (const y of Y) for (const z of Z) { if (zu.has(z)) continue; const k = [c, y, z].sort().join(','); if (used.has(k)) continue; used.add(k); zu.add(z); trios.push([c, y, z]); break; }
+  });
+  return { adj, trios };
+}
+function sbUniverse(u) {
+  const people = Object.keys(SBO).filter(q => SBO[q].on === true && !!SBO[q].test === (u === 'test') && QR2T[q] && (P.find(p => p.id === QR2T[q]) || {}).status === 'active');
+  const set = new Set(people); const links = SBL.filter(l => !!l.test === (u === 'test') && set.has(l.a) && set.has(l.b));
+  return { people, links };
+}
+async function sbRun(force) {
+  if (sbBusy || !OWNER) return; if (!force && Date.now() - sbLastRun < 10000) return; sbBusy = true; sbLastRun = Date.now();
+  try {
+    const reveal = !!(S && S.sbReveal); let writes = [];
+    for (const u of ['main', 'test']) {
+      const { people, links } = sbUniverse(u);
+      const cnt = { star: 0, light: 0, grain: 0 }; people.forEach(q => { if (SBRO[q]) cnt[SBRO[q]]++; });
+      people.filter(q => !SBRO[q]).forEach(q => { const min = Math.min(...Object.values(cnt)); const c = Object.keys(cnt).filter(r => cnt[r] === min); const r = c[Math.floor(Math.random() * c.length)]; cnt[r]++; SBRO[q] = r; writes.push([doc(db, 'sbrole', q), { r }]); });
+      const { adj, trios } = sbGalaxies(people, links, SBRO);
+      const gal = {}; trios.forEach(t => t.forEach(q => gal[q] = (gal[q] || 0) + 1));
+      const stat = { people: people.length, links: links.length, galaxies: trios.length, at: Date.now() };
+      if (!SBST[u] || SBST[u].people !== stat.people || SBST[u].links !== stat.links || SBST[u].galaxies !== stat.galaxies) { SBST[u] = stat; writes.push([doc(db, 'sbstat', u), stat]); }
+      people.forEach(q => { const t = QR2T[q]; const me = { links: adj[q].length, gal: gal[q] || 0 }; if (reveal) me.role = SBRO[q]; const old = SBME[t] || {}; if (old.links !== me.links || old.gal !== me.gal || (old.role || null) !== (me.role || null)) { SBME[t] = me; writes.push([doc(db, 'sbme', t), me]); } });
+      if (u === ($('#sbU') ? $('#sbU').value : 'main')) window.__sbView = { people, links, trios, cnt };
+    }
+    for (let i = 0; i < writes.length; i += 400) { const b = writeBatch(db); writes.slice(i, i + 400).forEach(([r, v]) => b.set(r, v)); await b.commit(); }
+    $('#sbMsg').textContent = '집계 ' + new Date().toLocaleTimeString('ko-KR') + (writes.length ? ' · ' + writes.length + '건 갱신' : ' · 바뀐 것 없음');
+  } catch (e) { console.error(e); $('#sbMsg').textContent = '집계 실패: ' + (e.code || e.message); }
+  sbBusy = false; renderSb();
+}
+function renderSb() {
+  if (!$('#sbCv')) return;
+  if (!window.__sbFilled && S) { fillSbForm(); window.__sbFilled = true; }
+  const u = $('#sbU').value; const { people, links } = sbUniverse(u);
+  const v = window.__sbView && window.__sbView.people.length === people.length ? window.__sbView : { trios: sbGalaxies(people, links, SBRO).trios, cnt: null };
+  const cnt = { star: 0, light: 0, grain: 0 }; people.forEach(q => { if (SBRO[q]) cnt[SBRO[q]]++; });
+  $('#sbP').textContent = people.length; $('#sbL').textContent = links.length; $('#sbG').textContent = v.trios.length;
+  $('#sbR').textContent = OWNER ? `별 ${cnt.star} · 빛 ${cnt.light} · 결 ${cnt.grain}` : '총괄만';
+  sbDraw($('#sbCv'), people, links, v.trios, !!(S && S.sbReveal));
+}
+function sbDraw(cv, people, links, trios, reveal) {
+  const W = cv.clientWidth || 800, H = cv.clientHeight || 480, dpr = window.devicePixelRatio || 1; cv.width = W * dpr; cv.height = H * dpr;
+  const x = cv.getContext('2d'); x.scale(dpr, dpr);
+  const g = x.createRadialGradient(W / 2, H / 2, 10, W / 2, H / 2, Math.max(W, H) * .7); g.addColorStop(0, '#16224a'); g.addColorStop(1, '#05070f'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  for (let i = 0; i < 120; i++) { x.fillStyle = 'rgba(255,255,255,' + (sbHash('bg' + i) * .35) + ')'; x.fillRect(sbHash('x' + i) * W, sbHash('y' + i) * H, 1, 1); }
+  const pos = {}; const R = Math.min(W, H) * .44;
+  people.forEach(q => { const a = sbHash(q) * Math.PI * 2, r = Math.sqrt(sbHash(q + 'r')) * R; pos[q] = [W / 2 + Math.cos(a) * r * (W / H > 1.3 ? 1.5 : 1), H / 2 + Math.sin(a) * r]; });
+  x.fillStyle = 'rgba(255,213,79,.07)'; trios.forEach(t => { const p = t.map(q => pos[q]); if (p.some(z => !z)) return; x.beginPath(); x.moveTo(...p[0]); x.lineTo(...p[1]); x.lineTo(...p[2]); x.closePath(); x.fill(); });
+  x.strokeStyle = 'rgba(190,215,255,.35)'; x.lineWidth = 1; links.forEach(l => { const a = pos[l.a], b = pos[l.b]; if (!a || !b) return; x.beginPath(); x.moveTo(...a); x.lineTo(...b); x.stroke(); });
+  people.forEach(q => { const [px, py] = pos[q]; const c = reveal && SBRO[q] ? SBRN[SBRO[q]][2] : '#ffffff'; const gl = x.createRadialGradient(px, py, 0, px, py, 9); gl.addColorStop(0, c); gl.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = gl; x.beginPath(); x.arc(px, py, 9, 0, 7); x.fill(); x.fillStyle = c; x.beginPath(); x.arc(px, py, 2.2, 0, 7); x.fill(); });
+  x.fillStyle = 'rgba(255,255,255,.85)'; x.font = '700 15px Pretendard, sans-serif'; x.fillText('별빛 ' + people.length + ' · 이어진 선 ' + links.length + ' · 은하 ' + trios.length, 14, 24);
+}
+$('#sbSave').onclick = async () => {
+  if (!OWNER) return alert('총괄만 바꿀 수 있어요.');
+  const o = fromLocalInput($('#sbOpen').value), c = fromLocalInput($('#sbClose').value);
+  await setDoc(doc(db, 'settings', 'main'), { sbShow: $('#sbShow').checked, sbReveal: $('#sbReveal').checked, ...(o ? { sbOpen: o } : {}), ...(c ? { sbClose: c } : {}) }, { merge: true });
+  S = { ...S, sbShow: $('#sbShow').checked, sbReveal: $('#sbReveal').checked, ...(o ? { sbOpen: o } : {}), ...(c ? { sbClose: c } : {}) };
+  alert('저장했어요.' + ($('#sbReveal').checked ? ' 역할 공개는 다음 집계 때 참가자 화면에 반영돼요.' : '')); sbRun(true);
+};
+$('#sbNow').onclick = () => sbRun(true);
+$('#sbU').onchange = () => { window.__sbView = null; renderSb(); };
+$('#sbAuto').onchange = () => { clearInterval(sbTimer); if ($('#sbAuto').checked) { sbRun(true); sbTimer = setInterval(() => sbRun(true), 15000); } };
+$('#sbFull').onclick = () => { const w = $('#sbWrap'); (w.requestFullscreen || w.webkitRequestFullscreen).call(w); setTimeout(renderSb, 300); };
+document.addEventListener('fullscreenchange', () => setTimeout(renderSb, 200));
+function fillSbForm() { if (!$('#sbShow') || !S) return; $('#sbShow').checked = !!S.sbShow; $('#sbReveal').checked = !!S.sbReveal; if (S.sbOpen) $('#sbOpen').value = toLocalInput(ts(S.sbOpen)); if (S.sbClose) $('#sbClose').value = toLocalInput(ts(S.sbClose)); }
+
 function filtered() {
   const q = $('#q').value.trim(), t = $('#fType').value, st = $('#fStatus').value;
   return P.filter(p => (!t || p.type === t) && (!st || p.status === st) && (!q || [p.name, p.school, p.phone, p.pno, p.email].join(' ').includes(q)));
@@ -1061,6 +1168,7 @@ $('#wipeTest').onclick = async () => {
   TM.forEach(t => { const rest = HK.filter(h => h.status === 'active' && h.team === t.id && !ids.has(h.id)); const had = HK.some(h => h.team === t.id && ids.has(h.id)); if (!had) return; if (rest.length) b.update(doc(db, 'teams', t.id), { count: rest.length, names: rest.map(h => h.name), v: 'admin' }); else b.delete(doc(db, 'teams', t.id)); });
   const hj = await getDocs(collection(db, 'hjoins')); hj.docs.forEach(d => { if (ids.has(d.data().tok)) b.delete(d.ref); });
   try { const qb = await getDocs(collection(db, 'qrby')); const tq = new Set(); qb.docs.forEach(d => { if (ids.has(d.id)) { const q = d.data().q; tq.add(q); b.delete(d.ref); b.delete(doc(db, 'qr', q)); b.delete(doc(db, 'qn', q)); } }); STAMP.filter(x => tq.has(x.q)).forEach(x => { b.delete(doc(db, 'stamps', x.q + '__' + x.b)); if (x.p) b.delete(doc(db, 'sproof', x.p)); }); } catch (e) { console.error(e); }
+  { Object.keys(SBO).forEach(q => { if (SBO[q].test) { b.delete(doc(db, 'sbo', q)); b.delete(doc(db, 'sbrole', q)); } }); SBL.filter(l => l.test).forEach(l => b.delete(doc(db, 'sblinks', l.a + '_' + l.b))); ids.forEach(id => b.delete(doc(db, 'sbme', id))); b.delete(doc(db, 'sbstat', 'test')); delete SBST.test; }
   const tw = WINS.filter(w => ids.has(w.id)); tw.forEach(w => b.delete(doc(db, 'wins', w.id)));
   try { const fq = await getDocs(collection(db, 'flights')); fq.docs.forEach(d => { if (ids.has(d.data().tok)) b.delete(d.ref); }); } catch (e) { }
   if (tw.length && LKM) { const left = WINS.filter(w => !ids.has(w.id)); const upd = {}; Object.keys(LKN).forEach(k => upd[k] = left.filter(w => w.prize === k).length); b.set(doc(db, 'lucky', 'main'), upd, { merge: true }); new Set(tw.map(w => w.day)).forEach(dd => b.set(doc(db, 'lday', String(dd)), { n: left.filter(w => w.day === dd).length }, { merge: true })); }

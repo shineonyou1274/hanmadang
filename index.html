@@ -242,6 +242,19 @@ details.sd ul{margin:5px 0 0;padding-left:16px;line-height:1.55}
 .kids input[type=checkbox]{width:18px;height:18px;accent-color:var(--g)}
 .kids select{font:inherit;border:1.5px solid #d3e2d8;border-radius:10px;padding:6px 10px}
 .need{border:2px solid var(--orange)!important}
+/* 별빛결 */
+#sbCard{background:linear-gradient(165deg,#0f1433,#252b6b 70%,#3b3f8f);color:#fff}
+#sbCard h3,#sbCard b{color:#fff}#sbCard p{color:#d6dcff}
+#sbCard .accs,#sbCard .accs .okk{color:#FFD54F}#sbCard .acci{border-color:#cfd6ff}
+#sbCard .outbtn{color:#aab3e6}
+.sbstats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0}
+.sbstats div{background:rgba(255,255,255,.1);border-radius:12px;padding:8px 6px;text-align:center;font-size:11.5px;color:#cfd6ff}
+.sbstats b{display:block;font-family:var(--mono);font-size:24px;color:#FFD54F!important}
+.sbrole{display:flex;align-items:center;gap:12px;background:rgba(255,213,79,.15);border:1.5px solid #FFD54F;border-radius:14px;padding:10px 14px;margin:8px 0;font-size:16px}
+.sbrole .ic{font-size:34px}
+.sbres{border-radius:14px;padding:0;margin:0 0 10px;font-weight:900;text-align:center;font-size:17px;line-height:1.45}
+.sbres.ok,.sbres.dup,.sbres.err,.sbres.wait{padding:14px}
+.sbres.ok{background:#2E9E5E;color:#fff}.sbres.dup{background:#F3D98A;color:#3a2a00}.sbres.err{background:#C0392B;color:#fff}.sbres.wait{background:#e6e9f5;color:#3b3f8f}
 /* 행운 비행 */
 .lkcard{background:linear-gradient(160deg,#14304d,#2F6FD6 75%,#5aa0f0);color:#fff;border-radius:18px;padding:16px;margin-bottom:12px;position:relative;overflow:hidden;box-shadow:var(--paper)}
 .lkcard:after{content:"";position:absolute;right:-30px;top:-30px;width:150px;height:150px;border-radius:50%;background:repeating-radial-gradient(circle,rgba(255,255,255,.08) 0 2px,transparent 2px 14px);pointer-events:none}
@@ -675,13 +688,110 @@ async function qrCanvas(text) {
   for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) x.fillRect((c + m) * sc, (r + m) * sc, sc, sc);
   return cv;
 }
-async function showStampQR(tok, d) {
-  modal('<h2>도장 찍기 QR</h2><div class="sub">세션·부스 담당 선생님께 이 화면을 보여 주세요</div><div class="qrbox" id="qrHere">만드는 중…</div><div class="gap"></div><button class="btn2" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">닫기</button>');
+async function showStampQR(tok, d, mode) {
+  modal((mode === 'sb' ? '<h2>내 별빛 QR</h2><div class="sub">처음 만난 선생님과 인사하고 이 QR을 찍게 해 주세요. 이름은 상대에게 보이지 않아요</div>' : '<h2>도장 찍기 QR</h2><div class="sub">세션·부스 담당 선생님께 이 화면을 보여 주세요</div>') + '<div class="qrbox" id="qrHere">만드는 중…</div><div class="gap"></div><button class="btn2" onclick="document.getElementById(\'modal\').classList.remove(\'on\')">닫기</button>');
   try {
     const q = await myQ(tok, d); const box = $('#qrHere'); box.innerHTML = '';
     try { box.appendChild(await qrCanvas('HMQ:' + q)); } catch (e) { box.insertAdjacentHTML('beforeend', '<p style="font-size:13px">QR을 못 불러왔어요. 아래 코드를 불러 주세요.</p>'); }
     box.insertAdjacentHTML('beforeend', '<div class="qcode">' + qFmt(q) + '</div><div style="font-size:12.5px;color:#6b8577;margin-top:2px">' + esc(d.name) + ' 선생님' + (d.no ? ' · ' + noTxt(d.no) : '') + '</div>');
   } catch (e) { console.error(e); $('#qrHere').textContent = '잠시 문제가 생겼어요. 다시 열어 주세요.'; }
+}
+/* ---------- 별빛결: 처음 만난 선생님과 인사하고 서로의 QR을 찍으면 별빛이 이어짐 ---------- */
+const SBR = { star: ['⭐', '별'], light: ['✨', '빛'], grain: ['🌊', '결'] };
+const sbOpenNow = d => d.test || (S && S.sbShow && S.sbOpen && S.sbClose && new Date() >= ts(S.sbOpen) && new Date() < ts(S.sbClose));
+const sbLocal = tok => { try { return JSON.parse(localStorage.getItem('hm_sb_' + tok) || '[]'); } catch (e) { return []; } };
+const sbLocalAdd = (tok, q) => { const l = sbLocal(tok); if (!l.includes(q)) { l.push(q); localStorage.setItem('hm_sb_' + tok, JSON.stringify(l)); } };
+async function sbCard(tok, d) {
+  const box = $('#sbCard'); if (!box) return;
+  if (!(d.test || (S && S.sbShow))) { box.style.display = 'none'; box.dataset.st = ''; return; }
+  box.style.display = '';
+  let q = null, o = null, me = {}, st = {};
+  try {
+    q = await myQ(tok, d);
+    const r = await Promise.all([getDoc(doc(db, 'sbo', q)), getDoc(doc(db, 'sbme', tok)), getDoc(doc(db, 'sbstat', d.test ? 'test' : 'main'))]);
+    o = r[0].exists() ? r[0].data() : null; me = r[1].exists() ? r[1].data() : {}; st = r[2].exists() ? r[2].data() : {};
+  } catch (e) { console.error(e); box.innerHTML = '<h3>✨ 별빛결</h3><p style="font-size:13px">잠시 불러오지 못했어요. 새로고침해 주세요.</p>'; return; }
+  const on = o && o.on === true, open = sbOpenNow(d);
+  const intro = '<p style="font-size:13px;line-height:1.6">처음 만난 선생님과 인사하고 <b>서로의 QR을 한 번 찍으면</b> 두 별빛이 이어져요. 나는 <b>별·빛·결</b> 중 하나인데, 무엇인지는 총회 때 공개돼요. 서로 다른 세 역할이 이어지면 <b>은하</b>가 생겨요. 순위는 없어요.</p>';
+  if (!on) {
+    box.dataset.st = 'off';
+    box.innerHTML = '<h3>✨ 별빛결</h3>' + intro + '<button class="btn" id="sbJoin" style="margin-top:10px;background:#3b3f8f">별빛결 참여하기</button><p style="font-size:12px;color:#6b8577;margin-top:6px">참여는 자유예요. 언제든 그만둘 수 있고, 내 이름은 어디에도 공개되지 않아요.</p>';
+    $('#sbJoin').onclick = () => sbSetOn(tok, d, q, true);
+    return;
+  }
+  const links = Math.max(me.links || 0, sbLocal(tok).length);
+  const role = me.role && SBR[me.role];
+  box.dataset.st = role ? 'role' : 'on'; box.dataset.n = links;
+  box.innerHTML = `<h3>✨ 별빛결</h3>
+    ${role ? `<div class="sbrole"><div class="ic">${role[0]}</div><div>나는 <b>${role[1]}</b>이었어요</div></div>` : ''}
+    <div class="sbstats"><div><b>${links}</b>인사 연결</div><div><b>${me.gal || 0}</b>함께한 은하</div><div><b>${st.galaxies || 0}</b>전체 은하</div></div>
+    ${open ? '<button class="btn" id="sbScan" style="background:#3b3f8f">인사하고 상대 QR 찍기</button><div class="gap"></div><button class="btn2" id="sbMine">내 QR 보여 주기</button>'
+      : '<p style="font-size:13px;margin:8px 0">인사 연결은 <b>12/19 행사장</b>에서 열려요. 참여 신청은 완료됐어요.</p><button class="btn2" id="sbMine">내 QR 미리 보기</button>'}
+    <p style="font-size:12px;color:#6b8577;margin-top:8px">같은 두 사람은 누가 찍든 한 번만 이어져요. 은하 수는 몇 분마다 갱신돼요.${st.people ? ' 지금 ' + st.people + '명이 함께하고 있어요.' : ''}</p>
+    <button class="outbtn" id="sbOff">별빛결 참여 그만두기</button>`;
+  $('#sbMine').onclick = () => showStampQR(tok, d, 'sb');
+  if ($('#sbScan')) $('#sbScan').onclick = () => sbScanner(tok, d, q);
+  $('#sbOff').onclick = () => { if (confirm('별빛결 참여를 그만둘까요? 이어진 별빛은 집계에서 빠져요. 다시 참여하면 돌아와요.')) sbSetOn(tok, d, q, false); };
+}
+async function sbSetOn(tok, d, q, on) {
+  try {
+    const b = writeBatch(db); const m = rid(20);
+    b.set(doc(db, 'marks', m), { tok });
+    b.set(doc(db, 'sbo', q), { m, test: !!d.test, on, at: serverTimestamp() });
+    await b.commit(); toast(on ? '별빛결에 참여했어요 ✨' : '참여를 그만뒀어요');
+  } catch (e) { console.error(e); toast('잠시 문제가 생겼어요. 다시 눌러 주세요'); }
+  sbCard(tok, d);
+}
+async function sbGreet(tok, d, myq, raw) {
+  const q = String(raw || '').toUpperCase().replace(/^HMQ:/, '').replace(/[^A-Z0-9]/g, '');
+  if (q.length !== 8) return ['err', 'QR이 아니에요. 상대 선생님의 탑승권(명찰) QR을 비춰 주세요'];
+  if (q === myq) return ['err', '내 QR이에요. 상대 선생님 QR을 찍어 주세요'];
+  const [a, b] = [myq, q].sort(); const id = a + '_' + b;
+  const to = p => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error('TIMEOUT')), 9000))]);
+  try {
+    const o = await to(getDoc(doc(db, 'sbo', q)));
+    if (!o.exists() || o.data().on !== true || !!o.data().test !== !!d.test) return ['dup', '상대 선생님이 아직 별빛결에 참여하지 않았어요.<br>탑승권에서 "참여하기"를 눌러 달라고 해 주세요'];
+    if ((await to(getDoc(doc(db, 'sblinks', id)))).exists()) { sbLocalAdd(tok, q); return ['dup', '이미 이어진 별빛이에요 ✨']; }
+    const bt = writeBatch(db); const m = rid(20);
+    bt.set(doc(db, 'marks', m), { tok });
+    bt.set(doc(db, 'sblinks', id), { a, b, m, test: !!d.test, at: serverTimestamp() });
+    await to(bt.commit());
+    sbLocalAdd(tok, q); return ['ok', '✨ 별빛이 이어졌어요!'];
+  } catch (e) {
+    if (e.message === 'TIMEOUT') return ['err', '연결이 약해요. 잠시 뒤 다시 찍어 주세요'];
+    try { if ((await getDoc(doc(db, 'sblinks', id))).exists()) { sbLocalAdd(tok, q); return ['dup', '이미 이어진 별빛이에요 ✨']; } } catch (e2) { }
+    console.error(e); return ['err', '연결하지 못했어요. 상대 선생님이 참여 중인지 확인해 주세요'];
+  }
+}
+async function sbScanner(tok, d, myq) {
+  modal(`<h2>인사하고 QR 찍기</h2><div class="sub">처음 만난 선생님과 인사한 뒤 상대 QR을 비춰요</div>
+    <div class="sbres" id="sbRes"></div>
+    <video id="sbCam" playsinline muted style="width:100%;max-height:48vh;aspect-ratio:1/1;object-fit:cover;border-radius:16px;background:#111;display:none"></video>
+    <button class="btn" id="sbCamOn" style="background:#3b3f8f">카메라 켜기</button>
+    <div style="font-size:12.5px;color:#6b8577;margin:12px 0 4px">카메라가 안 되면 상대 QR 아래 8자리 코드를 넣어요</div>
+    <div style="display:flex;gap:8px"><input id="sbMq" maxlength="9" placeholder="ABCD-EFGH" autocomplete="off" style="flex:1;font-family:var(--mono);font-size:18px;text-transform:uppercase;letter-spacing:.08em;border:1.5px solid #d3e2d8;border-radius:12px;padding:10px"><button class="btn" id="sbMgo" style="width:auto;padding:0 18px;flex:none;background:#3b3f8f">연결</button></div>
+    <div class="gap"></div><button class="btn2" id="sbClose">닫기</button>`);
+  let stop = () => { }, busy = false, last = '', lastAt = 0, hideT = null, AC = null;
+  const beep = ok => { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); [[ok ? 988 : 330, 0], ...(ok ? [[1480, .12]] : [])].forEach(([f, t0]) => { const o = AC.createOscillator(), g = AC.createGain(); o.frequency.value = f; o.connect(g); g.connect(AC.destination); const t = AC.currentTime + t0; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.3, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .16); o.start(t); o.stop(t + .18); }); } catch (e) { } };
+  const show = ([cls, msg]) => { const r = $('#sbRes'); if (!r) return; r.className = 'sbres ' + cls; r.innerHTML = msg; beep(cls === 'ok'); if (navigator.vibrate) navigator.vibrate(cls === 'ok' ? 120 : [60, 60]); clearTimeout(hideT); hideT = setTimeout(() => { if ($('#sbRes')) { $('#sbRes').className = 'sbres'; $('#sbRes').innerHTML = ''; } }, 4000); };
+  const go = async raw => { const q = String(raw || '').toUpperCase().replace(/^HMQ:/, '').replace(/[^A-Z0-9]/g, ''); if (busy || (q === last && Date.now() - lastAt < 8000)) return; busy = true; last = q; lastAt = Date.now(); show(['wait', '잇는 중…']); try { show(await sbGreet(tok, d, myq, raw)); } finally { busy = false; } };
+  const close = () => { stop(); closeModal(); sbCard(tok, d); };
+  $('#sbClose').onclick = close;
+  $('#sbMgo').onclick = () => { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); AC.resume(); } catch (e) { } last = ''; go($('#sbMq').value); };
+  $('#sbMq').addEventListener('keydown', e => { if (e.key === 'Enter') $('#sbMgo').click(); });
+  $('#sbCamOn').onclick = async () => {
+    try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); AC.resume(); } catch (e) { }
+    $('#sbCamOn').disabled = true; $('#sbCamOn').textContent = '카메라 여는 중…';
+    try {
+      if (!window.jsQR) await loadScript('https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js');
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      const v = $('#sbCam'); v.style.display = 'block'; v.srcObject = stream; await v.play(); $('#sbCamOn').style.display = 'none';
+      const cv = document.createElement('canvas'), cx = cv.getContext('2d', { willReadFrequently: true });
+      let on = true; stop = () => { on = false; stream.getTracks().forEach(t => t.stop()); };
+      const tick = () => { if (!on) return; if (!$('#modal').classList.contains('on') || !$('#sbCam')) { stop(); return; } if (v.readyState >= 2) { const w = 480, h = Math.round(v.videoHeight / v.videoWidth * w) || 480; cv.width = w; cv.height = h; cx.drawImage(v, 0, 0, w, h); const r = window.jsQR(cx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' }); if (r && r.data) go(r.data); } setTimeout(tick, 220); };
+      tick();
+    } catch (e) { console.error(e); $('#sbCamOn').disabled = false; $('#sbCamOn').textContent = '카메라 다시 켜기'; show(['err', '카메라를 못 열었어요. 브라우저 설정에서 카메라를 허용하거나 아래에 8자리 코드를 넣어 주세요']); }
+  };
 }
 async function stampCard(tok, d) {
   const box = $('#stampCard'); if (!box) return;
@@ -1342,6 +1452,7 @@ async function ticket(tok) {
     <a class="btn2" href="./mascot/" style="display:block;margin:12px 0;text-align:center">마스코트 전시 · 투표 보러 가기</a>
     <div class="acct">내 신청 관리 · 제목을 누르면 열려요</div>
     <div class="card" id="planCard"><h3>내 하루 일정</h3><p>불러오는 중…</p></div>
+    <div class="card" id="sbCard" style="display:none"></div>
     <div class="card" id="stampCard"><h3>스탬프 여권</h3><p>불러오는 중…</p></div>
     ${d.staff ? '<div class="tfbox" id="tfBox"><h3>' + CROWN + 'TF 운영 현황</h3><div class="ro">보기 전용 · 실시간 · 수정은 총괄 운영진만</div><div id="tfStat" class="note">불러오는 중…</div></div>' : ''}
     <div class="card" id="seatCard"><h3>세션 신청</h3><p>불러오는 중…</p></div>
@@ -1379,6 +1490,8 @@ async function ticket(tok) {
   acc($('#stampCard'), el => el.dataset.t ? '<span class="okk">도장 ' + el.dataset.n + '개</span>' : '');
   stampCard(tok, d);
   luckyCard(tok, d);
+  acc($('#sbCard'), el => el.dataset.st === 'role' ? '<span class="okk">역할 공개!</span>' : el.dataset.st === 'on' ? '<span class="okk">인사 ' + (el.dataset.n || 0) + '</span>' : el.dataset.st === 'off' ? '참여하기' : '', !!d.test || !!(S && S.sbShow && S.sbOpen && new Date() >= ts(S.sbOpen)));
+  sbCard(tok, d);
   if ($('#qrTop')) $('#qrTop').onclick = () => showStampQR(tok, d);
   acc($('#infoCard'), () => S && canCancel ? '취소는 ' + md(ts(S.cancelDeadline)) + '까지' : '');
   document.querySelectorAll('#view .promo video').forEach(v => v.pause());
