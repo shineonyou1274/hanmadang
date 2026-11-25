@@ -270,7 +270,7 @@ header nav button{white-space:nowrap}
       <div class="kpi" style="border-left-color:var(--gold)"><div class="l">은하</div><div class="v" id="sbG">-</div></div>
       <div class="kpi" style="border-left-color:var(--purple)"><div class="l">역할 분포 (운영진만)</div><div class="v" id="sbR" style="font-size:16px">-</div></div>
     </div>
-    <div class="panel"><h3>별빛 지도 <span class="tools"><select id="sbU"><option value="main">실제 참가자</option><option value="test">테스트</option></select><button class="b2" id="sbDemo">미리보기 (가상 150명)</button><button class="b2" id="sbFull">큰 화면으로 보기</button></span></h3>
+    <div class="panel"><h3>별빛 지도 <span class="tools"><select id="sbU"><option value="main">실제 참가자</option><option value="test">테스트</option></select><label style="font-size:13px;font-weight:600;margin-right:6px"><input type="checkbox" id="sbLab" checked> 이름 첫 글자(초성)</label><button class="b2" id="sbDemo">미리보기 (가상 150명)</button><button class="b2" id="sbFull">큰 화면으로 보기</button></span></h3>
       <p class="note">이름 없는 불빛과 선만 보여요. 역할 색은 "역할 공개"를 켠 뒤에만 보여요. 행사 때 이 화면을 큰 화면에 띄우세요.</p>
       <div id="sbWrap" style="background:#05070f;border-radius:14px;overflow:hidden;margin-top:8px"><canvas id="sbCv" style="width:100%;height:min(66vh,620px);display:block"></canvas></div></div>
     <div class="panel"><h3>운영 설정 <span class="tools"><button class="b" id="sbSave">저장</button></span></h3>
@@ -1133,6 +1133,10 @@ function skyFrame(now) {
     const R = base * 5 * tw; const hg = x.createRadialGradient(p[0], p[1], 0, p[0], p[1], R); hg.addColorStop(0, `rgba(${r},${g},${b},${.55 * tw})`); hg.addColorStop(.35, `rgba(${r},${g},${b},${.18 * tw})`); hg.addColorStop(1, `rgba(${r},${g},${b},0)`); x.fillStyle = hg; x.beginPath(); x.arc(p[0], p[1], R, 0, 7); x.fill();
     if (d >= 2) { const L = base * (3 + 3 * tw); x.strokeStyle = `rgba(${r},${g},${b},${.5 * tw})`; x.lineWidth = .8; x.beginPath(); x.moveTo(p[0] - L, p[1]); x.lineTo(p[0] + L, p[1]); x.moveTo(p[0], p[1] - L); x.lineTo(p[0], p[1] + L); x.stroke(); }
     x.fillStyle = `rgba(255,255,255,${.85 + .15 * tw})`; x.beginPath(); x.arc(p[0], p[1], base * .55, 0, 7); x.fill(); });
+  // 이름 초성
+  if (!$('#sbLab') || $('#sbLab').checked) { x.globalCompositeOperation = 'source-over'; const fz = document.fullscreenElement ? 15 : 11; x.font = '700 ' + fz + 'px Pretendard, sans-serif'; x.textAlign = 'center';
+    SKY.nodes.forEach(q => { const p = SKY.pos[q], l = SKY.lab && SKY.lab[q]; if (!p || !l) return; const d = SKY.deg[q] || 0; const yo = 7 + 2.2 * Math.sqrt(d / maxd) * 3; x.fillStyle = 'rgba(5,8,25,.55)'; x.fillText(l, p[0] + .8, p[1] - yo + .8); x.fillStyle = 'rgba(235,240,255,.82)'; x.fillText(l, p[0], p[1] - yo); });
+    x.textAlign = 'left'; x.globalCompositeOperation = 'lighter'; }
   // 별똥별
   if (Math.random() < .004) SKY.shoot.push({ x: Math.random() * W, y: Math.random() * H * .4, vx: 6 + Math.random() * 5, vy: 2 + Math.random() * 2, life: 1 });
   SKY.shoot = SKY.shoot.filter(s => { s.x += s.vx; s.y += s.vy; s.life -= .02; const lg = x.createLinearGradient(s.x, s.y, s.x - s.vx * 14, s.y - s.vy * 14); lg.addColorStop(0, `rgba(255,255,255,${s.life})`); lg.addColorStop(1, 'rgba(255,255,255,0)'); x.strokeStyle = lg; x.lineWidth = 1.5; x.beginPath(); x.moveTo(s.x, s.y); x.lineTo(s.x - s.vx * 14, s.y - s.vy * 14); x.stroke(); return s.life > 0 && s.x < W + 50; });
@@ -1142,11 +1146,15 @@ function skyFrame(now) {
   x.fillStyle = 'rgba(220,228,255,.85)'; x.font = `600 ${big ? 20 : 13}px Pretendard, sans-serif`; x.fillText(SKY.counts, 18, big ? 80 : 50);
   SKY.raf = requestAnimationFrame(skyFrame);
 }
+const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+const choOf = name => { const s = String(name || '').trim(); if (!s) return ''; const c = s.charCodeAt(0) - 0xAC00; return c >= 0 && c < 11172 ? CHO[Math.floor(c / 588)] : s[0].toUpperCase(); };
+function sbLabelOf(q) { if (window.__sbDemo && SBDEMO) return SBDEMO.cho[q] || ''; const p = P.find(x => x.id === QR2T[q]); return p ? choOf(p.name) : ''; }
 function sbDraw(cv, people, links, trios, reveal) {
   SKY.cv = cv; SKY.reveal = reveal;
   const key = people.length + '|' + links.length + '|' + trios.length + '|' + reveal;
   const first = !SKY.seen.size && !SKY.nodes.length;
   links.forEach(l => { const k = l.a + '_' + l.b; if (!SKY.seen.has(k)) { SKY.seen.add(k); if (!first) SKY.fresh.push({ k, a: l.a, b: l.b, t: performance.now() }); } });
+  SKY.lab = {}; people.forEach(q => SKY.lab[q] = sbLabelOf(q));
   SKY.nodes = people; SKY.links = links; SKY.trios = trios; SKY.deg = {}; links.forEach(l => { SKY.deg[l.a] = (SKY.deg[l.a] || 0) + 1; SKY.deg[l.b] = (SKY.deg[l.b] || 0) + 1; });
   SKY.counts = '별빛 ' + people.length + ' · 이어진 선 ' + links.length + ' · 은하 ' + trios.length + (window.__sbDemo ? '   (미리보기 · 가상 데이터)' : '');
   if (SKY.key !== key) { SKY.key = key; skyResize(); skyLayout(); skyStatic(); }
@@ -1157,7 +1165,8 @@ let SBDEMO = null;
 function sbDemoToggle() {
   if (window.__sbDemo) { clearInterval(SBDEMO.iv); window.__sbDemo = false; SBDEMO = null; SKY.seen = new Set(); SKY.fresh = []; SKY.nodes = []; SKY.lp = {}; $('#sbDemo').textContent = '미리보기 (가상 150명)'; renderSb(); return; }
   const N = 150, ppl = Array.from({ length: N }, (_, i) => 'DEMO' + String(i).padStart(4, '0')), role = {}; ppl.forEach((q, i) => role[q] = ['star', 'light', 'grain'][i % 3]);
-  SBDEMO = { ppl, role, links: [], set: new Set() }; window.__sbDemo = true; SKY.seen = new Set(); SKY.fresh = []; SKY.nodes = []; SKY.lp = {};
+  const SUR = '김이박최정강조윤장임한오서신권황안송류전홍고문양손배백허유남심노하곽성차주우구민진나지엄채원천방공현함변염여추도소석선설마길연위표명기반왕금옥육인맹제모탁국어은편용예경봉사부'; const cho = {}; ppl.forEach(q => cho[q] = choOf(SUR[Math.floor(Math.random() * (Math.random() < .6 ? 10 : SUR.length))]));
+  SBDEMO = { ppl, role, cho, links: [], set: new Set() }; window.__sbDemo = true; SKY.seen = new Set(); SKY.fresh = []; SKY.nodes = []; SKY.lp = {};
   const add = n => { for (let k = 0; k < n; k++) { const ia = Math.floor(Math.random() * N), a = ppl[ia], b = ppl[Math.random() < .7 ? (ia + 1 + Math.floor(Math.random() * 12)) % N : Math.floor(Math.random() * N)]; if (a === b) continue; const [p, q] = [a, b].sort(); if (SBDEMO.set.has(p + '_' + q)) continue; SBDEMO.set.add(p + '_' + q); SBDEMO.links.push({ a: p, b: q }); } };
   add(160); renderSb();
   SBDEMO.iv = setInterval(() => { if (SBDEMO.links.length > 1100) return; add(1 + Math.floor(Math.random() * 3)); renderSb(); }, 900);
