@@ -62,6 +62,7 @@ tr.dup td{background:#FFF7E1}
 @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}}
 header nav button{white-space:nowrap}
 @media(max-width:700px){header{padding:10px 12px;gap:8px}header nav{width:100%;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}header nav button{padding:6px 10px;flex:0 0 auto}.kpis{grid-template-columns:repeat(2,1fr)!important;gap:8px}.hcards{grid-template-columns:1fr}}
+#sbWrap:fullscreen{border-radius:0}#sbWrap:fullscreen canvas{height:100vh!important}
 </style>
 </head>
 <body>
@@ -269,9 +270,9 @@ header nav button{white-space:nowrap}
       <div class="kpi" style="border-left-color:var(--gold)"><div class="l">은하</div><div class="v" id="sbG">-</div></div>
       <div class="kpi" style="border-left-color:var(--purple)"><div class="l">역할 분포 (운영진만)</div><div class="v" id="sbR" style="font-size:16px">-</div></div>
     </div>
-    <div class="panel"><h3>별빛 지도 <span class="tools"><select id="sbU"><option value="main">실제 참가자</option><option value="test">테스트</option></select><button class="b2" id="sbFull">큰 화면으로 보기</button></span></h3>
+    <div class="panel"><h3>별빛 지도 <span class="tools"><select id="sbU"><option value="main">실제 참가자</option><option value="test">테스트</option></select><button class="b2" id="sbDemo">미리보기 (가상 150명)</button><button class="b2" id="sbFull">큰 화면으로 보기</button></span></h3>
       <p class="note">이름 없는 불빛과 선만 보여요. 역할 색은 "역할 공개"를 켠 뒤에만 보여요. 행사 때 이 화면을 큰 화면에 띄우세요.</p>
-      <div id="sbWrap" style="background:#05070f;border-radius:14px;overflow:hidden;margin-top:8px"><canvas id="sbCv" style="width:100%;height:min(62vh,560px);display:block"></canvas></div></div>
+      <div id="sbWrap" style="background:#05070f;border-radius:14px;overflow:hidden;margin-top:8px"><canvas id="sbCv" style="width:100%;height:min(66vh,620px);display:block"></canvas></div></div>
     <div class="panel"><h3>운영 설정 <span class="tools"><button class="b" id="sbSave">저장</button></span></h3>
       <div class="grid2">
         <label style="display:flex;gap:8px;align-items:center;font-weight:700;font-size:14px"><input type="checkbox" id="sbShow" style="width:18px;height:18px"> 참가자 탑승권에 별빛결 카드 보이기 (참여 신청 가능)</label>
@@ -1054,24 +1055,104 @@ async function sbRun(force) {
 function renderSb() {
   if (!$('#sbCv')) return;
   if (!window.__sbFilled && S) { fillSbForm(); window.__sbFilled = true; }
-  const u = $('#sbU').value; const { people, links } = sbUniverse(u);
-  const v = window.__sbView && window.__sbView.people.length === people.length ? window.__sbView : { trios: sbGalaxies(people, links, SBRO).trios, cnt: null };
-  const cnt = { star: 0, light: 0, grain: 0 }; people.forEach(q => { if (SBRO[q]) cnt[SBRO[q]]++; });
+  const u = $('#sbU').value; let { people, links } = sbUniverse(u);
+  let v = window.__sbView && window.__sbView.people.length === people.length ? window.__sbView : { trios: sbGalaxies(people, links, SBRO).trios, cnt: null };
+  if (window.__sbDemo && SBDEMO) { people = SBDEMO.ppl; links = SBDEMO.links; v = { trios: sbGalaxies(people, links, SBDEMO.role).trios }; }
+  const cnt = { star: 0, light: 0, grain: 0 }; const rm = window.__sbDemo && SBDEMO ? SBDEMO.role : SBRO; people.forEach(q => { if (rm[q]) cnt[rm[q]]++; });
   $('#sbP').textContent = people.length; $('#sbL').textContent = links.length; $('#sbG').textContent = v.trios.length;
   $('#sbR').textContent = OWNER ? `별 ${cnt.star} · 빛 ${cnt.light} · 결 ${cnt.grain}` : '총괄만';
   sbDraw($('#sbCv'), people, links, v.trios, !!(S && S.sbReveal));
 }
+/* ---------- 별빛 하늘 (움직이는 밤하늘 렌더러) ---------- */
+const SKY = { cv: null, W: 0, H: 0, dpr: 1, bg: null, st: null, pos: {}, deg: {}, nodes: [], links: [], trios: [], reveal: false, seen: new Set(), fresh: [], shoot: [], bgStars: [], raf: 0, key: '', t0: performance.now(), counts: '' };
+const skyRnd = s => sbHash(s);
+function skyGauss(s) { const u = Math.max(1e-6, skyRnd(s + 'u')), v = skyRnd(s + 'v'); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+function skyResize() {
+  const cv = SKY.cv; const W = cv.clientWidth || 800, H = cv.clientHeight || 480, dpr = Math.min(2, window.devicePixelRatio || 1);
+  if (W === SKY.W && H === SKY.H && dpr === SKY.dpr && SKY.bg) return false;
+  Object.assign(SKY, { W, H, dpr }); cv.width = W * dpr; cv.height = H * dpr;
+  // 배경: 깊은 밤 + 성운 + 은하수 띠 (한 번만 그림)
+  const bg = document.createElement('canvas'); bg.width = W * dpr; bg.height = H * dpr; const x = bg.getContext('2d'); x.scale(dpr, dpr);
+  const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#030512'); g.addColorStop(.5, '#0a0f2e'); g.addColorStop(1, '#04030f'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  x.globalCompositeOperation = 'lighter';
+  [['#3b2a8f', .55, .35, .55], ['#0f5f7a', .25, .65, .45], ['#7a2a6a', .78, .3, .35], ['#1d3fa0', .5, .55, .7], ['#2a6a8f', .85, .75, .3]].forEach(([c, cx, cy, r], i) => { const rg = x.createRadialGradient(cx * W, cy * H, 0, cx * W, cy * H, r * Math.max(W, H)); rg.addColorStop(0, c + '55'); rg.addColorStop(.5, c + '1a'); rg.addColorStop(1, c + '00'); x.fillStyle = rg; x.fillRect(0, 0, W, H); });
+  x.save(); x.translate(W / 2, H / 2); x.rotate(-0.38);
+  for (let i = 0; i < 1400; i++) { const a = (skyRnd('mw' + i) - .5) * W * 1.5, b = skyGauss('mwb' + i) * H * .09; const al = skyRnd('mwa' + i) * .5; x.fillStyle = `rgba(${200 + skyRnd('c' + i) * 55 | 0},${200 + skyRnd('d' + i) * 55 | 0},255,${al})`; x.fillRect(a, b, skyRnd('s' + i) * 1.4 + .3, skyRnd('s' + i) * 1.4 + .3); }
+  const band = x.createLinearGradient(0, -H * .22, 0, H * .22); band.addColorStop(0, 'rgba(120,140,255,0)'); band.addColorStop(.5, 'rgba(150,170,255,.10)'); band.addColorStop(1, 'rgba(120,140,255,0)'); x.fillStyle = band; x.fillRect(-W, -H * .22, W * 2, H * .44);
+  x.restore();
+  SKY.bg = bg;
+  SKY.bgStars = Array.from({ length: Math.round(W * H / 3500) }, (_, i) => ({ x: skyRnd('bx' + i) * W, y: skyRnd('by' + i) * H, r: skyRnd('br' + i) * 1.1 + .2, p: skyRnd('bp' + i) * 6.28, s: .6 + skyRnd('bs' + i) * 2 }));
+  SKY.key = ''; return true;
+}
+function skyLayout() {
+  const { W, H } = SKY; SKY.pos = {};
+  SKY.nodes.forEach(q => {
+    const along = (skyRnd(q + 'a') - .5) * 1.7, across = skyGauss(q) * .22;
+    const ang = -0.38, cx = W / 2 + Math.cos(ang) * along * W * .5 - Math.sin(ang) * across * H, cy = H / 2 + Math.sin(ang) * along * W * .5 + Math.cos(ang) * across * H;
+    SKY.pos[q] = [Math.max(24, Math.min(W - 24, cx)), Math.max(40, Math.min(H - 24, cy))];
+  });
+}
+function skyStatic() {
+  // 선과 은하는 데이터가 바뀔 때만 다시 그림
+  const { W, H, dpr } = SKY; const st = document.createElement('canvas'); st.width = W * dpr; st.height = H * dpr; const x = st.getContext('2d'); x.scale(dpr, dpr);
+  x.globalCompositeOperation = 'lighter';
+  SKY.trios.forEach(t => { const p = t.map(q => SKY.pos[q]); if (p.some(z => !z)) return; const cx = (p[0][0] + p[1][0] + p[2][0]) / 3, cy = (p[0][1] + p[1][1] + p[2][1]) / 3; const rg = x.createRadialGradient(cx, cy, 0, cx, cy, 60); rg.addColorStop(0, 'rgba(255,210,120,.16)'); rg.addColorStop(1, 'rgba(255,170,90,.02)'); x.fillStyle = rg; x.beginPath(); x.moveTo(...p[0]); x.lineTo(...p[1]); x.lineTo(...p[2]); x.closePath(); x.fill(); });
+  const fresh = new Set(SKY.fresh.map(f => f.k));
+  SKY.links.forEach(l => { if (fresh.has(l.a + '_' + l.b)) return; const a = SKY.pos[l.a], b = SKY.pos[l.b]; if (!a || !b) return; const lg = x.createLinearGradient(a[0], a[1], b[0], b[1]); lg.addColorStop(0, 'rgba(170,200,255,.55)'); lg.addColorStop(.5, 'rgba(200,220,255,.18)'); lg.addColorStop(1, 'rgba(170,200,255,.55)'); x.strokeStyle = lg; x.lineWidth = 1; x.beginPath(); x.moveTo(...a); x.lineTo(...b); x.stroke(); });
+  SKY.st = st;
+}
+function skyFrame(now) {
+  SKY.raf = 0; const cv = SKY.cv; if (!cv || !cv.isConnected) return;
+  if (cv.offsetParent === null && !document.fullscreenElement) { SKY.raf = requestAnimationFrame(skyFrame); return; }
+  if (skyResize()) { skyLayout(); skyStatic(); }
+  const { W, H, dpr } = SKY; const x = cv.getContext('2d'); const t = (now - SKY.t0) / 1000;
+  x.setTransform(dpr, 0, 0, dpr, 0, 0); x.globalCompositeOperation = 'source-over'; x.drawImage(SKY.bg, 0, 0, W, H);
+  x.globalCompositeOperation = 'lighter';
+  SKY.bgStars.forEach(s => { const a = .25 + .35 * (1 + Math.sin(t * s.s + s.p)) / 2; x.fillStyle = `rgba(220,230,255,${a})`; x.fillRect(s.x, s.y, s.r, s.r); });
+  if (SKY.st) x.drawImage(SKY.st, 0, 0, W, H);
+  // 새로 이어진 선: 빛줄기가 달려가며 그려짐
+  SKY.fresh = SKY.fresh.filter(f => { const a = SKY.pos[f.a], b = SKY.pos[f.b]; if (!a || !b) return false; const u = Math.min(1, (now - f.t) / 1400); const e = 1 - Math.pow(1 - u, 3); const hx = a[0] + (b[0] - a[0]) * e, hy = a[1] + (b[1] - a[1]) * e;
+    x.strokeStyle = `rgba(255,236,170,${.9 - u * .4})`; x.lineWidth = 1.6; x.beginPath(); x.moveTo(...a); x.lineTo(hx, hy); x.stroke();
+    const hg = x.createRadialGradient(hx, hy, 0, hx, hy, 14 + 10 * (1 - u)); hg.addColorStop(0, 'rgba(255,245,200,.95)'); hg.addColorStop(1, 'rgba(255,200,120,0)'); x.fillStyle = hg; x.beginPath(); x.arc(hx, hy, 24, 0, 7); x.fill();
+    if (u >= 1) { if (!f.done) { f.done = now; } const k = (now - f.done) / 900; if (k < 1) { for (let i = 0; i < 8; i++) { const an = i / 8 * 6.28, rr = 6 + k * 26; x.fillStyle = `rgba(255,230,160,${1 - k})`; x.fillRect(b[0] + Math.cos(an) * rr, b[1] + Math.sin(an) * rr, 2, 2); } return true; } skyStatic(); return false; }
+    return true; });
+  // 별빛(참가자): 반짝이는 핵 + 십자 광채
+  const maxd = Math.max(1, ...Object.values(SKY.deg));
+  SKY.nodes.forEach(q => { const p = SKY.pos[q]; if (!p) return; const d = SKY.deg[q] || 0, ph = skyRnd(q + 'p') * 6.28, sp = 1.2 + skyRnd(q + 's') * 1.8;
+    const tw = .65 + .35 * Math.sin(t * sp + ph); const base = 1.6 + 2.2 * Math.sqrt(d / maxd);
+    const rmap = window.__sbDemo && SBDEMO ? SBDEMO.role : SBRO; const rev = SKY.reveal || (window.__sbDemo && $('#sbReveal') && $('#sbReveal').checked); const col = rev && rmap[q] ? SBRN[rmap[q]][2] : '#ffffff'; const [r, g, b] = [1, 3, 5].map(i => parseInt(col.slice(i, i + 2), 16));
+    const R = base * 5 * tw; const hg = x.createRadialGradient(p[0], p[1], 0, p[0], p[1], R); hg.addColorStop(0, `rgba(${r},${g},${b},${.55 * tw})`); hg.addColorStop(.35, `rgba(${r},${g},${b},${.18 * tw})`); hg.addColorStop(1, `rgba(${r},${g},${b},0)`); x.fillStyle = hg; x.beginPath(); x.arc(p[0], p[1], R, 0, 7); x.fill();
+    if (d >= 2) { const L = base * (3 + 3 * tw); x.strokeStyle = `rgba(${r},${g},${b},${.5 * tw})`; x.lineWidth = .8; x.beginPath(); x.moveTo(p[0] - L, p[1]); x.lineTo(p[0] + L, p[1]); x.moveTo(p[0], p[1] - L); x.lineTo(p[0], p[1] + L); x.stroke(); }
+    x.fillStyle = `rgba(255,255,255,${.85 + .15 * tw})`; x.beginPath(); x.arc(p[0], p[1], base * .55, 0, 7); x.fill(); });
+  // 별똥별
+  if (Math.random() < .004) SKY.shoot.push({ x: Math.random() * W, y: Math.random() * H * .4, vx: 6 + Math.random() * 5, vy: 2 + Math.random() * 2, life: 1 });
+  SKY.shoot = SKY.shoot.filter(s => { s.x += s.vx; s.y += s.vy; s.life -= .02; const lg = x.createLinearGradient(s.x, s.y, s.x - s.vx * 14, s.y - s.vy * 14); lg.addColorStop(0, `rgba(255,255,255,${s.life})`); lg.addColorStop(1, 'rgba(255,255,255,0)'); x.strokeStyle = lg; x.lineWidth = 1.5; x.beginPath(); x.moveTo(s.x, s.y); x.lineTo(s.x - s.vx * 14, s.y - s.vy * 14); x.stroke(); return s.life > 0 && s.x < W + 50; });
+  // 글자
+  x.globalCompositeOperation = 'source-over'; const big = !!document.fullscreenElement;
+  x.fillStyle = 'rgba(255,255,255,.92)'; x.font = `800 ${big ? 30 : 17}px Pretendard, sans-serif`; x.fillText('✨ 별빛결', 18, big ? 46 : 30);
+  x.fillStyle = 'rgba(220,228,255,.85)'; x.font = `600 ${big ? 20 : 13}px Pretendard, sans-serif`; x.fillText(SKY.counts, 18, big ? 80 : 50);
+  SKY.raf = requestAnimationFrame(skyFrame);
+}
 function sbDraw(cv, people, links, trios, reveal) {
-  const W = cv.clientWidth || 800, H = cv.clientHeight || 480, dpr = window.devicePixelRatio || 1; cv.width = W * dpr; cv.height = H * dpr;
-  const x = cv.getContext('2d'); x.scale(dpr, dpr);
-  const g = x.createRadialGradient(W / 2, H / 2, 10, W / 2, H / 2, Math.max(W, H) * .7); g.addColorStop(0, '#16224a'); g.addColorStop(1, '#05070f'); x.fillStyle = g; x.fillRect(0, 0, W, H);
-  for (let i = 0; i < 120; i++) { x.fillStyle = 'rgba(255,255,255,' + (sbHash('bg' + i) * .35) + ')'; x.fillRect(sbHash('x' + i) * W, sbHash('y' + i) * H, 1, 1); }
-  const pos = {}; const R = Math.min(W, H) * .44;
-  people.forEach(q => { const a = sbHash(q) * Math.PI * 2, r = Math.sqrt(sbHash(q + 'r')) * R; pos[q] = [W / 2 + Math.cos(a) * r * (W / H > 1.3 ? 1.5 : 1), H / 2 + Math.sin(a) * r]; });
-  x.fillStyle = 'rgba(255,213,79,.07)'; trios.forEach(t => { const p = t.map(q => pos[q]); if (p.some(z => !z)) return; x.beginPath(); x.moveTo(...p[0]); x.lineTo(...p[1]); x.lineTo(...p[2]); x.closePath(); x.fill(); });
-  x.strokeStyle = 'rgba(190,215,255,.35)'; x.lineWidth = 1; links.forEach(l => { const a = pos[l.a], b = pos[l.b]; if (!a || !b) return; x.beginPath(); x.moveTo(...a); x.lineTo(...b); x.stroke(); });
-  people.forEach(q => { const [px, py] = pos[q]; const c = reveal && SBRO[q] ? SBRN[SBRO[q]][2] : '#ffffff'; const gl = x.createRadialGradient(px, py, 0, px, py, 9); gl.addColorStop(0, c); gl.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = gl; x.beginPath(); x.arc(px, py, 9, 0, 7); x.fill(); x.fillStyle = c; x.beginPath(); x.arc(px, py, 2.2, 0, 7); x.fill(); });
-  x.fillStyle = 'rgba(255,255,255,.85)'; x.font = '700 15px Pretendard, sans-serif'; x.fillText('별빛 ' + people.length + ' · 이어진 선 ' + links.length + ' · 은하 ' + trios.length, 14, 24);
+  SKY.cv = cv; SKY.reveal = reveal;
+  const key = people.length + '|' + links.length + '|' + trios.length + '|' + reveal;
+  const first = !SKY.seen.size && !SKY.nodes.length;
+  links.forEach(l => { const k = l.a + '_' + l.b; if (!SKY.seen.has(k)) { SKY.seen.add(k); if (!first) SKY.fresh.push({ k, a: l.a, b: l.b, t: performance.now() }); } });
+  SKY.nodes = people; SKY.links = links; SKY.trios = trios; SKY.deg = {}; links.forEach(l => { SKY.deg[l.a] = (SKY.deg[l.a] || 0) + 1; SKY.deg[l.b] = (SKY.deg[l.b] || 0) + 1; });
+  SKY.counts = '별빛 ' + people.length + ' · 이어진 선 ' + links.length + ' · 은하 ' + trios.length + (window.__sbDemo ? '   (미리보기 · 가상 데이터)' : '');
+  if (SKY.key !== key) { SKY.key = key; skyResize(); skyLayout(); skyStatic(); }
+  if (!SKY.raf) SKY.raf = requestAnimationFrame(skyFrame);
+}
+// 미리보기: 서버에 아무것도 쓰지 않고 가상의 참가자로 하늘이 차오르는 모습을 보여 줌
+let SBDEMO = null;
+function sbDemoToggle() {
+  if (window.__sbDemo) { clearInterval(SBDEMO.iv); window.__sbDemo = false; SBDEMO = null; SKY.seen = new Set(); SKY.fresh = []; SKY.nodes = []; $('#sbDemo').textContent = '미리보기 (가상 150명)'; renderSb(); return; }
+  const N = 150, ppl = Array.from({ length: N }, (_, i) => 'DEMO' + String(i).padStart(4, '0')), role = {}; ppl.forEach((q, i) => role[q] = ['star', 'light', 'grain'][i % 3]);
+  SBDEMO = { ppl, role, links: [], set: new Set() }; window.__sbDemo = true; SKY.seen = new Set(); SKY.fresh = []; SKY.nodes = [];
+  const add = n => { for (let k = 0; k < n; k++) { const a = ppl[Math.floor(Math.random() * N)], b = ppl[Math.floor(Math.random() * N)]; if (a === b) continue; const [p, q] = [a, b].sort(); if (SBDEMO.set.has(p + '_' + q)) continue; SBDEMO.set.add(p + '_' + q); SBDEMO.links.push({ a: p, b: q }); } };
+  add(160); renderSb();
+  SBDEMO.iv = setInterval(() => { if (SBDEMO.links.length > 1100) return; add(1 + Math.floor(Math.random() * 3)); renderSb(); }, 900);
+  $('#sbDemo').textContent = '미리보기 끄기';
 }
 $('#sbSave').onclick = async () => {
   if (!OWNER) return alert('총괄만 바꿀 수 있어요.');
@@ -1081,6 +1162,8 @@ $('#sbSave').onclick = async () => {
   alert('저장했어요.' + ($('#sbReveal').checked ? ' 역할 공개는 다음 집계 때 참가자 화면에 반영돼요.' : '')); sbRun(true);
 };
 $('#sbNow').onclick = () => sbRun(true);
+$('#sbDemo').onclick = sbDemoToggle;
+$('#sbReveal').addEventListener('change', () => { if (window.__sbDemo) { SKY.key = ''; renderSb(); } });
 $('#sbU').onchange = () => { window.__sbView = null; renderSb(); };
 $('#sbAuto').onchange = () => { clearInterval(sbTimer); if ($('#sbAuto').checked) { sbRun(true); sbTimer = setInterval(() => sbRun(true), 15000); } };
 $('#sbFull').onclick = () => { const w = $('#sbWrap'); (w.requestFullscreen || w.webkitRequestFullscreen).call(w); setTimeout(renderSb, 300); };
