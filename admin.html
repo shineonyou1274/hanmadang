@@ -1283,7 +1283,8 @@ function bkPerson(p) {
         <div class="cinfo"><div class="lab">접수번호 · 경품 추첨 번호</div><div class="no">${p.no ? 'No.' + String(p.no).padStart(3, '0') : '-'}</div>
           <div class="lab">점심 도시락</div><div class="lunch">🍱 ${esc(lunchLine)}</div>
           ${e.kids ? `<div class="lab">자녀 동반</div><div class="lunch">${e.kids}명 · 아이돌봄 408호</div>` : ''}</div></div>
-      <div class="chint">세션·부스에서 이 QR을 보여 주면 도장이 찍혀요</div>
+      <div class="csb"><img src="https://hanmadang.peace.re.kr/byeolbit-sky.jpg"><div class="csbt"><b>✨ 인사 미션 · 별빛결</b>처음 만난 선생님과 인사하고 <u>서로의 QR을 한 번 찍으면</u> 두 별빛이 이어져요. 나는 <u>별·빛·결</u> 중 하나! 서로 다른 세 역할이 이어지면 <u>은하</u>가 생겨요. 내 역할은 총회 때 공개돼요.<small>참여 신청은 폰 탑승권의 "별빛결 참여하기"에서 · 순위 없음 · 이름 비공개</small></div></div>
+      <div class="chint">세션·부스 도장도, 별빛결 인사도 이 QR 하나면 돼요</div>
       <div class="cfoot">마산대학교 창의관 · 09:00–17:00</div>
     </div>
   </section>
@@ -1322,6 +1323,10 @@ body{font-family:Pretendard,'Malgun Gothic',sans-serif;color:#14402A;-webkit-pri
 .cinfo{flex:1}.lab{font-size:8.5pt;color:#cfe8da;margin-top:3mm;letter-spacing:.04em}
 .no{font-family:ui-monospace,Consolas,monospace;font-size:28pt;font-weight:900;color:#FFD54F;line-height:1.1}
 .lunch{font-size:11pt;font-weight:800;margin-top:1mm;line-height:1.35}
+.csb{margin-top:7mm;border-radius:3mm;overflow:hidden;background:#141a4a;box-shadow:0 0 0 .4mm rgba(243,217,138,.55)}
+.csb img{display:block;width:100%;height:36mm;object-fit:cover}
+.csbt{padding:2.6mm 3.5mm 3mm;font-size:8.6pt;line-height:1.5;color:#e6e8ff}.csbt b{display:block;font-size:11pt;color:#FFE38A;margin-bottom:.8mm}.csbt u{text-decoration:none;font-weight:800;color:#fff}
+.csbt small{display:block;font-size:7.2pt;color:#aeb3e0;margin-top:1mm}
 .chint{margin-top:auto;background:rgba(0,0,0,.18);border-radius:2.5mm;padding:3mm 4mm;font-size:10pt;font-weight:700}
 .cfoot{font-size:9pt;color:#d9f0e2;margin-top:3mm;text-align:right}
 .back{background:#FBF6E9}
