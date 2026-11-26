@@ -160,7 +160,7 @@ header nav button{white-space:nowrap}
         <input id="q" placeholder="이름·학교·번호 검색">
         <select id="fType"><option value="">구분 전체</option><option value="nanum">나눔회원</option><option value="baeum">배움회원</option><option value="outside">지딜 외</option></select>
         <select id="fStatus"><option value="active">신청 중</option><option value="">취소 포함</option><option value="cancelled">취소만</option></select>
-        <button class="b2" id="csv">엑셀(CSV) 받기</button></span></h3>
+        <button class="b2" id="bkPrint" style="background:#FFD54F;border-color:#c9a227">명찰·소책자 인쇄</button> <button class="b2" id="csv">엑셀(CSV) 받기</button></span></h3>
       <p class="note">노란 줄 = 같은 휴대폰 번호로 신청 중인 사람이 둘 이상. 링크 버튼 = 그 사람의 탑승권 주소 복사 (여권을 잃어버린 선생님께 보내 줄 때)</p>
       <div style="overflow:auto;margin-top:8px"><table><thead><tr><th>접수번호</th><th>신청 시각</th><th>이름</th><th>소속</th><th>휴대폰</th><th>이메일</th><th>구분</th><th>세션</th><th>도시락·자녀·공문</th><th>여권번호</th><th>상태</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
     </div>
@@ -1187,6 +1187,159 @@ $('#sbAuto').onchange = () => { clearInterval(sbTimer); if ($('#sbAuto').checked
 $('#sbFull').onclick = () => { const w = $('#sbWrap'); (w.requestFullscreen || w.webkitRequestFullscreen).call(w); setTimeout(renderSb, 300); };
 document.addEventListener('fullscreenchange', () => setTimeout(renderSb, 200));
 function fillSbForm() { if (!$('#sbShow') || !S) return; $('#sbShow').checked = !!S.sbShow; $('#sbReveal').checked = !!S.sbReveal; if (S.sbOpen) $('#sbOpen').value = toLocalInput(ts(S.sbOpen)); if (S.sbClose) $('#sbClose').value = toLocalInput(ts(S.sbClose)); }
+
+/* ---------- 명찰·소책자 인쇄 (A4 가로 양면 → 반 접으면 A5 4쪽) ---------- */
+const BK_LUNCH = { galbi: '왕갈비맛 함박스테이크', chipotle: '치폴레 함박스테이크', none: '도시락 신청 안 함' };
+const BK_PRIZE = { hum: '💧 미니 가습기', lnl: '🍱 락앤락 그릇 세트', chs: '🐱 춘식이 온열 데스크패드', cal: '📅 2027 캘린더' };
+let BKQR = null;
+async function bkLib() { if (window.qrcode) return; await new Promise((ok, no) => { const e = document.createElement('script'); e.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js'; e.onload = ok; e.onerror = no; document.head.appendChild(e); }); }
+function bkQrSvg(text) { const q = window.qrcode(0, 'M'); q.addData(text); q.make(); const n = q.getModuleCount(); let d = ''; for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) d += `M${c},${r}h1v1h-1z`; return `<svg viewBox="-2 -2 ${n + 4} ${n + 4}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="-2" y="-2" width="${n + 4}" height="${n + 4}" fill="#fff"/><path d="${d}" fill="#14402A"/></svg>`; }
+const bkRoom = r => String(r || '').replace('창의관 ', '').replace(/\s*\(.*\)\s*$/, '');
+const bkRoomFull = r => String(r || '').replace('창의관 ', '');
+async function bkEnsureQ(list) {
+  const need = list.filter(p => !Object.keys(QR2T).some(k => QR2T[k] === p.id));
+  const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  for (let i = 0; i < need.length; i += 120) {
+    const b = writeBatch(db);
+    need.slice(i, i + 120).forEach(p => { const x = new Uint32Array(8); crypto.getRandomValues(x); const q = [...x].map(v => a[v % a.length]).join(''); b.set(doc(db, 'qrby', p.id), { q }); b.set(doc(db, 'qr', q), { tok: p.id }); b.set(doc(db, 'qn', q), { name: p.name, no: p.no || 0 }); QR2T[q] = p.id; });
+    await b.commit();
+  }
+  return need.length;
+}
+function bkTimetable() {
+  const ses = [...SE].sort((a, b) => a.start.localeCompare(b.start) || (a.order || 0) - (b.order || 0));
+  const row = (t, n, r) => `<tr><td class="t">${t}</td><td>${esc(n)}</td><td class="r">${esc(r)}</td></tr>`;
+  return `<table class="tt"><tbody>
+    ${row('09:00', '오프닝 · 네트워킹', '송원홀')}
+    <tr class="h"><td colspan="3">오전 10:00–11:30</td></tr>${ses.filter(s => s.start < '12:00').map(s => row(s.start, s.name, bkRoom(s.room))).join('')}
+    ${row('10:00', '바이브코딩 챌린지 (~14:50)', '305호')}${row('10:00', '부스 · 수업사례발표', '송원홀')}
+    ${row('11:30', '점심 · 도시락', '')}
+    <tr class="h"><td colspan="3">오후 13:00–16:20</td></tr>${ses.filter(s => s.start >= '12:00').map(s => row(s.start + '–' + s.end, s.name, bkRoom(s.room))).join('')}
+    ${row('종일', '아이돌봄 (초등)', '408호')}
+    ${row('16:30', '총회 · 경품 추첨', '송원홀')}</tbody></table>`;
+}
+function bkFloors() {
+  const by = {}; SE.forEach(s => { const r = bkRoom(s.room); (by[r] = by[r] || []).push(s); });
+  const f3 = Object.keys(by).filter(r => /^3/.test(r)).sort(), f4 = Object.keys(by).filter(r => /^4/.test(r)).sort();
+  const box = (r, items, extra) => `<div class="fr"><b>${esc(r)}</b><span>${items.map(s => esc(s.name) + ' <i>' + (s.start < '12:00' ? '오전' : s.start >= '15:00' ? s.start : '오후') + '</i>').join(' · ')}${extra || ''}</span></div>`;
+  return `<div class="fl"><div class="fh">송원홀 (세미나실)</div><div class="fr big"><span>오프닝 09:00 · 부스 6곳 · 수업사례발표 · 총회·경품 추첨 16:30</span></div>
+    <div class="fh">3층</div>${box('305 멀티미디어실', f3.flatMap(r => by[r]), ' · 바이브코딩 챌린지 <i>10:00–14:50</i>')}
+    <div class="fh">4층</div>${f4.map(r => box(bkRoomFull((by[r][0] || {}).room).replace(/^(\d+)호\s*/, '$1 '), by[r])).join('')}${box('408', [], '아이돌봄 (초등) <i>종일</i>')}</div>`;
+}
+function bkPerson(p) {
+  const q = Object.keys(QR2T).find(k => QR2T[k] === p.id) || '';
+  const e = EX[p.id] || {}; const held = seatsOf(p.id).sort((a, b) => a.start.localeCompare(b.start)); const waits = waitsOf(p.id);
+  const hk = HK.find(h => h.id === p.id && h.status === 'active'); const win = WINS.find(w => w.id === p.id);
+  const am = held.find(s => s.start < '12:00'), pms = held.filter(s => s.start >= '12:00');
+  const li = (t, n, r) => `<li><span class="t">${t}</span><span class="n">${n}</span><span class="r">${r || ''}</span></li>`;
+  const L = [li('09:00', '오프닝 · 네트워킹', '송원홀')];
+  if (hk) L.push(li('10:00', '바이브코딩 챌린지 (~14:50)', '305호'));
+  else L.push(am ? li(am.start, esc(am.name), bkRoom(am.room)) : li('10:00', '부스 · 수업사례발표 자유 관람', '송원홀'));
+  L.push(li('11:30', '점심 · ' + (e.lunch ? esc(BK_LUNCH[e.lunch]) : '<u>도시락 미선택</u>'), ''));
+  if (pms.length) pms.forEach(s => L.push(li(s.start, esc(s.name), bkRoom(s.room)))); else if (!hk) L.push(li('13:00', '부스 · 수업사례발표 자유 관람', '송원홀'));
+  if (hk && !pms.length) L.push(li('15:00', '부스 · 수업사례발표', '송원홀'));
+  if (e.kids) L.push(li('종일', '아이돌봄 · 자녀 ' + e.kids + '명', '408호'));
+  L.push(li('16:30', '총회 · 경품 추첨', '송원홀'));
+  const spots = SPOT.filter(s => s.on !== false);
+  const grp = (k, t) => { const l = spots.filter(s => s.kind === k); return l.length ? `<div class="sg">${t}</div><div class="sgrid">${l.map(s => `<div class="sb"><span>${esc(s.name.replace(' (입장 체크)', '').replace(' 부스', ''))}</span></div>`).join('')}</div>` : ''; };
+  const lunchLine = (e.lunch ? BK_LUNCH[e.lunch] : '도시락 미선택') + (e.klunch ? ' + 아이 도시락 ' + e.klunch + '개' : '');
+  return `<section class="sheet out">
+    <div class="pnl back">
+      <div class="bh">스탬프 카드 <small>QR이 안 될 때 담당 선생님이 이 칸에 도장이나 사인을 해 드려요</small></div>
+      ${grp('program', '프로그램')}${grp('session', '세션')}${grp('booth', '부스 (송원홀)')}
+      ${win ? `<div class="win">✈ 행운 비행 당첨 · <b>${BK_PRIZE[win.prize] || win.prize}</b><br><small>등록 데스크에서 이 소책자를 보여 주고 받아 가세요</small></div>` : ''}
+      <div class="foot">G-DEAL 경상디지털교육자연합 · 문의 angelpeace@gdeal.io · hanmadang.peace.re.kr</div>
+    </div>
+    <div class="pnl cover">
+      <div class="ch"><span>BOARDING PASS</span><span>제3회 지딜 한마당 · 2026.12.19 SAT</span></div>
+      <div class="cname">${esc(p.name)} <small>선생님</small></div>
+      <div class="cschool">${esc(p.school || '')} · ${TYPE[p.type] || ''}${p.staff ? ' · 운영진' : ''}</div>
+      <div class="cmid"><div class="cqr">${q ? bkQrSvg('HMQ:' + q) : ''}<div class="ccode">${q ? q.slice(0, 4) + '-' + q.slice(4) : ''}</div></div>
+        <div class="cinfo"><div class="lab">접수번호 · 경품 추첨 번호</div><div class="no">${p.no ? 'No.' + String(p.no).padStart(3, '0') : '-'}</div>
+          <div class="lab">점심 도시락</div><div class="lunch">🍱 ${esc(lunchLine)}</div>
+          ${e.kids ? `<div class="lab">자녀 동반</div><div class="lunch">${e.kids}명 · 아이돌봄 408호</div>` : ''}</div></div>
+      <div class="chint">세션·부스에서 이 QR을 보여 주면 도장이 찍혀요</div>
+      <div class="cfoot">마산대학교 창의관 · 09:00–17:00</div>
+    </div>
+  </section>
+  <section class="sheet in">
+    <div class="pnl">
+      <div class="ph">나의 하루 일정</div><ul class="my">${L.join('')}</ul>
+      ${waits.length ? `<div class="wt">대기 중: ${waits.map(s => esc(s.name)).join(', ')} · 확정되면 탑승권에 알림이 떠요</div>` : ''}
+      <div class="ph" style="margin-top:4mm">전체 시간표</div>${bkTimetable()}
+    </div>
+    <div class="pnl">
+      <div class="ph">어디로 가면 되나요 · 층별 안내</div>${bkFloors()}
+      <div class="ph" style="margin-top:4mm">꼭 알아 두세요</div>
+      <ul class="tips"><li>도장은 세션·부스 담당 선생님이 앞면 QR을 찍어 줘요. 폰 탑승권 QR도 똑같이 돼요.</li><li>총회 16:30 송원홀에서 접수번호로 경품을 추첨해요. 이 소책자를 꼭 챙겨 오세요.</li><li>도시락은 점심시간(11:30–13:00)에 나눠 드려요.</li><li>못 오시게 되면 운영진에게 꼭 알려 주세요.</li></ul>
+    </div>
+  </section>`;
+}
+function bkHTML(list) {
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>지딜 한마당 명찰·소책자 (${list.length}명)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+@page{size:A4 landscape;margin:0}*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Pretendard,'Malgun Gothic',sans-serif;color:#14402A;-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#ddd}
+.bar{position:sticky;top:0;z-index:9;background:#1E5B3C;color:#fff;padding:10px 16px;font-size:14px;display:flex;gap:14px;align-items:center}
+.bar button{font:inherit;font-weight:800;background:#FFD54F;border:0;border-radius:8px;padding:8px 16px;cursor:pointer}
+@media print{.bar{display:none}body{background:#fff}}
+.sheet{width:297mm;height:210mm;display:flex;background:#fff;margin:6mm auto;page-break-after:always;break-after:page;position:relative;overflow:hidden}
+@media print{.sheet{margin:0}}
+.sheet:after{content:"";position:absolute;left:148.5mm;top:6mm;bottom:6mm;border-left:.3mm dashed #c9d6cc}
+.pnl{width:148.5mm;height:210mm;padding:9mm 10mm;position:relative;overflow:hidden}
+.cover{background:linear-gradient(170deg,#1E5B3C,#2b7a52 60%,#45AF76);color:#fff;display:flex;flex-direction:column}
+.ch{display:flex;justify-content:space-between;font-size:8.5pt;letter-spacing:.12em;color:#F3D98A;font-weight:700;border-bottom:.3mm solid rgba(243,217,138,.5);padding-bottom:3mm}
+.cname{font-size:34pt;font-weight:900;margin-top:9mm;line-height:1.1}.cname small{font-size:14pt;font-weight:700;color:#d9f0e2}
+.cschool{font-size:12pt;color:#d9f0e2;margin-top:2mm}
+.cmid{display:flex;gap:6mm;margin-top:9mm;align-items:flex-start}
+.cqr{background:#fff;border-radius:3mm;padding:2.5mm;width:52mm}.cqr svg{width:100%;display:block}
+.ccode{font-family:ui-monospace,Consolas,monospace;font-weight:800;font-size:12pt;color:#14402A;text-align:center;letter-spacing:.1em;margin-top:1mm}
+.cinfo{flex:1}.lab{font-size:8.5pt;color:#cfe8da;margin-top:3mm;letter-spacing:.04em}
+.no{font-family:ui-monospace,Consolas,monospace;font-size:28pt;font-weight:900;color:#FFD54F;line-height:1.1}
+.lunch{font-size:11pt;font-weight:800;margin-top:1mm;line-height:1.35}
+.chint{margin-top:auto;background:rgba(0,0,0,.18);border-radius:2.5mm;padding:3mm 4mm;font-size:10pt;font-weight:700}
+.cfoot{font-size:9pt;color:#d9f0e2;margin-top:3mm;text-align:right}
+.back{background:#FBF6E9}
+.bh{font-size:15pt;font-weight:900}.bh small{display:block;font-size:8.5pt;font-weight:600;color:#5b7566;margin-top:1mm}
+.sg{font-size:9pt;font-weight:800;color:#2F6FD6;margin:3.5mm 0 1.5mm}
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:2mm}
+.sb{border:.4mm dashed #9fb8a8;border-radius:2mm;height:17mm;display:flex;align-items:flex-start;padding:1.2mm 1.5mm;background:#fff}
+.sb span{font-size:7.5pt;font-weight:700;color:#5b7566;line-height:1.2}
+.win{margin-top:4mm;background:#FFF1BF;border:.4mm solid #C9A24A;border-radius:2.5mm;padding:2.5mm 3.5mm;font-size:10pt}.win small{font-size:8pt;color:#6b5a2a}
+.foot{position:absolute;left:10mm;right:10mm;bottom:7mm;font-size:7.5pt;color:#6b8577;text-align:center}
+.ph{font-size:13pt;font-weight:900;border-bottom:.5mm solid #45AF76;padding-bottom:1.2mm;margin-bottom:2mm}
+.my{list-style:none}.my li{display:grid;grid-template-columns:13mm 1fr 18mm;gap:2mm;font-size:10pt;padding:1.4mm 0;border-bottom:.2mm dashed #dfe9e2;align-items:baseline}
+.my .t{font-family:ui-monospace,Consolas,monospace;font-weight:800;color:#1E5B3C}.my .n{font-weight:700}.my .r{text-align:right;font-weight:800;color:#2F6FD6;font-size:9pt}
+.wt{font-size:8.5pt;color:#c4621a;margin-top:1.5mm}
+.tt{width:100%;border-collapse:collapse;font-size:8.2pt}.tt td{padding:.7mm 1mm;border-bottom:.2mm solid #eef3ef}.tt .t{font-family:ui-monospace,Consolas,monospace;font-weight:700;width:20mm;color:#1E5B3C}.tt .r{text-align:right;color:#2F6FD6;font-weight:700}
+.tt tr.h td{background:#EAF7EF;font-weight:800;color:#1E5B3C}
+.fl .fh{font-size:9.5pt;font-weight:900;color:#fff;background:#1E5B3C;border-radius:1.5mm;padding:1mm 2.5mm;margin:2.5mm 0 1.2mm;display:inline-block}
+.fr{display:grid;grid-template-columns:30mm 1fr;gap:2mm;font-size:9pt;padding:1.2mm 0;border-bottom:.2mm dashed #dfe9e2}.fr b{color:#2F6FD6}.fr i{font-style:normal;color:#6b8577;font-size:8pt}
+.fr.big{grid-template-columns:1fr;font-weight:700}
+.tips{padding-left:4mm;font-size:9pt;line-height:1.55}
+</style></head><body><div class="bar"><b>${list.length}명 · ${list.length * 2}쪽</b><span>A4 가로 · 양면 인쇄(짧은 쪽으로 넘기기) · 배율 100% · 배경 그래픽 켜기 → 반으로 접으면 A5 소책자</span><button onclick="print()">인쇄하기</button></div>
+${list.map(bkPerson).join('')}</body></html>`;
+}
+async function printBooklets() {
+  const act = P.filter(p => p.status === 'active');
+  const ans = prompt('인쇄할 사람을 골라 주세요.\n- 전체: 비워 두고 확인\n- 접수번호 범위: 예) 1-50\n- 한 명: 예) 12\n- 테스트 신청자만: test', '');
+  if (ans === null) return;
+  let list;
+  if (ans.trim() === 'test') list = act.filter(p => p.test);
+  else if (/^\d+\s*-\s*\d+$/.test(ans.trim())) { const [a, b] = ans.split('-').map(Number); list = act.filter(p => !p.test && p.no >= a && p.no <= b); }
+  else if (/^\d+$/.test(ans.trim())) list = act.filter(p => p.no === Number(ans));
+  else list = act.filter(p => !p.test);
+  list.sort((a, b) => (a.no || 9999) - (b.no || 9999));
+  if (!list.length) return alert('해당하는 신청자가 없어요.');
+  const w = window.open('', '_blank'); if (!w) return alert('팝업이 막혔어요. 이 사이트의 팝업을 허용해 주세요.');
+  w.document.write('<p style="font-family:sans-serif;padding:20px">만드는 중… (' + list.length + '명)</p>');
+  try { await bkLib(); const made = await bkEnsureQ(list); w.document.open(); w.document.write(bkHTML(list)); w.document.close(); if (made) console.log('QR 새로 만든 사람', made); }
+  catch (e) { console.error(e); w.document.body.innerHTML = '<p style="padding:20px">만들지 못했어요: ' + esc(e.code || e.message) + '</p>'; }
+}
+window.__bkHTML = bkHTML; window.__bkLib = bkLib; window.__bkEnsureQ = bkEnsureQ;
+
+$('#bkPrint').onclick = printBooklets;
 
 function filtered() {
   const q = $('#q').value.trim(), t = $('#fType').value, st = $('#fStatus').value;
