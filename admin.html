@@ -133,7 +133,7 @@ header nav button{white-space:nowrap}
              id="w4_path46"
              style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
              d="m 0,0 h -259.19 c -7.99,0 -14.47,-6.48 -14.47,-14.47 v -51.14 h 8.51 v 51.14 c 0,3.29 2.67,5.97 5.96,5.97 H 0 c 3.29,0 5.97,-2.68 5.97,-5.97 v -47.75 c 3.88,0.87 6.65,1.61 8.5,2.17 v 45.58 C 14.47,-6.48 7.99,0 0,0 m -96.5,-237.99 h -66.18 v 20.76 h 66.18 z m 102.47,35.23 c 0,-3.29 -2.68,-5.97 -5.97,-5.97 h -259.19 c -3.29,0 -5.96,2.68 -5.96,5.97 v 38.14 c -3.68,1.54 -6.59,2.82 -8.51,3.69 v -41.83 c 0,-7.99 6.48,-14.47 14.47,-14.47 h 88.01 v -20.76 h -32.61 c -2.34,0 -4.25,-1.91 -4.25,-4.25 0,-1.18 0.48,-2.24 1.25,-3.01 0.77,-0.77 1.83,-1.25 3,-1.25 h 148.25 c 2.35,0 4.26,1.91 4.26,4.26 0,1.17 -0.48,2.23 -1.25,3 -0.77,0.77 -1.83,1.25 -3.01,1.25 H -88 v 20.76 H 0 c 7.99,0 14.47,6.48 14.47,14.47 v 53.83 c -4.86,0.52 -8.5,0.76 -8.5,0.76 z" /></g></g></g></g></svg> 운영실</div>
-  <nav><button data-tab="dash" class="on">현황</button><button data-tab="list">명단</button><button data-tab="ses">세션·도시락·공문</button><button data-tab="ntc">알림</button><button data-tab="stp">스탬프</button><button data-tab="lucky">행운 비행</button><button data-tab="sb">별빛결</button><button data-tab="hack">해커톤</button><button data-tab="set">설정</button></nav>
+  <nav><button data-tab="dash" class="on">현황</button><button data-tab="list">명단</button><button data-tab="ses">세션·도시락·공문</button><button data-tab="ntc">알림</button><button data-tab="stp">스탬프</button><button data-tab="lucky">행운 비행</button><button data-tab="sb">별빛결</button><button data-tab="hack">해커톤</button><button data-tab="mv">마스코트 투표</button><button data-tab="set">설정</button></nav>
   <div class="me"><span id="meEmail"></span><button id="xlsxAll" style="background:#f5c542;color:#1d3b2c;font-weight:800">전체 엑셀 받기</button><button id="logout">로그아웃</button></div>
 </header>
 <main>
@@ -261,6 +261,11 @@ header nav button{white-space:nowrap}
     <div class="panel"><h3>당첨자 <span class="tools"><button class="b2" id="lkCsv">엑셀(CSV)</button></span></h3>
       <p class="note">행사 당일 경품을 건네면 "교환" 칸을 체크하세요. 참가자 교환권에 바로 "교환 완료"가 떠요.</p>
       <div style="overflow:auto;margin-top:8px"><table><thead><tr><th>당첨일</th><th>접수번호</th><th>이름</th><th>소속</th><th>경품</th><th>교환</th></tr></thead><tbody id="lkRows"></tbody></table></div></div>
+  </section>
+
+  <section id="tab-mv" class="hidden">
+    <iframe id="mvFrame" title="마스코트 투표 관리" style="width:100%;height:calc(100vh - 120px);min-height:700px;border:0;border-radius:14px;background:#edf6ef"></iframe>
+    <p style="font-size:12px;color:#6b8577;margin-top:6px">전시판 <a href="/mascot/" target="_blank">hanmadang.peace.re.kr/mascot</a> · 투표 기간·마감·집계·1등 맞히기 추첨·결과 공개를 여기서 해요.</p>
   </section>
 
   <section id="tab-sb" class="hidden">
@@ -542,7 +547,8 @@ $('#loginBtn').onclick = async () => {
 $('#logout').onclick = () => signOut(auth);
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
   document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
-  ['dash', 'list', 'ses', 'ntc', 'stp', 'lucky', 'sb', 'hack', 'set'].forEach(t => $('#tab-' + t).classList.toggle('hidden', t !== b.dataset.tab));
+  ['dash', 'list', 'ses', 'ntc', 'stp', 'lucky', 'sb', 'hack', 'mv', 'set'].forEach(t => $('#tab-' + t).classList.toggle('hidden', t !== b.dataset.tab));
+  if (b.dataset.tab === 'mv' && !$('#mvFrame').src) $('#mvFrame').src = '/mascot/admin-vote.html';
 });
 
 onAuthStateChanged(auth, async user => {
@@ -559,6 +565,7 @@ onAuthStateChanged(auth, async user => {
   catch (e) { if (authEpoch !== leaderEpoch) return; $('#loginMsg').innerHTML = `<b>${esc(user.email)}</b> 계정은 아직 운영진으로 등록되어 있지 않아요. 등록된 계정으로 다시 로그인하거나, 대표님께 이 주소를 운영진에 추가해 달라고 해 주세요.`; await signOut(auth); return; }
   $('#loginView').classList.add('hidden'); $('#appView').classList.remove('hidden'); $('#meEmail').textContent = user.email + (OWNER ? ' · 총괄' : ' · 운영진');
   document.querySelector('nav button[data-tab="set"]').style.display = OWNER ? '' : 'none';
+  document.querySelector('nav button[data-tab="mv"]').style.display = OWNER ? '' : 'none';
   ['#csv', '#hcsv', '#hCopyPh', '#xlsxAll'].forEach(s => $(s).style.display = OWNER ? '' : 'none');
   start();
 });
