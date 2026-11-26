@@ -1279,7 +1279,7 @@ function bkPerson(p) {
       <div class="bh">스탬프 카드 <small>QR이 안 될 때 담당 선생님이 이 칸에 도장이나 사인을 해 드려요</small></div>
       ${grp('program', '프로그램')}${grp('session', '세션')}${grp('booth', '부스 (로비 홀)')}
       <div class="way"><img src="https://hanmadang.peace.re.kr/campus-changui.jpg"><div class="wayt"><b>찾아오는 길</b><span>마산대학교 <u>창의관</u><br>창원시 마산회원구 내서읍 함마대로 2640<br>후문 쪽 큰길가 12층 흰 건물</span><div class="wayq">${bkQrSvg('https://vr2.dreamvrad.net/masan_univ_vr/')}<small>캠퍼스 VR<br>미리 보기</small></div></div></div>
-      ${win ? `<div class="win">✈ 행운 비행 당첨 · <b>${BK_PRIZE[win.prize] || win.prize}</b><br><small>등록 데스크에서 이 소책자를 보여 주고 받아 가세요</small></div>` : ''}
+      
       <div class="foot">G-DEAL 경상디지털교육자연합 · 문의 angelpeace@gdeal.io · hanmadang.peace.re.kr</div>
     </div>
     <div class="pnl cover">
@@ -1299,7 +1299,7 @@ function bkPerson(p) {
     <div class="pnl">
       <div class="ph">나의 하루 일정</div><ul class="my">${L.join('')}</ul>
       ${waits.length ? `<div class="wt">대기 중: ${waits.map(s => esc(s.name)).join(', ')} · 확정되면 탑승권에 알림이 떠요</div>` : ''}
-      <div class="ph" style="margin-top:3mm">전체 시간표 · 실별</div>${bkTimetable(Object.assign({ hack: !!hk, kids: !!e.kids }, Object.fromEntries(held.map(s => [s.id, 1]))))}
+      <div class="ph" style="margin-top:3mm">전체 시간표 · 실별</div>${bkTimetable(Object.assign({ hack: !!hk, kids: !!e.kids }, Object.fromEntries(held.map(s => [s.id, 1]))))}${win ? `<div class="win">✈ 행운 비행 당첨 · <b>${BK_PRIZE[win.prize] || win.prize}</b><br><small>등록 데스크에서 이 소책자를 보여 주고 받아 가세요</small></div>` : ''}
     </div>
     <div class="pnl">
       <div class="ph">어디로 가면 되나요 · 층별 안내</div>${bkFloors()}${bkBooths()}
@@ -1340,9 +1340,9 @@ body{font-family:Pretendard,'Malgun Gothic',sans-serif;color:#14402A;-webkit-pri
 .bh{font-size:15pt;font-weight:900}.bh small{display:block;font-size:8.5pt;font-weight:600;color:#5b7566;margin-top:1mm}
 .sg{font-size:9pt;font-weight:800;color:#2F6FD6;margin:3.5mm 0 1.5mm}
 .sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:2mm}
-.sb{border:.4mm dashed #9fb8a8;border-radius:2mm;height:13.5mm;display:flex;align-items:flex-start;padding:1.2mm 1.5mm;background:#fff}
-.sb span{font-size:7.5pt;font-weight:700;color:#5b7566;line-height:1.2}
-.win{margin-top:4mm;background:#FFF1BF;border:.4mm solid #C9A24A;border-radius:2.5mm;padding:2.5mm 3.5mm;font-size:10pt}.win small{font-size:8pt;color:#6b5a2a}
+.sb{border:.4mm dashed #9fb8a8;border-radius:2mm;height:15mm;display:flex;align-items:flex-start;padding:.9mm 1.3mm;background:#fff}
+.sb span{font-size:6pt;font-weight:700;color:#8aa597;line-height:1.2}
+.win{margin-top:3mm;background:#FFF1BF;border:.4mm solid #C9A24A;border-radius:2.5mm;padding:2.5mm 3.5mm;font-size:10pt}.win small{font-size:8pt;color:#6b5a2a}
 .foot{position:absolute;left:10mm;right:10mm;bottom:7mm;font-size:7.5pt;color:#6b8577;text-align:center}
 .ph{font-size:13pt;font-weight:900;border-bottom:.5mm solid #45AF76;padding-bottom:1.2mm;margin-bottom:2mm}
 .my{list-style:none}.my li{display:grid;grid-template-columns:13mm 1fr 18mm;gap:2mm;font-size:10pt;padding:1.4mm 0;border-bottom:.2mm dashed #dfe9e2;align-items:baseline}
