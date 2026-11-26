@@ -1190,7 +1190,7 @@ const FX_INFO = {
 const sesInfoHTML = s => { const i = SES_INFO[s.id]; if (!i) return ''; return `<div class="sub">${esc(i.t)}</div><details class="sd"><summary>자세히</summary><p>${esc(i.d)}</p>${i.f ? '<span class="tg">' + esc(i.f) + '</span>' : ''}${i.c ? '<span class="tg">' + esc(i.c) + '</span>' : ''}${i.w ? '<span class="tg w">' + esc(i.w) + '</span>' : ''}</details>`; };
 const fxInfoHTML = f => { const i = FX_INFO[f.name]; if (!i) return ''; return `<details class="sd"><summary>${i.h}</summary><ul>${i.l.map(x => '<li><b>' + esc(x[0]) + '</b>' + (x[1] ? ' ' + esc(x[1]) : '') + (x[2] ? ' · ' + esc(x[2]) : '') + '</li>').join('')}</ul>${i.n ? '<p>' + esc(i.n) + '</p>' : ''}</details>`; };
 const TIMETABLE_FX = [
-    { name: '부스', room: '송원홀', note: '블루포트·LG 외 6곳 · 자유 관람', start: '10:00', end: '16:20' },
+    { name: '부스', room: '로비 홀', note: '블루포트·LG 외 6곳 · 창의관 로비 · 자유 관람', start: '10:00', end: '16:20' },
     { name: '수업사례발표', room: '송원홀', note: '자유 입장', start: '10:00', end: '16:20' },
     { name: '바이브코딩 챌린지', room: '305호', note: '초보 환영 · 팀이 없어도 신청 가능 · 3~4인 1팀 · 참가비 없음', start: '10:00', end: '14:50', show: 1, hack: 1 },
     { name: '아이돌봄 (초등)', room: '408호', note: '아이돌봄 신청 마감 · 기존 확정 유지', start: '10:00', end: '16:20' }];

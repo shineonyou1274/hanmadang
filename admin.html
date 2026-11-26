@@ -1212,7 +1212,7 @@ function bkTimetable() {
   return `<table class="tt"><tbody>
     ${row('09:00', '오프닝 · 네트워킹', '송원홀')}
     <tr class="h"><td colspan="3">오전 10:00–11:30</td></tr>${ses.filter(s => s.start < '12:00').map(s => row(s.start, s.name, bkRoom(s.room))).join('')}
-    ${row('10:00', '바이브코딩 챌린지 (~14:50)', '305호')}${row('10:00', '부스 · 수업사례발표', '송원홀')}
+    ${row('10:00', '바이브코딩 챌린지 (~14:50)', '305호')}${row('10:00', '수업사례발표', '송원홀')}${row('10:00', '부스 6곳 (~16:20)', '로비 홀')}
     ${row('11:30', '점심 · 도시락', '')}
     <tr class="h"><td colspan="3">오후 13:00–16:20</td></tr>${ses.filter(s => s.start >= '12:00').map(s => row(s.start + '–' + s.end, s.name, bkRoom(s.room))).join('')}
     ${row('종일', '아이돌봄 (초등)', '408호')}
@@ -1220,11 +1220,23 @@ function bkTimetable() {
 }
 function bkFloors() {
   const by = {}; SE.forEach(s => { const r = bkRoom(s.room); (by[r] = by[r] || []).push(s); });
-  const f3 = Object.keys(by).filter(r => /^3/.test(r)).sort(), f4 = Object.keys(by).filter(r => /^4/.test(r)).sort();
-  const box = (r, items, extra) => `<div class="fr"><b>${esc(r)}</b><span>${items.map(s => esc(s.name) + ' <i>' + (s.start < '12:00' ? '오전' : s.start >= '15:00' ? s.start : '오후') + '</i>').join(' · ')}${extra || ''}</span></div>`;
-  return `<div class="fl"><div class="fh">송원홀 (세미나실)</div><div class="fr big"><span>오프닝 09:00 · 부스 6곳 · 수업사례발표 · 총회·경품 추첨 16:30</span></div>
-    <div class="fh">3층</div>${box('305 멀티미디어실', f3.flatMap(r => by[r]), ' · 바이브코딩 챌린지 <i>10:00–14:50</i>')}
-    <div class="fh">4층</div>${f4.map(r => box(bkRoomFull((by[r][0] || {}).room).replace(/^(\d+)호\s*/, '$1 '), by[r])).join('')}${box('408', [], '아이돌봄 (초등) <i>종일</i>')}</div>`;
+  const nm = r => { const s = (by[r] || [])[0]; const m = s ? String(s.room).match(/\(([^)]+)\)/) : null; return r.replace('호', '') + (m ? ' ' + m[1] : ''); };
+  const box = (label, items, extra) => `<div class="fr"><b>${esc(label)}</b><span>${items.map(s => esc(s.name) + ' <i>' + (s.start < '12:00' ? '오전' : s.start >= '15:00' ? s.start : '오후') + '</i>').join(' · ')}${items.length && extra ? ' · ' : ''}${extra || ''}</span></div>`;
+  const f4 = Object.keys(by).filter(r => /^4/.test(r)).sort();
+  return `<div class="fl"><div class="fh">3층</div>
+    <div class="fr"><b>송원홀 (세미나실)</b><span>오프닝 <i>09:00</i> · 수업사례발표 · 총회·경품 추첨 <i>16:30</i></span></div>
+    ${box('305 멀티미디어실', by['305호'] || [], '바이브코딩 챌린지 <i>10:00–14:50</i>')}
+    <div class="fr"><b>쉼터</b><span>잠깐 쉬어 가요</span></div>
+    <div class="fh">4층</div>${f4.map(r => box(nm(r), by[r])).join('')}${box('408', [], '아이돌봄 (초등) <i>종일</i>')}
+    <div class="fh">1층</div><div class="fr"><b>편의시설</b><span>카페 · 한솥도시락 · 이마트24</span></div></div>`;
+}
+function bkBooths() {
+  const names = SPOT.filter(s => s.kind === 'booth' && s.on !== false).map(s => s.name.replace(' 부스', ''));
+  const b = i => `<div class="bt">부스 ${i}</div>`;
+  return `<div class="bm"><div class="bmt">창의관 로비 홀 · 부스 6곳 <small>(배치 안)</small></div>
+    <div class="bmap"><div class="col">${b(1)}${b(2)}${b(3)}</div><div class="mid">중앙 통로</div><div class="col">${b(4)}${b(5)}${b(6)}</div></div>
+    <div class="bme">▲ 로비 입구 (접수대)</div>
+    <div class="bmn">${names.map(esc).join(' · ')}</div></div>`;
 }
 function bkPerson(p) {
   const q = Object.keys(QR2T).find(k => QR2T[k] === p.id) || '';
@@ -1234,10 +1246,10 @@ function bkPerson(p) {
   const li = (t, n, r) => `<li><span class="t">${t}</span><span class="n">${n}</span><span class="r">${r || ''}</span></li>`;
   const L = [li('09:00', '오프닝 · 네트워킹', '송원홀')];
   if (hk) L.push(li('10:00', '바이브코딩 챌린지 (~14:50)', '305호'));
-  else L.push(am ? li(am.start, esc(am.name), bkRoom(am.room)) : li('10:00', '부스 · 수업사례발표 자유 관람', '송원홀'));
+  else L.push(am ? li(am.start, esc(am.name), bkRoom(am.room)) : li('10:00', '부스(로비)·수업사례발표(송원홀) 자유', ''));
   L.push(li('11:30', '점심 · ' + (e.lunch ? esc(BK_LUNCH[e.lunch]) : '<u>도시락 미선택</u>'), ''));
-  if (pms.length) pms.forEach(s => L.push(li(s.start, esc(s.name), bkRoom(s.room)))); else if (!hk) L.push(li('13:00', '부스 · 수업사례발표 자유 관람', '송원홀'));
-  if (hk && !pms.length) L.push(li('15:00', '부스 · 수업사례발표', '송원홀'));
+  if (pms.length) pms.forEach(s => L.push(li(s.start, esc(s.name), bkRoom(s.room)))); else if (!hk) L.push(li('13:00', '부스(로비)·수업사례발표(송원홀) 자유', ''));
+  if (hk && !pms.length) L.push(li('15:00', '부스(로비)·수업사례발표(송원홀)', ''));
   if (e.kids) L.push(li('종일', '아이돌봄 · 자녀 ' + e.kids + '명', '408호'));
   L.push(li('16:30', '총회 · 경품 추첨', '송원홀'));
   const spots = SPOT.filter(s => s.on !== false);
@@ -1246,7 +1258,7 @@ function bkPerson(p) {
   return `<section class="sheet out">
     <div class="pnl back">
       <div class="bh">스탬프 카드 <small>QR이 안 될 때 담당 선생님이 이 칸에 도장이나 사인을 해 드려요</small></div>
-      ${grp('program', '프로그램')}${grp('session', '세션')}${grp('booth', '부스 (송원홀)')}
+      ${grp('program', '프로그램')}${grp('session', '세션')}${grp('booth', '부스 (로비 홀)')}
       ${win ? `<div class="win">✈ 행운 비행 당첨 · <b>${BK_PRIZE[win.prize] || win.prize}</b><br><small>등록 데스크에서 이 소책자를 보여 주고 받아 가세요</small></div>` : ''}
       <div class="foot">G-DEAL 경상디지털교육자연합 · 문의 angelpeace@gdeal.io · hanmadang.peace.re.kr</div>
     </div>
@@ -1269,9 +1281,8 @@ function bkPerson(p) {
       <div class="ph" style="margin-top:4mm">전체 시간표</div>${bkTimetable()}
     </div>
     <div class="pnl">
-      <div class="ph">어디로 가면 되나요 · 층별 안내</div>${bkFloors()}
-      <div class="ph" style="margin-top:4mm">꼭 알아 두세요</div>
-      <ul class="tips"><li>도장은 세션·부스 담당 선생님이 앞면 QR을 찍어 줘요. 폰 탑승권 QR도 똑같이 돼요.</li><li>총회 16:30 송원홀에서 접수번호로 경품을 추첨해요. 이 소책자를 꼭 챙겨 오세요.</li><li>도시락은 점심시간(11:30–13:00)에 나눠 드려요.</li><li>못 오시게 되면 운영진에게 꼭 알려 주세요.</li></ul>
+      <div class="ph">어디로 가면 되나요 · 층별 안내</div>${bkFloors()}${bkBooths()}
+      <ul class="tips"><li>도장은 담당 선생님이 앞면 QR을 찍어 줘요. 폰 탑승권 QR도 돼요.</li><li>16:30 송원홀에서 접수번호로 경품을 추첨해요. 이 소책자를 꼭 챙겨 오세요.</li></ul>
     </div>
   </section>`;
 }
@@ -1317,7 +1328,13 @@ body{font-family:Pretendard,'Malgun Gothic',sans-serif;color:#14402A;-webkit-pri
 .fl .fh{font-size:9.5pt;font-weight:900;color:#fff;background:#1E5B3C;border-radius:1.5mm;padding:1mm 2.5mm;margin:2.5mm 0 1.2mm;display:inline-block}
 .fr{display:grid;grid-template-columns:30mm 1fr;gap:2mm;font-size:9pt;padding:1.2mm 0;border-bottom:.2mm dashed #dfe9e2}.fr b{color:#2F6FD6}.fr i{font-style:normal;color:#6b8577;font-size:8pt}
 .fr.big{grid-template-columns:1fr;font-weight:700}
-.tips{padding-left:4mm;font-size:9pt;line-height:1.55}
+.tips{padding-left:4mm;font-size:8.6pt;line-height:1.5;margin-top:3mm}
+.bm{margin-top:3mm;border:.3mm solid #cfe0d5;border-radius:2mm;padding:2mm 3mm}
+.bmt{font-size:9.5pt;font-weight:900}.bmt small{font-weight:600;color:#6b8577}
+.bmap{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:2mm;margin-top:1.5mm;height:26mm}
+.bmap .col{display:flex;flex-direction:column;gap:1mm}.bt{flex:1;background:#2F6FD6;color:#fff;border-radius:1mm;font-size:7.5pt;font-weight:800;display:flex;align-items:center;justify-content:center}
+.bmap .mid{border:.3mm dashed #b7c7bd;border-radius:1mm;display:flex;align-items:center;justify-content:center;font-size:7.5pt;color:#6b8577}
+.bme{text-align:center;font-size:7.5pt;font-weight:800;color:#1E5B3C;margin-top:1mm}.bmn{font-size:8pt;color:#3d5a4a;margin-top:1mm;line-height:1.4}
 </style></head><body><div class="bar"><b>${list.length}명 · ${list.length * 2}쪽</b><span>A4 가로 · 양면 인쇄(짧은 쪽으로 넘기기) · 배율 100% · 배경 그래픽 켜기 → 반으로 접으면 A5 소책자</span><button onclick="print()">인쇄하기</button></div>
 ${list.map(bkPerson).join('')}</body></html>`;
 }
