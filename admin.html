@@ -1206,17 +1206,30 @@ async function bkEnsureQ(list) {
   }
   return need.length;
 }
-function bkTimetable() {
-  const ses = [...SE].sort((a, b) => a.start.localeCompare(b.start) || (a.order || 0) - (b.order || 0));
-  const row = (t, n, r) => `<tr><td class="t">${t}</td><td>${esc(n)}</td><td class="r">${esc(r)}</td></tr>`;
-  return `<table class="tt"><tbody>
-    ${row('09:00', '오프닝 · 네트워킹', '송원홀')}
-    <tr class="h"><td colspan="3">오전 10:00–11:30</td></tr>${ses.filter(s => s.start < '12:00').map(s => row(s.start, s.name, bkRoom(s.room))).join('')}
-    ${row('10:00', '바이브코딩 챌린지 (~14:50)', '305호')}${row('10:00', '수업사례발표', '송원홀')}${row('10:00', '부스 6곳 (~16:20)', '로비 홀')}
-    ${row('11:30', '점심 · 도시락', '')}
-    <tr class="h"><td colspan="3">오후 13:00–16:20</td></tr>${ses.filter(s => s.start >= '12:00').map(s => row(s.start + '–' + s.end, s.name, bkRoom(s.room))).join('')}
-    ${row('종일', '아이돌봄 (초등)', '408호')}
-    ${row('16:30', '총회 · 경품 추첨', '송원홀')}</tbody></table>`;
+const BK_TALK = { '10:00': ['신수현 수석교사', '데이터분석 수업·교수평기 일체화'], '10:40': ['이충효 교사', 'AI가 못하는 글쓰기'], '13:00': ['김동환 교사', 'AI가 돕고 아이가 하는 데이터 수업'], '14:00': ['정주연 교사', '마음사계 놀이터 사회정서역량'], '15:00': ['황아영 교사', 'AI시대 내 정보 지키기'], '15:40': ['최소은 교사', '글로벌 커리어 로드맵'] };
+function bkTimetable(mine) {
+  mine = mine || {}; const B = ['09:00', '10:00', '10:40', '11:30', '13:00', '14:00', '15:00', '15:40', '16:30', '17:00'];
+  const C = ['407호', '408호', '305호', '410호', '412호', '413호'];
+  const ev = SE.map(s => ({ room: bkRoom(s.room), name: s.name, start: s.start, end: s.end, me: !!mine[s.id] }))
+    .concat([['10:00', '11:30'], ['13:00', '14:50']].map(([a, b]) => ({ room: '305호', name: '바이브코딩 챌린지', start: a, end: b, me: !!mine.hack, hk: 1 })))
+    .concat([['10:00', '11:30'], ['13:00', '16:20']].map(([a, b]) => ({ room: '408호', name: '아이돌봄 (초등)', start: a, end: b, me: !!mine.kids, kid: 1 })));
+  const si = t => B.indexOf(t), ei = t => B.findIndex(b => b >= t);
+  const grid = C.map(() => Array(9).fill(null));
+  ev.forEach(e => { const c = C.indexOf(e.room), a = si(e.start), b = ei(e.end); if (c < 0 || a < 0 || b <= a) return; grid[c][a] = { e, span: b - a }; for (let r = a + 1; r < b; r++) grid[c][r] = 'x'; });
+  const full = (t, cls) => `<td colspan="7" class="full ${cls || ''}">${t}</td>`;
+  let h = '<table class="tg"><colgroup><col style="width:11mm"><col style="width:27mm"><col span="6"></colgroup><thead><tr><th></th><th>송원홀</th>' + C.map(c => '<th>' + c.replace('호', '') + '</th>').join('') + '</tr></thead><tbody>';
+  for (let r = 0; r < 9; r++) {
+    h += `<tr class="r${r}"><td class="tm">${B[r]}</td>`;
+    if (r === 0) h += full('오프닝 · 네트워킹 <i>송원홀</i>', 'op');
+    else if (r === 3) h += full('점심 · 도시락 <i>11:30–13:00</i>', 'ln');
+    else if (r === 8) h += full('총회 · 폐막식 · 경품 추첨 <i>송원홀</i>', 'op');
+    else {
+      const tk = BK_TALK[B[r]]; h += `<td class="talk">${tk ? '<b>' + tk[0] + '</b><br>' + tk[1] : ''}</td>`;
+      C.forEach((c, ci) => { const g = grid[ci][r]; if (g === 'x') return; if (!g) { h += '<td class="em"></td>'; return; } h += `<td rowspan="${g.span}" class="ev${g.e.me ? ' me' : ''}${g.e.hk ? ' hk' : ''}${g.e.kid ? ' kid' : ''}">${g.e.me ? '<em>★ 나</em>' : ''}${esc(g.e.name)}<small>${g.e.start}–${g.e.end}</small></td>`; });
+    }
+    h += '</tr>';
+  }
+  return h + '</tbody></table><div class="tgn">★ 나 = 내가 확정된 곳 · 부스 6곳은 10:00–16:20 로비 홀에서 자유 관람</div>';
 }
 function bkFloors() {
   const by = {}; SE.forEach(s => { const r = bkRoom(s.room); (by[r] = by[r] || []).push(s); });
@@ -1224,10 +1237,9 @@ function bkFloors() {
   const box = (label, items, extra) => `<div class="fr"><b>${esc(label)}</b><span>${items.map(s => esc(s.name) + ' <i>' + (s.start < '12:00' ? '오전' : s.start >= '15:00' ? s.start : '오후') + '</i>').join(' · ')}${items.length && extra ? ' · ' : ''}${extra || ''}</span></div>`;
   const f4 = Object.keys(by).filter(r => /^4/.test(r)).sort();
   return `<div class="fl"><div class="fh">3층</div>
-    <div class="fr"><b>송원홀 (세미나실)</b><span>오프닝 <i>09:00</i> · 수업사례발표 · 총회·경품 추첨 <i>16:30</i></span></div>
     ${box('305 멀티미디어실', by['305호'] || [], '바이브코딩 챌린지 <i>10:00–14:50</i>')}
     <div class="fr"><b>쉼터</b><span>잠깐 쉬어 가요</span></div>
-    <div class="fh">4층</div>${f4.map(r => box(nm(r), by[r])).join('')}${box('408', [], '아이돌봄 (초등) <i>종일</i>')}
+    <div class="fh">4층</div><div class="fr"><b>송원홀 (세미나실)</b><span>오프닝 <i>09:00</i> · 수업사례발표 · 총회·경품 추첨 <i>16:30</i></span></div>${f4.map(r => box(nm(r), by[r])).join('')}${box('408', [], '아이돌봄 (초등) <i>종일</i>')}
     <div class="fh">1층</div><div class="fr"><b>편의시설</b><span>카페 · 한솥도시락 · 이마트24</span></div></div>`;
 }
 function bkBooths() {
@@ -1259,6 +1271,7 @@ function bkPerson(p) {
     <div class="pnl back">
       <div class="bh">스탬프 카드 <small>QR이 안 될 때 담당 선생님이 이 칸에 도장이나 사인을 해 드려요</small></div>
       ${grp('program', '프로그램')}${grp('session', '세션')}${grp('booth', '부스 (로비 홀)')}
+      <div class="way"><img src="https://hanmadang.peace.re.kr/campus-changui.jpg"><div class="wayt"><b>찾아오는 길</b><span>마산대학교 <u>창의관</u><br>창원시 마산회원구 내서읍 함마대로 2640<br>후문 쪽 큰길가 12층 흰 건물</span><div class="wayq">${bkQrSvg('https://vr2.dreamvrad.net/masan_univ_vr/')}<small>캠퍼스 VR<br>미리 보기</small></div></div></div>
       ${win ? `<div class="win">✈ 행운 비행 당첨 · <b>${BK_PRIZE[win.prize] || win.prize}</b><br><small>등록 데스크에서 이 소책자를 보여 주고 받아 가세요</small></div>` : ''}
       <div class="foot">G-DEAL 경상디지털교육자연합 · 문의 angelpeace@gdeal.io · hanmadang.peace.re.kr</div>
     </div>
@@ -1278,7 +1291,7 @@ function bkPerson(p) {
     <div class="pnl">
       <div class="ph">나의 하루 일정</div><ul class="my">${L.join('')}</ul>
       ${waits.length ? `<div class="wt">대기 중: ${waits.map(s => esc(s.name)).join(', ')} · 확정되면 탑승권에 알림이 떠요</div>` : ''}
-      <div class="ph" style="margin-top:4mm">전체 시간표</div>${bkTimetable()}
+      <div class="ph" style="margin-top:3mm">전체 시간표 · 실별</div>${bkTimetable(Object.assign({ hack: !!hk, kids: !!e.kids }, Object.fromEntries(held.map(s => [s.id, 1]))))}
     </div>
     <div class="pnl">
       <div class="ph">어디로 가면 되나요 · 층별 안내</div>${bkFloors()}${bkBooths()}
@@ -1315,7 +1328,7 @@ body{font-family:Pretendard,'Malgun Gothic',sans-serif;color:#14402A;-webkit-pri
 .bh{font-size:15pt;font-weight:900}.bh small{display:block;font-size:8.5pt;font-weight:600;color:#5b7566;margin-top:1mm}
 .sg{font-size:9pt;font-weight:800;color:#2F6FD6;margin:3.5mm 0 1.5mm}
 .sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:2mm}
-.sb{border:.4mm dashed #9fb8a8;border-radius:2mm;height:17mm;display:flex;align-items:flex-start;padding:1.2mm 1.5mm;background:#fff}
+.sb{border:.4mm dashed #9fb8a8;border-radius:2mm;height:13.5mm;display:flex;align-items:flex-start;padding:1.2mm 1.5mm;background:#fff}
 .sb span{font-size:7.5pt;font-weight:700;color:#5b7566;line-height:1.2}
 .win{margin-top:4mm;background:#FFF1BF;border:.4mm solid #C9A24A;border-radius:2.5mm;padding:2.5mm 3.5mm;font-size:10pt}.win small{font-size:8pt;color:#6b5a2a}
 .foot{position:absolute;left:10mm;right:10mm;bottom:7mm;font-size:7.5pt;color:#6b8577;text-align:center}
@@ -1323,6 +1336,20 @@ body{font-family:Pretendard,'Malgun Gothic',sans-serif;color:#14402A;-webkit-pri
 .my{list-style:none}.my li{display:grid;grid-template-columns:13mm 1fr 18mm;gap:2mm;font-size:10pt;padding:1.4mm 0;border-bottom:.2mm dashed #dfe9e2;align-items:baseline}
 .my .t{font-family:ui-monospace,Consolas,monospace;font-weight:800;color:#1E5B3C}.my .n{font-weight:700}.my .r{text-align:right;font-weight:800;color:#2F6FD6;font-size:9pt}
 .wt{font-size:8.5pt;color:#c4621a;margin-top:1.5mm}
+.tg{width:100%;border-collapse:collapse;table-layout:fixed;font-size:6.6pt;line-height:1.2}
+.tg th{background:#1E5B3C;color:#fff;font-weight:800;padding:.8mm 0;font-size:7pt;border:.2mm solid #fff}
+.tg td{border:.2mm solid #d5e3da;padding:.6mm .7mm;vertical-align:middle;text-align:center;word-break:keep-all}
+.tg .tm{font-family:ui-monospace,Consolas,monospace;font-weight:800;color:#1E5B3C;font-size:6.6pt;text-align:left}
+.tg tr.r1 td,.tg tr.r2 td,.tg tr.r4 td,.tg tr.r5 td,.tg tr.r6 td,.tg tr.r7 td{height:10.5mm}
+.tg .full{background:#EAF7EF;font-weight:800;font-size:7.4pt;height:5.5mm}.tg .full i{font-style:normal;color:#5b7566;font-weight:600}.tg .full.ln{background:#FFF6D6}
+.tg .talk{background:#F4F8FF;text-align:left;font-size:6.2pt;color:#3d5a4a}.tg .talk b{color:#14402A;font-size:6.6pt}
+.tg .ev{background:#E9F1FF;font-weight:800;color:#14402A}.tg .ev small{display:block;font-weight:600;color:#5b7566;font-size:5.8pt;margin-top:.4mm}
+.tg .ev.hk{background:#EDE7FF}.tg .ev.kid{background:#FFEFE3}.tg .em{background:#fafbfa}
+.tg .ev.me{background:#FFD54F;box-shadow:inset 0 0 0 .5mm #C9A24A}.tg .ev em{display:block;font-style:normal;font-size:5.8pt;color:#8a5a00;font-weight:900}
+.tgn{font-size:7pt;color:#5b7566;margin-top:1mm}
+.way{display:flex;gap:3mm;margin-top:3.5mm;border-top:.3mm solid #e3dcc6;padding-top:3mm}.way img{width:60mm;height:44mm;object-fit:cover;border-radius:2mm;display:block}
+.wayt{flex:1;display:flex;flex-direction:column;font-size:8pt;line-height:1.45}.wayt b{font-size:10.5pt;font-weight:900;margin-bottom:1mm}.wayt u{text-decoration:none;font-weight:900;color:#1E5B3C}
+.wayq{display:flex;gap:2mm;align-items:center;margin-top:auto}.wayq svg{width:17mm;height:17mm}.wayq small{font-size:7pt;color:#5b7566;line-height:1.3}
 .tt{width:100%;border-collapse:collapse;font-size:8.2pt}.tt td{padding:.7mm 1mm;border-bottom:.2mm solid #eef3ef}.tt .t{font-family:ui-monospace,Consolas,monospace;font-weight:700;width:20mm;color:#1E5B3C}.tt .r{text-align:right;color:#2F6FD6;font-weight:700}
 .tt tr.h td{background:#EAF7EF;font-weight:800;color:#1E5B3C}
 .fl .fh{font-size:9.5pt;font-weight:900;color:#fff;background:#1E5B3C;border-radius:1.5mm;padding:1mm 2.5mm;margin:2.5mm 0 1.2mm;display:inline-block}
