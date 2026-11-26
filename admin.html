@@ -1221,7 +1221,7 @@ function bkTimetable(mine) {
   for (let r = 0; r < 9; r++) {
     h += `<tr class="r${r}"><td class="tm">${B[r]}</td>`;
     if (r === 0) h += full('오프닝 · 네트워킹 <i>송원홀</i>', 'op');
-    else if (r === 3) h += full('점심 · 도시락 <i>11:30–13:00</i>', 'ln');
+    else if (r === 3) h += full('점심 · 도시락 <i>1층 · 11:30–13:00</i>', 'ln');
     else if (r === 8) h += full('총회 · 폐막식 · 경품 추첨 <i>송원홀</i>', 'op');
     else {
       const tk = BK_TALK[B[r]]; h += `<td class="talk">${tk ? '<b>' + tk[0] + '</b><br>' + tk[1] : ''}</td>`;
@@ -1236,11 +1236,11 @@ function bkFloors() {
   const nm = r => { const s = (by[r] || [])[0]; const m = s ? String(s.room).match(/\(([^)]+)\)/) : null; return r.replace('호', '') + (m ? ' ' + m[1] : ''); };
   const box = (label, items, extra) => `<div class="fr"><b>${esc(label)}</b><span>${items.map(s => esc(s.name) + ' <i>' + (s.start < '12:00' ? '오전' : s.start >= '15:00' ? s.start : '오후') + '</i>').join(' · ')}${items.length && extra ? ' · ' : ''}${extra || ''}</span></div>`;
   const f4 = Object.keys(by).filter(r => /^4/.test(r)).sort();
-  return `<div class="fl"><div class="fh">3층</div>
+  return `<div class="fl"><div class="fh">3층</div><div class="fr"><b>송원홀 (세미나실)</b><span>오프닝 <i>09:00</i> · 수업사례발표 · 총회·경품 추첨 <i>16:30</i><br><i>출입구는 3층 · 3~4층에 걸친 홀이라 관객석 뒤편이 4층과 이어져요</i></span></div>
     ${box('305 멀티미디어실', by['305호'] || [], '바이브코딩 챌린지 <i>10:00–14:50</i>')}
     <div class="fr"><b>쉼터</b><span>잠깐 쉬어 가요</span></div>
-    <div class="fh">4층</div><div class="fr"><b>송원홀 (세미나실)</b><span>오프닝 <i>09:00</i> · 수업사례발표 · 총회·경품 추첨 <i>16:30</i></span></div>${f4.map(r => box(nm(r), by[r])).join('')}${box('408', [], '아이돌봄 (초등) <i>종일</i>')}
-    <div class="fh">1층</div><div class="fr"><b>편의시설</b><span>카페 · 한솥도시락 · 이마트24</span></div></div>`;
+    <div class="fh">4층 · 세션 교실</div>${f4.map(r => box(nm(r), by[r])).join('')}${box('408', [], '아이돌봄 (초등) <i>종일</i>')}
+    <div class="fh">1층</div><div class="fr"><b>점심 · 편의시설</b><span>도시락은 1층에서 먹어요 <i>11:30–13:00</i> · 카페 · 이마트24<br><i>물은 따로 드리지 않아요. 1층 편의점에서 각자 챙겨 주세요</i></span></div></div>`;
 }
 function bkBooths() {
   const names = SPOT.filter(s => s.kind === 'booth' && s.on !== false).map(s => s.name.replace(' 부스', ''));
@@ -1259,7 +1259,7 @@ function bkPerson(p) {
   const L = [li('09:00', '오프닝 · 네트워킹', '송원홀')];
   if (hk) L.push(li('10:00', '바이브코딩 챌린지 (~14:50)', '305호'));
   else L.push(am ? li(am.start, esc(am.name), bkRoom(am.room)) : li('10:00', '부스(로비)·수업사례발표(송원홀) 자유', ''));
-  L.push(li('11:30', '점심 · ' + (e.lunch ? esc(BK_LUNCH[e.lunch]) : '<u>도시락 미선택</u>'), ''));
+  L.push(li('11:30', '점심 · ' + (e.lunch ? esc(BK_LUNCH[e.lunch]) : '<u>도시락 미선택</u>'), '1층'));
   if (pms.length) pms.forEach(s => L.push(li(s.start, esc(s.name), bkRoom(s.room)))); else if (!hk) L.push(li('13:00', '부스(로비)·수업사례발표(송원홀) 자유', ''));
   if (hk && !pms.length) L.push(li('15:00', '부스(로비)·수업사례발표(송원홀)', ''));
   if (e.kids) L.push(li('종일', '아이돌봄 · 자녀 ' + e.kids + '명', '408호'));
@@ -1295,7 +1295,7 @@ function bkPerson(p) {
     </div>
     <div class="pnl">
       <div class="ph">어디로 가면 되나요 · 층별 안내</div>${bkFloors()}${bkBooths()}
-      <ul class="tips"><li>도장은 담당 선생님이 앞면 QR을 찍어 줘요. 폰 탑승권 QR도 돼요.</li><li>16:30 송원홀에서 접수번호로 경품을 추첨해요. 이 소책자를 꼭 챙겨 오세요.</li></ul>
+      <ul class="tips"><li>도장은 담당 선생님이 앞면 QR을 찍어 줘요. 폰 탑승권 QR도 돼요.</li><li>16:30 송원홀에서 접수번호로 경품을 추첨해요. 이 소책자를 꼭 챙겨 오세요.</li><li>물은 1층 편의점(이마트24)에서 각자 챙겨 주세요.</li></ul>
     </div>
   </section>`;
 }
